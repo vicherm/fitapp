@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 0.1
+Version: 0.2
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -8,6 +8,7 @@ Primary User: Personal use (single user)
 ---
 
 # 1. Vision
+
 GymLog is a lightweight personal workout logging application optimized for
 strength training.
 
@@ -15,6 +16,7 @@ The application replaces HeavySet and is tailored specifically for the owner's
 training style rather than attempting to satisfy a broad audience.
 
 The application must be:
+
 - offline-first
 - installable as an iPhone PWA
 - developed entirely on Windows
@@ -82,17 +84,13 @@ Maps
 
 # 4. Core Concepts
 
-The application stores five main entity types.
+The application stores five primary entities.
 
-Exercise
-
-Workout
-
-WorkoutSet
-
-Gym
-
-Template
+- Exercise
+- Gym
+- Workout
+- Workout Exercise
+- Workout Set
 
 ---
 
@@ -103,16 +101,18 @@ Template
 Fields
 
 - id
-- category
 - name
+- bodyPartGroup
 - notes
 
 Example
 
-Name:
+Name
+
 Deadlift
 
-Category:
+Body Part Group
+
 Back
 
 ---
@@ -125,11 +125,14 @@ Fields
 - name
 - latitude
 - longitude
+- notes
 
 Example
 
 Factory Prague
+
 50.087
+
 14.420
 
 ---
@@ -152,13 +155,26 @@ Derived values
 
 ---
 
-## Workout Set
+## Workout Exercise
+
+Represents one exercise performed during one workout.
 
 Fields
 
 - id
 - workoutId
 - exerciseId
+- order
+- notes
+
+---
+
+## Workout Set
+
+Fields
+
+- id
+- workoutExerciseId
 - setNumber
 - weight
 - reps
@@ -188,39 +204,48 @@ Automatically
 - read GPS
 - determine nearest gym
 
+If a gym is found
+
+- select it automatically
+
+Otherwise
+
 Display
 
-Current Gym
+No gym detected.
 
-Factory Prague
+Options
 
-Change button
+- Select existing gym
+- Create new gym using current GPS location
 
-Start
+Then
+
+Start Workout
 
 ---
 
 ## Active Workout
 
-List of exercises
+List of Workout Exercises.
 
-Each exercise expands into sets
+Each exercise expands into its sets.
 
 Example
 
 Deadlift
 
-20 x 10
+20 × 10
 
-60 x 5
+60 × 5
 
-100 x 3
+100 × 3
 
-115 x 5
+115 × 5
 
-115 x 5
+115 × 5
 
-115 x 5
+115 × 5
 
 Button
 
@@ -242,7 +267,9 @@ All exercises
 
 Gyms
 
-Exercise categories
+Body part groups
+
+Global gym detection radius
 
 Import
 
@@ -262,21 +289,24 @@ Application requests GPS permission.
 
 When a workout starts
 
-Read current location
+Read current location.
 
 For every configured gym
 
-calculate distance
+calculate distance.
 
-If distance <= radius
+If distance <= configured global radius
 
-select gym automatically
+select nearest gym automatically.
 
 Otherwise
 
-Gym = Unknown
+Gym = Unknown.
 
-User can override.
+User can
+
+- choose existing gym
+- create a new gym using current location
 
 ---
 
@@ -286,11 +316,9 @@ For every exercise
 
 Show
 
-Maximum weight
-
-Estimated 1RM
-
-Graph
+- Maximum weight
+- Estimated 1RM
+- Graph
 
 ---
 
@@ -298,43 +326,24 @@ Graph
 
 CSV
 
-One row per set.
+One row per workout set.
 
-Columns
-
-Date
-
-Gym
-
-Exercise
-
-Weight
-
-Reps
-
-Volume
-
-Workout Duration
-
-Notes
+Details to be finalized.
 
 XLSX
 
 Workbook contains sheets
 
-Exercises
-
-Gyms
-
-Workouts
-
-Sets
-
-Statistics
+- Exercises
+- Gyms
+- Workouts
+- Workout Exercises
+- Workout Sets
+- Statistics
 
 ---
 
-# 11. User Experience
+# 10. User Experience
 
 Dark mode only.
 
@@ -350,43 +359,28 @@ Default weight and reps filled automatically from previous workout.
 
 ---
 
-# 12. Future Features
+# 11. Future Features
 
-AI weight recommendations
-
-Workout templates
-
-Plate calculator
-
-Rest timer
-
-Supersets
-
-Drop sets
-
-Warm-up generator
-
-Exercise photos
-
-Body weight tracking
-
-Measurements
-
-Cloud synchronization
-
-Apple Health integration
-
-Wearables
-
-QR code export
-
-Voice logging
-
-Watch support
+- AI weight recommendations
+- Workout templates
+- Plate calculator
+- Rest timer
+- Supersets
+- Drop sets
+- Warm-up generator
+- Exercise photos
+- Body weight tracking
+- Measurements
+- Cloud synchronization
+- Apple Health integration
+- Wearables
+- QR code export
+- Voice logging
+- Watch support
 
 ---
 
-# 13. Design Principles
+# 12. Design Principles
 
 Fast over beautiful.
 
