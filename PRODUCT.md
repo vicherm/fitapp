@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 0.2
+Version: 0.4
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -51,83 +51,139 @@ Non-goals
 
 # 3. Core Concepts
 
-The application stores five primary entities.
+The application stores six primary entities plus application settings.
 
 - Exercise
+- Body Part Group
 - Gym
 - Workout
 - Workout Exercise
 - Workout Set
-
----
-
-# 4. Main Screens
-
-## Dashboard
-
-Shows
-
-- Start Workout
-- Continue Workout
-- History
-- Export
 - Settings
 
 ---
 
-## Start Workout
+# 4. Main Workflow
 
-Automatically
-
-- read GPS
-- determine nearest gym
-
-If a gym is found
-
-- select it automatically
-
-Otherwise
-
-Display
-
-No gym detected.
-
-Options
-
-- Select existing gym
-- Create new gym using current GPS location
-
-Then
+The primary workflow of the application is
 
 Start Workout
 
+↓
+
+Active Workout
+
+↓
+
+Select Exercise
+
+↓
+
+Log Sets
+
+↓
+
+Select Exercise
+
+↓
+
+Log Sets
+
+↓
+
+Finish Workout
+
+Almost the entire workout should be performed from the Active Workout screen.
+
 ---
 
-## Active Workout
+# 5. Main Screens
 
-List of Workout Exercises.
+## Active Workout (Primary Screen)
 
-Each exercise expands into its sets.
+The Active Workout screen is the central screen of the application.
+
+The user should be able to log an entire workout with minimal navigation.
+
+The screen contains the following elements.
+
+### Exercise
+
+Displays the currently selected exercise.
+
+If no exercise is selected, tapping the exercise name opens the Exercise Selection screen.
+
+The user can change the current exercise by tapping its name.
+
+---
+
+### Weight
+
+Numeric input field for the current set weight.
+
+The value is pre-filled using the previous set of the same exercise whenever available.
+
+---
+
+### Repetitions
+
+Numeric input field for the number of repetitions.
+
+The value is pre-filled using the previous set of the same exercise whenever available.
+
+---
+
+### Log Button
+
+Stores the entered set.
+
+After logging
+
+- the set is added to the current workout
+- the history is immediately updated
+- the screen remains ready for entering the next set
+
+---
+
+### Numeric Keypad
+
+A large on-screen numeric keypad is displayed while entering weight or repetitions.
+
+The keypad is optimized for one-handed operation.
+
+---
+
+### Exercise History
+
+Displays previous sets for the selected exercise.
+
+History consists of two sections.
+
+#### Current Workout
+
+Shows all sets already logged during the current workout.
 
 Example
 
-Deadlift
+115 × 5
 
-20 x 10
+115 × 5
 
-60 x 5
+110 × 6
 
-100 x 3
+#### Previous Workout
 
-115 x 5
+Shows all sets from the most recent previous workout containing the same exercise.
 
-115 x 5
+Example
 
-115 x 5
+112.5 × 5
 
-Button
+112.5 × 5
 
-Add Set
+112.5 × 5
+
+The history is read-only and serves as a reference while logging new sets.
 
 ---
 
@@ -141,19 +197,44 @@ All exercises
 
 ---
 
+## Exercise Editor
+
+Used to create and edit exercises.
+
+Fields
+
+- name
+- body part group
+- note
+
+The exercise editor allows the user to assign an exercise to a body part group.
+
+---
+
+## Body Part Groups
+
+Used to create and edit body part groups.
+
+The user can:
+
+- create a new body part group
+- rename an existing body part group
+- delete a body part group when it is no longer used
+
+---
+
 ## Settings
 
+Application settings
+
+- Global gym detection radius
+- Theme
+
 Gyms
-
-Body part groups
-
-Global gym detection radius
 
 Import
 
 Export
-
-Theme
 
 Backup
 
@@ -161,7 +242,7 @@ Restore
 
 ---
 
-# 5. Gym Detection
+# 6. Gym Detection
 
 Application requests GPS permission.
 
@@ -188,7 +269,7 @@ User can
 
 ---
 
-# 6. Progress Tracking
+# 7. Progress Tracking
 
 For every exercise
 
@@ -200,7 +281,7 @@ Show
 
 ---
 
-# 7. Export
+# 8. Export
 
 CSV
 
@@ -213,6 +294,7 @@ XLSX
 Workbook contains sheets
 
 - Exercises
+- Body Part Groups
 - Gyms
 - Workouts
 - Workout Exercises

@@ -1,17 +1,44 @@
 # GymLog - Database Model
 
-Version: 0.2
+Version: 0.3
 Status: Draft
 
 ---
 
-# 1. Exercise
+# 1. Settings
+
+Stores application-wide settings.
+
+Fields
+
+- id
+- gymDetectionRadius
+- theme
+
+---
+
+# 2. Body Part Group
 
 Fields
 
 - id
 - name
-- bodyPartGroup
+
+Example
+
+Back
+
+Biceps
+
+---
+
+# 3. Exercise
+
+Fields
+
+- id
+- name
+- bodyPartGroupId
 - notes
 
 Example
@@ -26,7 +53,7 @@ Back
 
 ---
 
-# 2. Gym
+# 4. Gym
 
 Fields
 
@@ -34,7 +61,6 @@ Fields
 - name
 - latitude
 - longitude
-- notes
 
 Example
 
@@ -46,7 +72,7 @@ Factory Prague
 
 ---
 
-# 3. Workout
+# 5. Workout
 
 Fields
 
@@ -54,7 +80,6 @@ Fields
 - gymId
 - startTime
 - endTime
-- notes
 
 Derived values
 
@@ -64,7 +89,7 @@ Derived values
 
 ---
 
-# 4. Workout Exercise
+# 6. Workout Exercise
 
 Represents one exercise performed during one workout.
 
@@ -74,11 +99,10 @@ Fields
 - workoutId
 - exerciseId
 - order
-- notes
 
 ---
 
-# 5. Workout Set
+# 7. Workout Set
 
 Fields
 
@@ -88,4 +112,3 @@ Fields
 - weight
 - reps
 - timestamp
-- notes
