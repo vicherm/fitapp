@@ -9,11 +9,9 @@ Primary User: Personal use (single user)
 
 # 1. Vision
 
-GymLog is a lightweight personal workout logging application optimized for
-strength training.
+GymLog is a lightweight personal workout logging application optimized for strength training.
 
-The application replaces HeavySet and is tailored specifically for the owner's
-training style rather than attempting to satisfy a broad audience.
+The application replaces HeavySet and is tailored specifically for the owner's training style rather than attempting to satisfy a broad audience.
 
 The application must be:
 
@@ -51,38 +49,7 @@ Non-goals
 
 ---
 
-# 3. Technology
-
-Frontend
-
-- React
-- TypeScript
-- Vite
-
-PWA
-
-- vite-plugin-pwa
-
-Database
-
-- IndexedDB
-- Dexie.js
-
-Charts
-
-- Recharts
-
-Export
-
-- SheetJS (xlsx)
-
-Maps
-
-- Browser Geolocation API
-
----
-
-# 4. Core Concepts
+# 3. Core Concepts
 
 The application stores five primary entities.
 
@@ -94,96 +61,7 @@ The application stores five primary entities.
 
 ---
 
-# 5. Data Model
-
-## Exercise
-
-Fields
-
-- id
-- name
-- bodyPartGroup
-- notes
-
-Example
-
-Name
-
-Deadlift
-
-Body Part Group
-
-Back
-
----
-
-## Gym
-
-Fields
-
-- id
-- name
-- latitude
-- longitude
-- notes
-
-Example
-
-Factory Prague
-
-50.087
-
-14.420
-
----
-
-## Workout
-
-Fields
-
-- id
-- gymId
-- startTime
-- endTime
-- notes
-
-Derived values
-
-- duration
-- totalVolume
-- totalSets
-
----
-
-## Workout Exercise
-
-Represents one exercise performed during one workout.
-
-Fields
-
-- id
-- workoutId
-- exerciseId
-- order
-- notes
-
----
-
-## Workout Set
-
-Fields
-
-- id
-- workoutExerciseId
-- setNumber
-- weight
-- reps
-- timestamp
-- notes
-
----
-
-# 6. Main Screens
+# 4. Main Screens
 
 ## Dashboard
 
@@ -235,17 +113,17 @@ Example
 
 Deadlift
 
-20 × 10
+20 x 10
 
-60 × 5
+60 x 5
 
-100 × 3
+100 x 3
 
-115 × 5
+115 x 5
 
-115 × 5
+115 x 5
 
-115 × 5
+115 x 5
 
 Button
 
@@ -283,7 +161,7 @@ Restore
 
 ---
 
-# 7. Gym Detection
+# 5. Gym Detection
 
 Application requests GPS permission.
 
@@ -310,7 +188,7 @@ User can
 
 ---
 
-# 8. Progress Tracking
+# 6. Progress Tracking
 
 For every exercise
 
@@ -322,7 +200,7 @@ Show
 
 ---
 
-# 9. Export
+# 7. Export
 
 CSV
 
@@ -340,62 +218,3 @@ Workbook contains sheets
 - Workout Exercises
 - Workout Sets
 - Statistics
-
----
-
-# 10. User Experience
-
-Dark mode only.
-
-Large buttons.
-
-One-hand operation.
-
-Maximum two taps to log a set.
-
-Previous values visible during logging.
-
-Default weight and reps filled automatically from previous workout.
-
----
-
-# 11. Future Features
-
-- AI weight recommendations
-- Workout templates
-- Plate calculator
-- Rest timer
-- Supersets
-- Drop sets
-- Warm-up generator
-- Exercise photos
-- Body weight tracking
-- Measurements
-- Cloud synchronization
-- Apple Health integration
-- Wearables
-- QR code export
-- Voice logging
-- Watch support
-
----
-
-# 12. Design Principles
-
-Fast over beautiful.
-
-Offline over cloud.
-
-Local ownership of data.
-
-Few screens.
-
-Minimal typing.
-
-No advertisements.
-
-No subscriptions.
-
-No unnecessary features.
-
-Everything exportable.
