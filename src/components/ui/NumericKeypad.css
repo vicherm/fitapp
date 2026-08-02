@@ -1,0 +1,26 @@
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.keypad-key {
+  font-size: 1.6rem;
+  font-weight: 500;
+  padding: 18px 0;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.keypad-key:active {
+  background: var(--accent-bg);
+}
+
+.keypad-del {
+  color: var(--text);
+}

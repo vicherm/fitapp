@@ -1,0 +1,211 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { db } from '../../db/db'
+import type { Exercise, WorkoutExercise, WorkoutSet } from '../../db/types'
+import type { WorkoutState } from '../../hooks/useWorkout'
+import NumericKeypad from '../ui/NumericKeypad'
+import './ActiveWorkout.css'
+
+interface Props {
+  workout: WorkoutState
+  pendingExercise?: Exercise
+}
+
+type Field = 'weight' | 'reps'
+
+export default function ActiveWorkout({ workout, pendingExercise }: Props) {
+  const navigate = useNavigate()
+  const { workout: w, isLoading, startWorkout, finishWorkout } = workout
+
+  const [exercise, setExercise] = useState<Exercise | null>(null)
+  const [workoutExercise, setWorkoutExercise] = useState<WorkoutExercise | null>(null)
+  const [weight, setWeight] = useState('')
+  const [reps, setReps] = useState('')
+  const [activeField, setActiveField] = useState<Field>('weight')
+  const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
+  const [prevSets, setPrevSets] = useState<WorkoutSet[]>([])
+
+  // Load history whenever exercise or workout changes
+  useEffect(() => {
+    if (pendingExercise) handleSelectExercise(pendingExercise)
+  }, [pendingExercise]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load history whenever exercise or workout changes
+  useEffect(() => {
+    if (!exercise?.id || !w?.id) {
+      setCurrentSets([])
+      setPrevSets([])
+      return
+    }
+
+    async function loadHistory() {
+      const weList = await db.workoutExercises
+        .where('exerciseId')
+        .equals(exercise!.id!)
+        .toArray()
+
+      const weIds = weList.map((we) => we.id!)
+      const allSets = await db.workoutSets.where('workoutExerciseId').anyOf(weIds).toArray()
+
+      const currentWeIds = new Set(
+        weList.filter((we) => we.workoutId === w!.id).map((we) => we.id!),
+      )
+      setCurrentSets(allSets.filter((s) => currentWeIds.has(s.workoutExerciseId)))
+
+      // Find the most recent prior workout that contained this exercise
+      const priorWeIds = weList
+        .filter((we) => we.workoutId !== w!.id)
+        .sort((a, b) => b.workoutId - a.workoutId)
+      const prevWeId = priorWeIds[0]?.id
+      setPrevSets(prevWeId ? allSets.filter((s) => s.workoutExerciseId === prevWeId) : [])
+
+      // Pre-fill from last set of this exercise
+      const lastSet = [...allSets]
+        .filter((s) => currentWeIds.has(s.workoutExerciseId))
+        .sort((a, b) => b.setNumber - a.setNumber)[0]
+      if (lastSet) {
+        setWeight(String(lastSet.weight))
+        setReps(String(lastSet.reps))
+      } else if (priorWeIds[0]) {
+        const lastPrev = allSets
+          .filter((s) => s.workoutExerciseId === priorWeIds[0].id)
+          .sort((a, b) => b.setNumber - a.setNumber)[0]
+        if (lastPrev) {
+          setWeight(String(lastPrev.weight))
+          setReps(String(lastPrev.reps))
+        }
+      }
+    }
+
+    loadHistory()
+  }, [exercise, w])
+
+  async function handleSelectExercise(ex: Exercise) {
+    if (!w?.id) return
+    setExercise(ex)
+
+    // Get or create the WorkoutExercise for this exercise in the current workout
+    let we = (
+      await db.workoutExercises
+        .where('workoutId')
+        .equals(w.id)
+        .and((r) => r.exerciseId === ex.id!)
+        .first()
+    )
+    if (!we) {
+      const count = await db.workoutExercises.where('workoutId').equals(w.id).count()
+      const id = await db.workoutExercises.add({
+        workoutId: w.id,
+        exerciseId: ex.id!,
+        order: count,
+      })
+      we = await db.workoutExercises.get(id)
+    }
+    setWorkoutExercise(we ?? null)
+  }
+
+  async function logSet() {
+    const wNum = parseFloat(weight)
+    const rNum = parseInt(reps, 10)
+    if (!workoutExercise?.id || isNaN(wNum) || isNaN(rNum)) return
+
+    const setNumber = currentSets.length + 1
+    const id = await db.workoutSets.add({
+      workoutExerciseId: workoutExercise.id,
+      setNumber,
+      weight: wNum,
+      reps: rNum,
+      timestamp: new Date(),
+    })
+    const saved = await db.workoutSets.get(id)
+    if (saved) setCurrentSets((prev) => [...prev, saved])
+  }
+
+  function handleKeypad(key: string) {
+    const setter = activeField === 'weight' ? setWeight : setReps
+    setter((prev) => {
+      if (key === '⌫') return prev.slice(0, -1)
+      if (key === '.' && prev.includes('.')) return prev
+      return prev + key
+    })
+  }
+
+  if (isLoading) return <div className="aw-loading">Loading…</div>
+
+  if (!w) {
+    return (
+      <div className="aw-start">
+        <button className="aw-start-btn" onClick={startWorkout}>
+          Start Workout
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="aw">
+      {/* Exercise selector */}
+      <button
+        className="aw-exercise-btn"
+        onClick={() => navigate('/exercises')}
+      >
+        {exercise ? exercise.name : 'Select Exercise'}
+      </button>
+
+      {/* Weight / reps row */}
+      <div className="aw-inputs">
+        <button
+          className={`aw-field ${activeField === 'weight' ? 'active' : ''}`}
+          onClick={() => setActiveField('weight')}
+        >
+          <span className="aw-field-label">kg</span>
+          <span className="aw-field-value">{weight || '0'}</span>
+        </button>
+        <button
+          className={`aw-field ${activeField === 'reps' ? 'active' : ''}`}
+          onClick={() => setActiveField('reps')}
+        >
+          <span className="aw-field-label">reps</span>
+          <span className="aw-field-value">{reps || '0'}</span>
+        </button>
+      </div>
+
+      {/* Log button */}
+      <button className="aw-log-btn" onClick={logSet} disabled={!exercise}>
+        Log Set
+      </button>
+
+      {/* Numeric keypad */}
+      <NumericKeypad onKey={handleKeypad} showDecimal={activeField === 'weight'} />
+
+      {/* History */}
+      <div className="aw-history">
+        {currentSets.length > 0 && (
+          <section>
+            <h3>This workout</h3>
+            {currentSets.map((s) => (
+              <p key={s.id}>
+                {s.weight} × {s.reps}
+              </p>
+            ))}
+          </section>
+        )}
+        {prevSets.length > 0 && (
+          <section>
+            <h3>Previous workout</h3>
+            {prevSets.map((s) => (
+              <p key={s.id}>
+                {s.weight} × {s.reps}
+              </p>
+            ))}
+          </section>
+        )}
+      </div>
+
+      {/* Finish */}
+      <button className="aw-finish-btn" onClick={finishWorkout}>
+        Finish Workout
+      </button>
+    </div>
+  )
+}
