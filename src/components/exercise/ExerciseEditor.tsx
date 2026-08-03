@@ -94,6 +94,9 @@ export default function ExerciseEditor({ exerciseId }: Props) {
               </option>
             ))}
           </select>
+          <button className="ee-manage-groups" type="button" onClick={() => navigate('/body-part-groups')}>
+            Edit body part groups
+          </button>
         </label>
 
         <label className="ee-label">

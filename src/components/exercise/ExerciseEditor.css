@@ -70,6 +70,19 @@
   border-color: var(--accent);
 }
 
+.ee-manage-groups {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
 .ee-textarea {
   resize: vertical;
   font-family: inherit;

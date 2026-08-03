@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ActiveWorkoutPage from './pages/ActiveWorkoutPage'
 import ExerciseSelectionPage from './pages/ExerciseSelectionPage'
 import ExerciseEditorPage from './pages/ExerciseEditorPage'
+import BodyPartGroupEditorPage from './pages/BodyPartGroupEditorPage'
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/exercises" element={<ExerciseSelectionPage />} />
         <Route path="/exercises/new" element={<ExerciseEditorPage />} />
         <Route path="/exercises/:id/edit" element={<ExerciseEditorPage />} />
+        <Route path="/body-part-groups" element={<BodyPartGroupEditorPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
