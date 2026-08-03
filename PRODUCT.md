@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 0.4
+Version: 0.5
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -115,6 +115,8 @@ If no exercise is selected, tapping the exercise name opens the Exercise Selecti
 
 The user can change the current exercise by tapping its name.
 
+After selecting an exercise, the selection is immediately transferred back to Active Workout and becomes the current exercise.
+
 ---
 
 ### Weight
@@ -123,6 +125,8 @@ Numeric input field for the current set weight.
 
 The value is pre-filled using the previous set of the same exercise whenever available.
 
+When the field is selected, its value is cleared so the user can enter a fresh value quickly.
+
 ---
 
 ### Repetitions
@@ -130,6 +134,8 @@ The value is pre-filled using the previous set of the same exercise whenever ava
 Numeric input field for the number of repetitions.
 
 The value is pre-filled using the previous set of the same exercise whenever available.
+
+When the field is selected, its value is cleared so the user can enter a fresh value quickly.
 
 ---
 
@@ -150,6 +156,15 @@ After logging
 A large on-screen numeric keypad is displayed while entering weight or repetitions.
 
 The keypad is optimized for one-handed operation.
+
+Hardware keyboard input is also supported for fast entry.
+
+Supported keys
+
+- `0` to `9`
+- `Backspace` and `Delete`
+- `.` or `,` for decimal weight input
+- `Enter` to log set
 
 ---
 
@@ -205,9 +220,11 @@ Fields
 
 - name
 - body part group
-- note
+- notes
 
 The exercise editor allows the user to assign an exercise to a body part group.
+
+The editor also provides quick navigation to body part group management.
 
 ---
 
@@ -219,7 +236,12 @@ The user can:
 
 - create a new body part group
 - rename an existing body part group
-- delete a body part group when it is no longer used
+- delete a body part group when it is no longer used by any exercise
+
+Validation rules
+
+- group name is required
+- group name must be unique (case-insensitive)
 
 ---
 
