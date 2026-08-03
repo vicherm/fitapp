@@ -25,10 +25,12 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
   const [prevSets, setPrevSets] = useState<WorkoutSet[]>([])
 
-  // Load history whenever exercise or workout changes
+  // Apply selected exercise passed from the exercise picker.
   useEffect(() => {
-    if (pendingExercise) handleSelectExercise(pendingExercise)
-  }, [pendingExercise]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (pendingExercise) {
+      void handleSelectExercise(pendingExercise)
+    }
+  }, [pendingExercise, w?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load history whenever exercise or workout changes
   useEffect(() => {
@@ -81,8 +83,11 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   }, [exercise, w])
 
   async function handleSelectExercise(ex: Exercise) {
-    if (!w?.id) return
     setExercise(ex)
+    if (!w?.id) {
+      setWorkoutExercise(null)
+      return
+    }
 
     // Get or create the WorkoutExercise for this exercise in the current workout
     let we = (
@@ -171,7 +176,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       </div>
 
       {/* Log button */}
-      <button className="aw-log-btn" onClick={logSet} disabled={!exercise}>
+      <button className="aw-log-btn" onClick={logSet} disabled={!exercise || !workoutExercise || !w}>
         Log Set
       </button>
 
