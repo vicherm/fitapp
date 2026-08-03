@@ -126,13 +126,66 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     if (saved) setCurrentSets((prev) => [...prev, saved])
   }
 
-  function handleKeypad(key: string) {
+  function handleInputKey(key: string) {
+    if (key === '') return
     const setter = activeField === 'weight' ? setWeight : setReps
     setter((prev) => {
       if (key === '⌫') return prev.slice(0, -1)
       if (key === '.' && prev.includes('.')) return prev
+      if (key === '.' && activeField === 'reps') return prev
       return prev + key
     })
+  }
+
+  function handleKeypad(key: string) {
+    handleInputKey(key)
+  }
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
+        return
+      }
+
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault()
+        handleInputKey(event.key)
+        return
+      }
+
+      if ((event.key === '.' || event.key === ',') && activeField === 'weight') {
+        event.preventDefault()
+        handleInputKey('.')
+        return
+      }
+
+      if (event.key === 'Backspace' || event.key === 'Delete') {
+        event.preventDefault()
+        handleInputKey('⌫')
+        return
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        void logSet()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [activeField, exercise, workoutExercise, weight, reps, currentSets.length, w])
+
+  function selectField(field: Field) {
+    setActiveField(field)
+    if (field === 'weight') {
+      setWeight('')
+      return
+    }
+    setReps('')
   }
 
   if (isLoading) return <div className="aw-loading">Loading…</div>
@@ -161,14 +214,16 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       <div className="aw-inputs">
         <button
           className={`aw-field ${activeField === 'weight' ? 'active' : ''}`}
-          onClick={() => setActiveField('weight')}
+          onClick={() => selectField('weight')}
+          onFocus={() => selectField('weight')}
         >
           <span className="aw-field-label">kg</span>
           <span className="aw-field-value">{weight || '0'}</span>
         </button>
         <button
           className={`aw-field ${activeField === 'reps' ? 'active' : ''}`}
-          onClick={() => setActiveField('reps')}
+          onClick={() => selectField('reps')}
+          onFocus={() => selectField('reps')}
         >
           <span className="aw-field-label">reps</span>
           <span className="aw-field-value">{reps || '0'}</span>
