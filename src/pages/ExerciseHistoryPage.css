@@ -44,6 +44,27 @@
   text-transform: uppercase;
 }
 
+.eh-clickable {
+  cursor: pointer;
+}
+
+.eh-title-input {
+  width: 100%;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-h);
+  padding: 4px 6px;
+}
+
+.eh-title-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .eh-subtitle {
   margin: 2px 0 0;
   color: var(--text);
@@ -51,6 +72,62 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.eh-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eh-meta-row {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 6px 8px;
+  cursor: pointer;
+  display: grid;
+  gap: 3px;
+}
+
+.eh-meta-row.is-editing {
+  border-color: var(--accent);
+}
+
+.eh-meta-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text);
+}
+
+.eh-meta-value {
+  font-size: 0.94rem;
+  color: var(--text-h);
+}
+
+.eh-meta-input,
+.eh-meta-select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-h);
+  color-scheme: dark;
+  font-size: 0.94rem;
+  font-family: inherit;
+  padding: 5px 6px;
+}
+
+.eh-meta-select option {
+  color: var(--text-h);
+  background: #1e2129;
+}
+
+.eh-meta-input:focus,
+.eh-meta-select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .eh-list {

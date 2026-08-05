@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 2.6
+Version: 2.7
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -267,6 +267,13 @@ All exercises
 ## Exercise History
 
 The Exercise History screen is opened from Active Workout for the currently selected exercise.
+
+Top section:
+
+- exercise name is used as the page title
+- exercise name is editable inline
+- body part group is shown and editable inline
+- exercise note is shown and editable inline
 
 The screen lists all sets for that exercise, including the current workout, grouped by workout.
 

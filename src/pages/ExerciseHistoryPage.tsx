@@ -1,7 +1,7 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
-import type { Exercise, Workout, WorkoutSet } from '../db/types'
+import type { BodyPartGroup, Exercise, Workout, WorkoutSet } from '../db/types'
 import './ExerciseHistoryPage.css'
 
 interface WorkoutGroup {
@@ -10,6 +10,7 @@ interface WorkoutGroup {
 }
 
 type SetDraftMap = Record<number, { weight: string; reps: string }>
+type MetaField = 'name' | 'bodyPartGroupId' | 'notes' | null
 
 function formatWorkoutDate(input: Date): string {
   const year = input.getFullYear()
@@ -48,6 +49,10 @@ export default function ExerciseHistoryPage() {
   const [groups, setGroups] = useState<WorkoutGroup[]>([])
   const [drafts, setDrafts] = useState<SetDraftMap>({})
   const [editingSetId, setEditingSetId] = useState<number | null>(null)
+  const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
+  const [editingMetaField, setEditingMetaField] = useState<MetaField>(null)
+  const [exerciseNameDraft, setExerciseNameDraft] = useState('')
+  const [exerciseNotesDraft, setExerciseNotesDraft] = useState('')
 
   const loadHistory = useCallback(async () => {
     if (!Number.isFinite(exerciseId) || exerciseId <= 0) {
@@ -57,6 +62,11 @@ export default function ExerciseHistoryPage() {
 
     const ex = await db.exercises.get(exerciseId)
     setExercise(ex ?? null)
+    setExerciseNameDraft(ex?.name ?? '')
+    setExerciseNotesDraft(ex?.notes ?? '')
+
+    const groups = await db.bodyPartGroups.orderBy('name').toArray()
+    setBodyPartGroups(groups)
 
     if (!ex) {
       setGroups([])
@@ -130,6 +140,34 @@ export default function ExerciseHistoryPage() {
     )
   }
 
+  async function handleExerciseNameChange(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value
+    setExerciseNameDraft(value)
+
+    const trimmed = value.trim()
+    if (!exercise?.id || trimmed.length === 0) return
+
+    await db.exercises.update(exercise.id, { name: trimmed })
+    setExercise((prev) => (prev ? { ...prev, name: trimmed } : prev))
+  }
+
+  async function handleBodyPartGroupChange(event: ChangeEvent<HTMLSelectElement>) {
+    const nextGroupId = Number(event.target.value)
+    if (!exercise?.id || !Number.isFinite(nextGroupId) || nextGroupId <= 0) return
+
+    await db.exercises.update(exercise.id, { bodyPartGroupId: nextGroupId })
+    setExercise((prev) => (prev ? { ...prev, bodyPartGroupId: nextGroupId } : prev))
+  }
+
+  async function handleExerciseNotesChange(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value
+    setExerciseNotesDraft(value)
+    if (!exercise?.id) return
+
+    await db.exercises.update(exercise.id, { notes: value })
+    setExercise((prev) => (prev ? { ...prev, notes: value } : prev))
+  }
+
   async function handleWeightChange(setId: number, event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.value
     setDrafts((prev) => ({
@@ -182,10 +220,78 @@ export default function ExerciseHistoryPage() {
           ←
         </button>
         <div className="eh-title-wrap">
-          <h1 className="eh-title">Exercise History</h1>
-          <p className="eh-subtitle">{exercise?.name ?? 'Unknown exercise'}</p>
+          {editingMetaField === 'name' ? (
+            <input
+              className="eh-title-input"
+              value={exerciseNameDraft}
+              onChange={(event) => void handleExerciseNameChange(event)}
+              onBlur={() => setEditingMetaField(null)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  setEditingMetaField(null)
+                }
+              }}
+              autoFocus
+              aria-label="Exercise name"
+            />
+          ) : (
+            <h1
+              className="eh-title eh-clickable"
+              onClick={() => setEditingMetaField('name')}
+            >
+              {exercise?.name ?? 'Unknown exercise'}
+            </h1>
+          )}
         </div>
       </header>
+
+      <section className="eh-meta" aria-label="Exercise details">
+        <div
+          className={`eh-meta-row ${editingMetaField === 'bodyPartGroupId' ? 'is-editing' : ''}`}
+          onClick={() => editingMetaField !== 'bodyPartGroupId' && setEditingMetaField('bodyPartGroupId')}
+        >
+          <span className="eh-meta-label">Body Part Group</span>
+          {editingMetaField === 'bodyPartGroupId' ? (
+            <select
+              className="eh-meta-select"
+              value={exercise?.bodyPartGroupId ?? ''}
+              onChange={(event) => void handleBodyPartGroupChange(event)}
+              onBlur={() => setEditingMetaField(null)}
+              autoFocus
+              aria-label="Body part group"
+            >
+              {bodyPartGroups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="eh-meta-value">
+              {bodyPartGroups.find((group) => group.id === exercise?.bodyPartGroupId)?.name ?? 'Unassigned'}
+            </span>
+          )}
+        </div>
+
+        <div
+          className={`eh-meta-row ${editingMetaField === 'notes' ? 'is-editing' : ''}`}
+          onClick={() => editingMetaField !== 'notes' && setEditingMetaField('notes')}
+        >
+          <span className="eh-meta-label">Note</span>
+          {editingMetaField === 'notes' ? (
+            <input
+              className="eh-meta-input"
+              value={exerciseNotesDraft}
+              onChange={(event) => void handleExerciseNotesChange(event)}
+              onBlur={() => setEditingMetaField(null)}
+              autoFocus
+              aria-label="Exercise note"
+            />
+          ) : (
+            <span className="eh-meta-value">{exercise?.notes?.trim() ? exercise.notes : 'No note'}</span>
+          )}
+        </div>
+      </section>
 
       <main className="eh-list">
         {groups.length === 0 ? (
