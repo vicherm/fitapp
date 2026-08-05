@@ -13,6 +13,13 @@ interface Props {
 
 type Field = 'weight' | 'reps'
 
+function formatWorkoutDate(input: Date): string {
+  const year = input.getFullYear()
+  const month = String(input.getMonth() + 1).padStart(2, '0')
+  const day = String(input.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const navigate = useNavigate()
   const { workout: w, isLoading, startWorkout, finishWorkout } = workout
@@ -23,7 +30,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [reps, setReps] = useState('')
   const [activeField, setActiveField] = useState<Field>('weight')
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
-  const [prevSets, setPrevSets] = useState<WorkoutSet[]>([])
+  const [previousWorkoutSets, setPreviousWorkoutSets] = useState<WorkoutSet[][]>([[], []])
+  const [previousWorkoutTitles, setPreviousWorkoutTitles] = useState<string[]>(['Previous', 'Previous'])
 
   // Apply selected exercise passed from the exercise picker.
   useEffect(() => {
@@ -36,7 +44,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   useEffect(() => {
     if (!exercise?.id || !w?.id) {
       setCurrentSets([])
-      setPrevSets([])
+      setPreviousWorkoutSets([[], []])
+      setPreviousWorkoutTitles(['Previous', 'Previous'])
       return
     }
 
@@ -52,14 +61,46 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       const currentWeIds = new Set(
         weList.filter((we) => we.workoutId === w!.id).map((we) => we.id!),
       )
-      setCurrentSets(allSets.filter((s) => currentWeIds.has(s.workoutExerciseId)))
+      setCurrentSets(
+        allSets
+          .filter((s) => currentWeIds.has(s.workoutExerciseId))
+          .sort((a, b) => a.setNumber - b.setNumber),
+      )
 
-      // Find the most recent prior workout that contained this exercise
-      const priorWeIds = weList
-        .filter((we) => we.workoutId !== w!.id)
-        .sort((a, b) => b.workoutId - a.workoutId)
-      const prevWeId = priorWeIds[0]?.id
-      setPrevSets(prevWeId ? allSets.filter((s) => s.workoutExerciseId === prevWeId) : [])
+      // Load up to two previous workouts for this exercise
+      const priorWorkoutIds = Array.from(
+        new Set(
+          weList
+            .filter((we) => we.workoutId !== w!.id)
+            .sort((a, b) => b.workoutId - a.workoutId)
+            .map((we) => we.workoutId),
+        ),
+      ).slice(0, 2)
+
+      const priorWorkouts =
+        priorWorkoutIds.length > 0
+          ? await db.workouts.where('id').anyOf(priorWorkoutIds).toArray()
+          : []
+      const priorWorkoutById = new Map(priorWorkouts.map((workout) => [workout.id!, workout]))
+
+      const previousColumns = priorWorkoutIds.map((workoutId) => {
+        const workoutExerciseIds = weList
+          .filter((we) => we.workoutId === workoutId)
+          .map((we) => we.id!)
+
+        return allSets
+          .filter((s) => workoutExerciseIds.includes(s.workoutExerciseId))
+          .sort((a, b) => a.setNumber - b.setNumber)
+      })
+      setPreviousWorkoutSets([previousColumns[0] ?? [], previousColumns[1] ?? []])
+      setPreviousWorkoutTitles([
+        priorWorkoutById.get(priorWorkoutIds[0])
+          ? formatWorkoutDate(priorWorkoutById.get(priorWorkoutIds[0])!.startTime)
+          : 'Previous',
+        priorWorkoutById.get(priorWorkoutIds[1])
+          ? formatWorkoutDate(priorWorkoutById.get(priorWorkoutIds[1])!.startTime)
+          : 'Previous',
+      ])
 
       // Pre-fill from last set of this exercise
       const lastSet = [...allSets]
@@ -68,9 +109,12 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       if (lastSet) {
         setWeight(String(lastSet.weight))
         setReps(String(lastSet.reps))
-      } else if (priorWeIds[0]) {
+      } else if (priorWorkoutIds[0]) {
+        const latestPriorWorkoutExerciseIds = weList
+          .filter((we) => we.workoutId === priorWorkoutIds[0])
+          .map((we) => we.id!)
         const lastPrev = allSets
-          .filter((s) => s.workoutExerciseId === priorWeIds[0].id)
+          .filter((s) => latestPriorWorkoutExerciseIds.includes(s.workoutExerciseId))
           .sort((a, b) => b.setNumber - a.setNumber)[0]
         if (lastPrev) {
           setWeight(String(lastPrev.weight))
@@ -205,6 +249,12 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     )
   }
 
+  const historyColumns = [
+    { title: 'Current', sets: currentSets },
+    { title: previousWorkoutTitles[0], sets: previousWorkoutSets[0] ?? [] },
+    { title: previousWorkoutTitles[1], sets: previousWorkoutSets[1] ?? [] },
+  ]
+
   return (
     <div className="aw">
       <div className="aw-top-row">
@@ -254,26 +304,20 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
       {/* History */}
       <div className="aw-history">
-        {currentSets.length > 0 && (
-          <section>
-            <h3>This workout</h3>
-            {currentSets.map((s) => (
-              <p key={s.id}>
-                {s.weight} × {s.reps}
-              </p>
-            ))}
+        {historyColumns.map((column, index) => (
+          <section key={`${index}-${column.title}`}>
+            <h3>{column.title}</h3>
+            {column.sets.length > 0 ? (
+              column.sets.map((s) => (
+                <p key={s.id}>
+                  {s.weight} × {s.reps}
+                </p>
+              ))
+            ) : (
+              <p className="aw-history-empty">No sets</p>
+            )}
           </section>
-        )}
-        {prevSets.length > 0 && (
-          <section>
-            <h3>Previous workout</h3>
-            {prevSets.map((s) => (
-              <p key={s.id}>
-                {s.weight} × {s.reps}
-              </p>
-            ))}
-          </section>
-        )}
+        ))}
       </div>
 
       {/* Finish */}

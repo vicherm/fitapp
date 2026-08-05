@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 1.3
+Version: 1.7
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -205,7 +205,16 @@ Supported keys
 
 Displays previous sets for the selected exercise.
 
-History consists of two sections.
+History is shown in three side-by-side columns:
+
+- Current workout
+- Previous workout 1
+- Previous workout 2
+- All three columns fit within page width without horizontal scrolling
+
+Previous workout columns are titled by workout date in `YYYY-MM-DD` format.
+
+Set entries (`weight × reps`) use larger text for readability while preserving compact title typography.
 
 #### Current Workout
 
@@ -219,9 +228,9 @@ Example
 
 110 × 6
 
-#### Previous Workout
+#### Previous Workouts
 
-Shows all sets from the most recent previous workout containing the same exercise.
+Shows sets from the two most recent previous workouts containing the same exercise.
 
 Example
 
