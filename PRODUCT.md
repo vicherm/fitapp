@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 2.7
+Version: 2.9
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -114,7 +114,12 @@ The user can navigate from Home to:
 
 - Active Workout
 - Body Part Groups
-- Exercise Editor (new exercise)
+- Exercises
+
+Exercises from Home opens an Exercise Management screen where the user can:
+
+- create a new exercise (opens Exercise Editor form)
+- select an existing exercise from a list (opens Exercise Details for editing)
 
 Home also provides data backup actions:
 
@@ -138,7 +143,7 @@ The Active Workout screen does not include a manual Finish Workout button.
 
 The screen includes a direct Home link.
 
-When an exercise is selected, the screen provides access to Exercise History.
+When an exercise is selected, the screen provides access to Exercise Details.
 
 The input area is compact:
 
@@ -264,9 +269,9 @@ All exercises
 
 ---
 
-## Exercise History
+## Exercise Details
 
-The Exercise History screen is opened from Active Workout for the currently selected exercise.
+The Exercise Details screen is opened from Active Workout for the currently selected exercise.
 
 Top section:
 
@@ -299,7 +304,9 @@ Workouts are ordered with the most recent on top.
 
 ## Exercise Editor
 
-Used to create and edit exercises.
+Used to create new exercises.
+
+Primary flow: creating new exercises.
 
 Fields
 

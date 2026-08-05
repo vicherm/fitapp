@@ -31,7 +31,7 @@ export default function ExerciseSelector() {
           onChange={(e) => setQuery(e.target.value)}
           autoFocus
         />
-        <button className="es-new" onClick={() => navigate('/exercises/new')}>
+        <button className="es-new" onClick={() => navigate('/exercises/create')}>
           +
         </button>
       </div>
@@ -47,7 +47,7 @@ export default function ExerciseSelector() {
             </button>
             <button
               className="es-edit"
-              onClick={() => navigate(`/exercises/${ex.id}/edit`)}
+              onClick={() => navigate(`/exercises/${ex.id}`)}
               aria-label={`Edit ${ex.name}`}
             >
               ⋯

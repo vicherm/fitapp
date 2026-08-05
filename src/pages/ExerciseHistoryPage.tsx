@@ -220,6 +220,7 @@ export default function ExerciseHistoryPage() {
           ←
         </button>
         <div className="eh-title-wrap">
+          <p className="eh-subtitle">Exercise Details</p>
           {editingMetaField === 'name' ? (
             <input
               className="eh-title-input"

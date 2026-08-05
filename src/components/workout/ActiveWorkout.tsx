@@ -337,9 +337,9 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         {exercise?.id && (
           <Link
             className="aw-history-link"
-            to={`/exercises/${exercise.id}/history`}
+            to={`/exercises/${exercise.id}`}
           >
-            History
+            Details
           </Link>
         )}
         <Link className="aw-home-link" to="/home">

@@ -13,8 +13,8 @@ const navItems = [
     to: '/body-part-groups',
   },
   {
-    title: 'Exercise Editor',
-    to: '/exercises/new',
+    title: 'Exercises',
+    to: '/exercise-management',
   },
 ]
 
