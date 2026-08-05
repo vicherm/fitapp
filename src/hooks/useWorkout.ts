@@ -6,7 +6,20 @@ export interface WorkoutState {
   workout: Workout | null
   isLoading: boolean
   startWorkout: () => Promise<void>
-  finishWorkout: () => Promise<void>
+}
+
+function isSameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+function endOfLocalDay(input: Date): Date {
+  const value = new Date(input)
+  value.setHours(23, 59, 59, 999)
+  return value
 }
 
 export default function useWorkout(): WorkoutState {
@@ -14,15 +27,21 @@ export default function useWorkout(): WorkoutState {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Resume the most recent unfinished workout, if any
-    db.workouts
-      .orderBy('startTime')
-      .reverse()
-      .first()
-      .then((latest) => {
-        if (latest && !latest.endTime) setWorkout(latest)
-      })
-      .finally(() => setIsLoading(false))
+    async function loadWorkout() {
+      const latest = await db.workouts.orderBy('startTime').reverse().first()
+      if (!latest || latest.endTime) return
+
+      const now = new Date()
+      if (isSameLocalDay(latest.startTime, now)) {
+        setWorkout(latest)
+        return
+      }
+
+      // Any unfinished workout from a previous day is automatically closed.
+      await db.workouts.update(latest.id!, { endTime: endOfLocalDay(latest.startTime) })
+    }
+
+    loadWorkout().finally(() => setIsLoading(false))
   }, [])
 
   async function startWorkout() {
@@ -30,12 +49,5 @@ export default function useWorkout(): WorkoutState {
     setWorkout(await db.workouts.get(id) ?? null)
   }
 
-  async function finishWorkout() {
-    if (!workout?.id) return
-    const endTime = new Date()
-    await db.workouts.update(workout.id, { endTime })
-    setWorkout((w) => (w ? { ...w, endTime } : null))
-  }
-
-  return { workout, isLoading, startWorkout, finishWorkout }
+  return { workout, isLoading, startWorkout }
 }

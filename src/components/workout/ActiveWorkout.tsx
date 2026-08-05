@@ -22,7 +22,7 @@ function formatWorkoutDate(input: Date): string {
 
 export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const navigate = useNavigate()
-  const { workout: w, isLoading, startWorkout, finishWorkout } = workout
+  const { workout: w, isLoading, startWorkout } = workout
 
   const [exercise, setExercise] = useState<Exercise | null>(null)
   const [workoutExercise, setWorkoutExercise] = useState<WorkoutExercise | null>(null)
@@ -319,11 +319,6 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           </section>
         ))}
       </div>
-
-      {/* Finish */}
-      <button className="aw-finish-btn" onClick={finishWorkout}>
-        Finish Workout
-      </button>
     </div>
   )
 }

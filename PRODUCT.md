@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 1.7
+Version: 1.8
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -98,6 +98,8 @@ Log Sets
 
 Finish Workout
 
+Note: workouts that remain open past midnight are automatically considered finished.
+
 Almost the entire workout should be performed from the Active Workout screen.
 
 ---
@@ -129,6 +131,10 @@ Route behavior:
 The Active Workout screen is the central screen of the application.
 
 The user should be able to log an entire workout with minimal navigation.
+
+Any workout left open from a previous calendar day is automatically considered finished.
+
+The Active Workout screen does not include a manual Finish Workout button.
 
 The screen includes a direct Home link.
 
