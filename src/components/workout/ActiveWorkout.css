@@ -1,9 +1,10 @@
 .aw {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  max-width: 420px;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  max-width: 760px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -15,9 +16,15 @@
   height: 100svh;
 }
 
+.aw-start-content {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
 .aw-start-btn {
-  font-size: 1.4rem;
-  padding: 20px 48px;
+  font-size: 1.2rem;
+  padding: 14px 34px;
   border-radius: 12px;
   background: var(--accent);
   color: #fff;
@@ -25,10 +32,34 @@
   cursor: pointer;
 }
 
+.aw-top-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.aw-home-link {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.aw-home-link:hover,
+.aw-home-link:focus-visible {
+  color: var(--text-h);
+  border-color: var(--accent);
+}
+
 .aw-exercise-btn {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  padding: 14px;
+  padding: 10px 12px;
   border-radius: 10px;
   background: var(--surface);
   color: var(--text-h);
@@ -39,20 +70,22 @@
 
 .aw-inputs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr minmax(78px, auto);
+  gap: 8px;
 }
 
 .aw-field {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 14px 10px;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8px 10px;
   border-radius: 10px;
   background: var(--surface);
   border: 2px solid var(--border);
   cursor: pointer;
-  gap: 4px;
+  gap: 1px;
+  min-height: 62px;
 }
 
 .aw-field.active {
@@ -60,22 +93,25 @@
 }
 
 .aw-field-label {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
 }
 
 .aw-field-value {
-  font-size: 2rem;
+  font-size: 1.45rem;
   font-weight: 700;
   color: var(--text-h);
+  line-height: 1.05;
 }
 
 .aw-log-btn {
-  font-size: 1.25rem;
-  font-weight: 600;
-  padding: 16px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0 10px;
+  min-height: 62px;
   border-radius: 10px;
   background: var(--accent);
   color: #fff;
@@ -91,12 +127,12 @@
 .aw-history {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 2px;
 }
 
 .aw-history h3 {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text);
@@ -104,18 +140,30 @@
 }
 
 .aw-history p {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-h);
-  margin: 2px 0;
+  margin: 1px 0;
 }
 
 .aw-finish-btn {
-  margin-top: 8px;
-  font-size: 1rem;
-  padding: 12px;
+  margin-top: 4px;
+  font-size: 0.9rem;
+  padding: 10px;
   border-radius: 10px;
   background: transparent;
   color: var(--text);
   border: 1px solid var(--border);
   cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .aw-inputs {
+    grid-template-columns: 1fr 1fr minmax(70px, auto);
+  }
+
+  .aw-log-btn {
+    min-height: 56px;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+  }
 }

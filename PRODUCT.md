@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 0.9
+Version: 1.3
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -23,6 +23,7 @@ The application must be:
 - support deployment from a URL subpath (for example `/fitapp/`) so routes and static assets resolve correctly outside domain root
 - include valid PWA manifest icon references that resolve to files shipped in the production build
 - use the GymLog branded application icon across install surfaces (manifest icons, maskable icons, Apple touch icon, and favicon)
+- use a consistent dark graphite + orange accent visual theme across screens that matches GymLog branding
 
 All user data is stored locally on the device.
 
@@ -113,6 +114,11 @@ The user can navigate from Home to:
 - Body Part Groups
 - Exercise Editor (new exercise)
 
+Home also provides data backup actions:
+
+- Export all local data to a JSON backup file
+- Import all local data from a JSON backup file (replaces local data)
+
 Route behavior:
 
 - Active Workout remains the default route (`/`)
@@ -123,6 +129,14 @@ Route behavior:
 The Active Workout screen is the central screen of the application.
 
 The user should be able to log an entire workout with minimal navigation.
+
+The screen includes a direct Home link.
+
+The input area is compact:
+
+- `kg` and `reps` labels are small text above their values
+- LOG action is placed next to the input fields
+- Numeric keypad uses full available width
 
 The screen contains the following elements.
 
@@ -341,3 +355,13 @@ Workbook contains sheets
 - Workout Exercises
 - Workout Sets
 - Statistics
+
+JSON Backup
+
+- Exports all local tables (settings, exercises, body part groups, gyms, workouts, workout exercises, workout sets)
+- Importing a JSON backup replaces all current local data
+
+CSV Migration Tooling
+
+- A CLI conversion script is provided to transform HeavySet CSV exports into GymLog JSON backup format for import
+- Encoded exercise prefixes (for example `LEG`, `BIC`) are mapped to body part groups during conversion

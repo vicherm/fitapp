@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../../db/db'
 import type { Exercise, WorkoutExercise, WorkoutSet } from '../../db/types'
 import type { WorkoutState } from '../../hooks/useWorkout'
@@ -193,15 +193,26 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   if (!w) {
     return (
       <div className="aw-start">
-        <button className="aw-start-btn" onClick={startWorkout}>
-          Start Workout
-        </button>
+        <div className="aw-start-content">
+          <Link className="aw-home-link" to="/home">
+            Home
+          </Link>
+          <button className="aw-start-btn" onClick={startWorkout}>
+            Start Workout
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="aw">
+      <div className="aw-top-row">
+        <Link className="aw-home-link" to="/home">
+          Home
+        </Link>
+      </div>
+
       {/* Exercise selector */}
       <button
         className="aw-exercise-btn"
@@ -228,12 +239,15 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           <span className="aw-field-label">reps</span>
           <span className="aw-field-value">{reps || '0'}</span>
         </button>
-      </div>
 
-      {/* Log button */}
-      <button className="aw-log-btn" onClick={logSet} disabled={!exercise || !workoutExercise || !w}>
-        Log Set
-      </button>
+        <button
+          className="aw-log-btn"
+          onClick={logSet}
+          disabled={!exercise || !workoutExercise || !w}
+        >
+          LOG
+        </button>
+      </div>
 
       {/* Numeric keypad */}
       <NumericKeypad onKey={handleKeypad} showDecimal={activeField === 'weight'} />

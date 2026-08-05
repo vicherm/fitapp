@@ -30,3 +30,19 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## HeavySet CSV Migration
+
+Convert a HeavySet CSV export to a GymLog JSON backup file compatible with Home -> Import JSON.
+
+```bash
+npm run convert:heavyset -- --input test_data/heavyset-export.csv --output test_data/gymlog-backup.json
+```
+
+Options:
+
+- `--gap-minutes <n>`: splits workouts when the time gap between rows exceeds `n` minutes (default: `180`)
+
+Exercise naming convention support:
+
+- Prefixes like `LEG`, `BIC`, `CHE`, `BAC`, `TRI` are mapped to body part groups (e.g. `LEG` -> `Legs`, `BIC` -> `Biceps`)
