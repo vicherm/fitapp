@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 0.7
+Version: 0.9
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -102,6 +102,21 @@ Almost the entire workout should be performed from the Active Workout screen.
 ---
 
 # 5. Main Screens
+
+## Home
+
+The Home screen displays the GymLog logo and simple navigation buttons.
+
+The user can navigate from Home to:
+
+- Active Workout
+- Body Part Groups
+- Exercise Editor (new exercise)
+
+Route behavior:
+
+- Active Workout remains the default route (`/`)
+- Home is available at a separate route (`/home`)
 
 ## Active Workout (Primary Screen)
 
