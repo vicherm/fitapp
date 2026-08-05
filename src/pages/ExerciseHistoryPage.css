@@ -1,0 +1,94 @@
+.eh {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 10px 12px 14px;
+  gap: 10px;
+}
+
+.eh-loading {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eh-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.eh-back {
+  font-size: 1.2rem;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.eh-title-wrap {
+  min-width: 0;
+}
+
+.eh-title {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.eh-subtitle {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eh-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eh-workout {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 8px 10px;
+}
+
+.eh-workout h2 {
+  margin: 0 0 6px;
+  font-size: 0.76rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.eh-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 1rem;
+  color: var(--text-h);
+  padding: 2px 0;
+}
+
+.eh-row span:last-child {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.eh-empty {
+  margin: 8px 0;
+  color: var(--text);
+}

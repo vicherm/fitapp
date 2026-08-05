@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../../db/db'
 import type { Exercise, WorkoutExercise, WorkoutSet } from '../../db/types'
@@ -12,6 +12,15 @@ interface Props {
 }
 
 type Field = 'weight' | 'reps'
+const ACTIVE_WORKOUT_DRAFT_KEY = 'gymlog-active-workout-draft-v1'
+
+interface ActiveWorkoutDraft {
+  workoutId: number
+  exerciseId?: number
+  weight: string
+  reps: string
+  activeField: Field
+}
 
 function formatWorkoutDate(input: Date): string {
   const year = input.getFullYear()
@@ -32,6 +41,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
   const [previousWorkoutSets, setPreviousWorkoutSets] = useState<WorkoutSet[][]>([[], []])
   const [previousWorkoutTitles, setPreviousWorkoutTitles] = useState<string[]>(['Previous', 'Previous'])
+  const isHydratingDraftRef = useRef(false)
+  const skipNextPrefillRef = useRef(false)
 
   // Apply selected exercise passed from the exercise picker.
   useEffect(() => {
@@ -39,6 +50,66 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       void handleSelectExercise(pendingExercise)
     }
   }, [pendingExercise, w?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Restore in-progress state when returning to Active page.
+  useEffect(() => {
+    if (isLoading) return
+
+    if (!w?.id) {
+      sessionStorage.removeItem(ACTIVE_WORKOUT_DRAFT_KEY)
+      return
+    }
+
+    // Explicit navigation selection has priority over restored draft.
+    if (pendingExercise?.id) return
+
+    const raw = sessionStorage.getItem(ACTIVE_WORKOUT_DRAFT_KEY)
+    if (!raw) return
+
+    try {
+      const draft = JSON.parse(raw) as Partial<ActiveWorkoutDraft>
+      if (draft.workoutId !== w.id) return
+
+      isHydratingDraftRef.current = true
+      skipNextPrefillRef.current = true
+
+      setWeight(typeof draft.weight === 'string' ? draft.weight : '')
+      setReps(typeof draft.reps === 'string' ? draft.reps : '')
+      setActiveField(draft.activeField === 'reps' ? 'reps' : 'weight')
+
+      if (typeof draft.exerciseId === 'number') {
+        db.exercises
+          .get(draft.exerciseId)
+          .then(async (savedExercise) => {
+            if (savedExercise) {
+              await handleSelectExercise(savedExercise)
+            }
+          })
+          .finally(() => {
+            isHydratingDraftRef.current = false
+          })
+        return
+      }
+
+      isHydratingDraftRef.current = false
+    } catch {
+      isHydratingDraftRef.current = false
+    }
+  }, [isLoading, w?.id, pendingExercise?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist in-progress state so it survives page navigation.
+  useEffect(() => {
+    if (!w?.id || isHydratingDraftRef.current) return
+
+    const draft: ActiveWorkoutDraft = {
+      workoutId: w.id,
+      exerciseId: exercise?.id,
+      weight,
+      reps,
+      activeField,
+    }
+    sessionStorage.setItem(ACTIVE_WORKOUT_DRAFT_KEY, JSON.stringify(draft))
+  }, [w?.id, exercise?.id, weight, reps, activeField])
 
   // Load history whenever exercise or workout changes
   useEffect(() => {
@@ -102,23 +173,28 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           : 'Previous',
       ])
 
-      // Pre-fill from last set of this exercise
-      const lastSet = [...allSets]
-        .filter((s) => currentWeIds.has(s.workoutExerciseId))
-        .sort((a, b) => b.setNumber - a.setNumber)[0]
-      if (lastSet) {
-        setWeight(String(lastSet.weight))
-        setReps(String(lastSet.reps))
-      } else if (priorWorkoutIds[0]) {
-        const latestPriorWorkoutExerciseIds = weList
-          .filter((we) => we.workoutId === priorWorkoutIds[0])
-          .map((we) => we.id!)
-        const lastPrev = allSets
-          .filter((s) => latestPriorWorkoutExerciseIds.includes(s.workoutExerciseId))
+      // Avoid overriding restored draft values once after hydration.
+      if (skipNextPrefillRef.current) {
+        skipNextPrefillRef.current = false
+      } else {
+        // Pre-fill from last set of this exercise.
+        const lastSet = [...allSets]
+          .filter((s) => currentWeIds.has(s.workoutExerciseId))
           .sort((a, b) => b.setNumber - a.setNumber)[0]
-        if (lastPrev) {
-          setWeight(String(lastPrev.weight))
-          setReps(String(lastPrev.reps))
+        if (lastSet) {
+          setWeight(String(lastSet.weight))
+          setReps(String(lastSet.reps))
+        } else if (priorWorkoutIds[0]) {
+          const latestPriorWorkoutExerciseIds = weList
+            .filter((we) => we.workoutId === priorWorkoutIds[0])
+            .map((we) => we.id!)
+          const lastPrev = allSets
+            .filter((s) => latestPriorWorkoutExerciseIds.includes(s.workoutExerciseId))
+            .sort((a, b) => b.setNumber - a.setNumber)[0]
+          if (lastPrev) {
+            setWeight(String(lastPrev.weight))
+            setReps(String(lastPrev.reps))
+          }
         }
       }
     }
@@ -258,6 +334,14 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   return (
     <div className="aw">
       <div className="aw-top-row">
+        {exercise?.id && (
+          <Link
+            className="aw-history-link"
+            to={`/exercises/${exercise.id}/history`}
+          >
+            History
+          </Link>
+        )}
         <Link className="aw-home-link" to="/home">
           Home
         </Link>

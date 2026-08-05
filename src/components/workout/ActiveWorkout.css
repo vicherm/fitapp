@@ -35,6 +35,7 @@
 .aw-top-row {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .aw-home-link {
@@ -48,6 +49,25 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 6px 10px;
+}
+
+.aw-history-link {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.aw-history-link:hover,
+.aw-history-link:focus-visible {
+  color: var(--text-h);
+  border-color: var(--accent);
 }
 
 .aw-home-link:hover,

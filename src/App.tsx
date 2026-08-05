@@ -4,6 +4,7 @@ import ExerciseSelectionPage from './pages/ExerciseSelectionPage'
 import ExerciseEditorPage from './pages/ExerciseEditorPage'
 import BodyPartGroupEditorPage from './pages/BodyPartGroupEditorPage'
 import HomePage from './pages/HomePage'
+import ExerciseHistoryPage from './pages/ExerciseHistoryPage'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/" element={<ActiveWorkoutPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/exercises" element={<ExerciseSelectionPage />} />
+        <Route path="/exercises/:id/history" element={<ExerciseHistoryPage />} />
         <Route path="/exercises/new" element={<ExerciseEditorPage />} />
         <Route path="/exercises/:id/edit" element={<ExerciseEditorPage />} />
         <Route path="/body-part-groups" element={<BodyPartGroupEditorPage />} />

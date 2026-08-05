@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 1.8
+Version: 2.2
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -138,11 +138,15 @@ The Active Workout screen does not include a manual Finish Workout button.
 
 The screen includes a direct Home link.
 
+When an exercise is selected, the screen provides access to Exercise History.
+
 The input area is compact:
 
 - `kg` and `reps` labels are small text above their values
 - LOG action is placed next to the input fields
 - Numeric keypad uses full available width
+
+When navigating away from Active Workout and returning within the same open workout, the in-progress state is restored (selected exercise, active field, and entered weight/reps values), including Home -> Active navigation.
 
 The screen contains the following elements.
 
@@ -257,6 +261,21 @@ Search box
 Recent exercises
 
 All exercises
+
+---
+
+## Exercise History
+
+The Exercise History screen is opened from Active Workout for the currently selected exercise.
+
+The screen lists all sets for that exercise, including the current workout, grouped by workout.
+
+For each set, one row displays:
+
+- `kg × reps`
+- set time (`HH:MM`)
+
+Workouts are ordered with the most recent on top.
 
 ---
 
