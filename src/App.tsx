@@ -6,7 +6,7 @@ import BodyPartGroupEditorPage from './pages/BodyPartGroupEditorPage'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<ActiveWorkoutPage />} />
         <Route path="/exercises" element={<ExerciseSelectionPage />} />

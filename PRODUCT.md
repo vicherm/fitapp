@@ -1,6 +1,7 @@
 # GymLog - Product Specification
 
-Version: 0.5
+Version: 0.7
+Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -19,6 +20,9 @@ The application must be:
 - installable as an iPhone PWA
 - developed entirely on Windows
 - require no backend server
+- support deployment from a URL subpath (for example `/fitapp/`) so routes and static assets resolve correctly outside domain root
+- include valid PWA manifest icon references that resolve to files shipped in the production build
+- use the GymLog branded application icon across install surfaces (manifest icons, maskable icons, Apple touch icon, and favicon)
 
 All user data is stored locally on the device.
 
