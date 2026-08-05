@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 2.2
+Version: 2.6
 Last Updated: 2026-08-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -274,6 +274,17 @@ For each set, one row displays:
 
 - `kg × reps`
 - set time (`HH:MM`)
+
+`kg × reps` and time are shown on the same row.
+
+Set editing:
+
+- rows are initially shown in read-only mode
+- tapping a row switches only that row to editing mode
+- `kg` and `reps` are editable inline in editing mode
+- when edit mode opens, focus starts in the `kg` input
+- changes are saved automatically (no explicit Save button)
+- a set can be deleted directly from the row
 
 Workouts are ordered with the most recent on top.
 
