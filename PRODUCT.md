@@ -42,13 +42,12 @@ Primary goals
 - Export all data to Excel / CSV
 - Keep complete ownership of all data
 
-Non-goals
+Version: 3.0
 
 - Social features
 - User accounts
 - Sharing workouts
 - Public leaderboards
-- Subscription model
 - Advertisement
 - Online backend
 
@@ -58,25 +57,17 @@ Non-goals
 
 The application stores six primary entities plus application settings.
 
-- Exercise
-- Body Part Group
-- Gym
 - Workout
 - Workout Exercise
 - Workout Set
-- Settings
-
 ---
+In the exercise picker used from Active Workout, exercises are grouped by body part group and sorted alphabetically at both group and exercise level.
 
 # 4. Main Workflow
-
-The primary workflow of the application is
 
 Start Workout
 
 ↓
-
-Active Workout
 
 ↓
 
