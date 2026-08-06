@@ -151,12 +151,26 @@
   margin-top: 2px;
 }
 
-.aw-history section {
+.aw-history-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.aw-history-card section {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 8px;
   min-height: 0;
+  height: 100%;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.aw-history-card:hover section,
+.aw-history-card:focus-visible section {
+  border-color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .aw-history h3 {
@@ -194,6 +208,10 @@
 
   .aw-history section {
     padding: 6px;
+  }
+
+  .aw-history-card section {
+    min-height: 0;
   }
 
   .aw-history h3 {

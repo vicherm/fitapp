@@ -387,22 +387,30 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       <NumericKeypad onKey={handleKeypad} showDecimal={activeField === 'weight'} />
 
       {/* History */}
-      <div className="aw-history">
-        {historyColumns.map((column, index) => (
-          <section key={`${index}-${column.title}`}>
-            <h3>{column.title}</h3>
-            {column.sets.length > 0 ? (
-              column.sets.map((s) => (
-                <p key={s.id}>
-                  {s.weight} × {s.reps}
-                </p>
-              ))
-            ) : (
-              <p className="aw-history-empty">No sets</p>
-            )}
-          </section>
-        ))}
-      </div>
+      {exercise?.id && (
+        <div className="aw-history">
+          {historyColumns.map((column, index) => (
+            <Link
+              key={`${index}-${column.title}`}
+              className="aw-history-card"
+              to={`/exercises/${exercise.id}`}
+            >
+              <section>
+                <h3>{column.title}</h3>
+                {column.sets.length > 0 ? (
+                  column.sets.map((s) => (
+                    <p key={s.id}>
+                      {s.weight} × {s.reps}
+                    </p>
+                  ))
+                ) : (
+                  <p className="aw-history-empty">No sets</p>
+                )}
+              </section>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
