@@ -19,6 +19,7 @@ export interface Exercise {
 export interface Gym {
   id?: number
   name: string
+  abbreviation: string
   latitude: number
   longitude: number
 }

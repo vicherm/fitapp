@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 2.9
-Last Updated: 2026-08-05
+Version: 3.5
+Last Updated: 2026-08-07
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -106,6 +106,7 @@ The user can navigate from Home to:
 - Active Workout
 - Body Part Groups
 - Exercises
+- Gyms
 
 Exercises from Home opens an Exercise Management screen where the user can:
 
@@ -121,6 +122,36 @@ Route behavior:
 
 - Active Workout remains the default route (`/`)
 - Home is available at a separate route (`/home`)
+
+## Gyms
+
+Gym management is split into two pages.
+
+1. Gym List page
+
+- lists all known gyms for selection
+- each row displays abbreviation first, then full gym name
+- GPS coordinates are not shown in the list rows
+- selecting a gym opens the editor page for that gym
+- delete is available directly from the list via a trash icon action
+- back button returns to Home page
+
+2. Gym Editor page
+
+- create a new gym
+- edit an existing gym
+
+The user can:
+
+- add a gym
+- edit a gym
+- delete a gym
+
+Each gym stores:
+
+- Name
+- Abbreviation (case-preserving; lowercase letters are allowed)
+- GPS coordinates (latitude, longitude)
 
 ## Active Workout (Primary Screen)
 

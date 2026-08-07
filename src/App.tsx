@@ -6,6 +6,8 @@ import BodyPartGroupEditorPage from './pages/BodyPartGroupEditorPage'
 import HomePage from './pages/HomePage'
 import ExerciseHistoryPage from './pages/ExerciseHistoryPage'
 import ExerciseManagementPage from './pages/ExerciseManagementPage'
+import GymsPage from './pages/GymsPage'
+import GymEditorPage from './pages/GymEditorPage'
 
 function App() {
   return (
@@ -21,6 +23,9 @@ function App() {
         <Route path="/exercises/new" element={<ExerciseEditorPage />} />
         <Route path="/exercises/:id/edit" element={<ExerciseHistoryPage />} />
         <Route path="/body-part-groups" element={<BodyPartGroupEditorPage />} />
+        <Route path="/gyms" element={<GymsPage />} />
+        <Route path="/gyms/create" element={<GymEditorPage />} />
+        <Route path="/gyms/:id/edit" element={<GymEditorPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

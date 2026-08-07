@@ -16,6 +16,10 @@ const navItems = [
     title: 'Exercises',
     to: '/exercise-management',
   },
+  {
+    title: 'Gyms',
+    to: '/gyms',
+  },
 ]
 
 export default function HomePage() {

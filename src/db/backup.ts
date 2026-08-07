@@ -60,6 +60,13 @@ function toWorkoutSet(input: SerializedWorkoutSet): WorkoutSet {
   }
 }
 
+function toGym(input: Gym): Gym {
+  return {
+    ...input,
+    abbreviation: input.abbreviation?.trim() || input.name.slice(0, 3).toUpperCase(),
+  }
+}
+
 export async function exportAllDataToJson(): Promise<void> {
   const [
     settings,
@@ -122,7 +129,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   const settings = ensureArray<Settings>(data.settings, 'settings')
   const bodyPartGroups = ensureArray<BodyPartGroup>(data.bodyPartGroups, 'bodyPartGroups')
   const exercises = ensureArray<Exercise>(data.exercises, 'exercises')
-  const gyms = ensureArray<Gym>(data.gyms, 'gyms')
+  const gyms = ensureArray<Gym>(data.gyms, 'gyms').map(toGym)
   const workoutsRaw = ensureArray<SerializedWorkout>(data.workouts, 'workouts')
   const workoutExercises = ensureArray<WorkoutExercise>(data.workoutExercises, 'workoutExercises')
   const workoutSetsRaw = ensureArray<SerializedWorkoutSet>(data.workoutSets, 'workoutSets')

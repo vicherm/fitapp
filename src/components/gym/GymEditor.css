@@ -1,0 +1,170 @@
+.gym-editor {
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100svh;
+}
+
+.gym-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gym-editor-back {
+  font-size: 1.4rem;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.gym-editor-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.gym-editor-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 24px;
+}
+
+.gym-editor-error {
+  margin: 0;
+  color: #f87171;
+  font-size: 0.875rem;
+}
+
+.gym-editor-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gym-editor-input {
+  font-size: 1rem;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  outline: none;
+  width: 100%;
+}
+
+.gym-editor-input:focus {
+  border-color: var(--accent);
+}
+
+.gym-editor-add,
+.gym-editor-action {
+  font-size: 0.95rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-h);
+  cursor: pointer;
+  padding: 10px 12px;
+}
+
+.gym-editor-add {
+  grid-column: 1 / -1;
+}
+
+.gym-editor-add:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.gym-editor-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.gym-editor-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.gym-editor-item:last-child {
+  border-bottom: none;
+}
+
+.gym-editor-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 4px;
+}
+
+.gym-editor-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gym-editor-name {
+  font-size: 1rem;
+  color: var(--text-h);
+}
+
+.gym-editor-abbr {
+  font-size: 0.78rem;
+  color: var(--text);
+  letter-spacing: 0.08em;
+}
+
+.gym-editor-coords {
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.gym-editor-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.gym-editor-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gym-editor-muted {
+  color: var(--text);
+}
+
+.gym-editor-danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.gym-editor-empty {
+  padding: 24px 8px;
+  color: var(--text);
+  font-style: italic;
+}
+
+@media (max-width: 520px) {
+  .gym-editor-form,
+  .gym-editor-edit-grid {
+    grid-template-columns: 1fr;
+  }
+}
