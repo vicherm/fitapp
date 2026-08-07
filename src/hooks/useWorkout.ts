@@ -5,7 +5,8 @@ import type { Workout } from '../db/types'
 export interface WorkoutState {
   workout: Workout | null
   isLoading: boolean
-  startWorkout: () => Promise<void>
+  startWorkout: (gymId: number) => Promise<void>
+  assignGymToWorkout: (workoutId: number, gymId: number) => Promise<void>
 }
 
 function isSameLocalDay(a: Date, b: Date): boolean {
@@ -44,10 +45,18 @@ export default function useWorkout(): WorkoutState {
     loadWorkout().finally(() => setIsLoading(false))
   }, [])
 
-  async function startWorkout() {
-    const id = await db.workouts.add({ startTime: new Date() })
+  async function startWorkout(gymId: number) {
+    const id = await db.workouts.add({ startTime: new Date(), gymId })
     setWorkout(await db.workouts.get(id) ?? null)
   }
 
-  return { workout, isLoading, startWorkout }
+  async function assignGymToWorkout(workoutId: number, gymId: number) {
+    await db.workouts.update(workoutId, { gymId })
+    setWorkout((current) => {
+      if (!current || current.id !== workoutId) return current
+      return { ...current, gymId }
+    })
+  }
+
+  return { workout, isLoading, startWorkout, assignGymToWorkout }
 }

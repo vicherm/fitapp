@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../../db/db'
-import type { Exercise, WorkoutExercise, WorkoutSet } from '../../db/types'
+import type { Exercise, Gym, WorkoutExercise, WorkoutSet } from '../../db/types'
 import type { WorkoutState } from '../../hooks/useWorkout'
 import NumericKeypad from '../ui/NumericKeypad'
 import './ActiveWorkout.css'
@@ -31,18 +31,41 @@ function formatWorkoutDate(input: Date): string {
 
 export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const navigate = useNavigate()
-  const { workout: w, isLoading, startWorkout } = workout
+  const { workout: w, isLoading, startWorkout, assignGymToWorkout } = workout
 
   const [exercise, setExercise] = useState<Exercise | null>(null)
   const [workoutExercise, setWorkoutExercise] = useState<WorkoutExercise | null>(null)
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
   const [activeField, setActiveField] = useState<Field>('weight')
+  const [gyms, setGyms] = useState<Gym[]>([])
+  const [selectedGymId, setSelectedGymId] = useState<number | ''>('')
+  const [selectedGymAbbreviation, setSelectedGymAbbreviation] = useState('')
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
   const [previousWorkoutSets, setPreviousWorkoutSets] = useState<WorkoutSet[][]>([[], []])
   const [previousWorkoutTitles, setPreviousWorkoutTitles] = useState<string[]>(['Previous', 'Previous'])
   const isHydratingDraftRef = useRef(false)
   const skipNextPrefillRef = useRef(false)
+
+  useEffect(() => {
+    db.gyms.orderBy('name').toArray().then(setGyms)
+  }, [])
+
+  useEffect(() => {
+    if (!w?.id) {
+      setSelectedGymAbbreviation('')
+      return
+    }
+
+    if (!w.gymId) {
+      setSelectedGymAbbreviation('UNKN')
+      return
+    }
+
+    db.gyms.get(w.gymId).then((gym) => {
+      setSelectedGymAbbreviation(gym?.abbreviation || 'UNKN')
+    })
+  }, [w?.id, w?.gymId])
 
   // Apply selected exercise passed from the exercise picker.
   useEffect(() => {
@@ -311,15 +334,108 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   if (isLoading) return <div className="aw-loading">Loading…</div>
 
   if (!w) {
+    const canStart = typeof selectedGymId === 'number'
+
     return (
       <div className="aw-start">
         <div className="aw-start-content">
           <Link className="aw-home-link" to="/home">
             Home
           </Link>
-          <button className="aw-start-btn" onClick={startWorkout}>
-            Start Workout
-          </button>
+          {gyms.length > 0 ? (
+            <>
+              <label className="aw-start-label" htmlFor="aw-gym-select">
+                Select Gym
+              </label>
+              <select
+                id="aw-gym-select"
+                className="aw-start-select"
+                value={selectedGymId}
+                onChange={(e) =>
+                  setSelectedGymId(e.target.value ? Number.parseInt(e.target.value, 10) : '')
+                }
+              >
+                <option value="">Choose gym…</option>
+                {gyms.map((gym) => (
+                  <option key={gym.id} value={gym.id}>
+                    {gym.abbreviation} {gym.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="aw-start-btn"
+                onClick={() => {
+                  if (typeof selectedGymId === 'number') {
+                    void startWorkout(selectedGymId)
+                  }
+                }}
+                disabled={!canStart}
+              >
+                Start Workout
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="aw-start-hint">No gyms found. Add a gym first.</p>
+              <button className="aw-start-btn" onClick={() => navigate('/gyms')}>
+                Open Gyms
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (!w.gymId) {
+    const canAssign = typeof selectedGymId === 'number'
+
+    return (
+      <div className="aw-start">
+        <div className="aw-start-content">
+          <Link className="aw-home-link" to="/home">
+            Home
+          </Link>
+          {gyms.length > 0 ? (
+            <>
+              <label className="aw-start-label" htmlFor="aw-assign-gym-select">
+                Select Gym
+              </label>
+              <select
+                id="aw-assign-gym-select"
+                className="aw-start-select"
+                value={selectedGymId}
+                onChange={(e) =>
+                  setSelectedGymId(e.target.value ? Number.parseInt(e.target.value, 10) : '')
+                }
+              >
+                <option value="">Choose gym…</option>
+                {gyms.map((gym) => (
+                  <option key={gym.id} value={gym.id}>
+                    {gym.abbreviation} {gym.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="aw-start-btn"
+                onClick={() => {
+                  if (typeof selectedGymId === 'number') {
+                    void assignGymToWorkout(w.id!, selectedGymId)
+                  }
+                }}
+                disabled={!canAssign}
+              >
+                Assign Gym
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="aw-start-hint">No gyms found. Add a gym first.</p>
+              <button className="aw-start-btn" onClick={() => navigate('/gyms')}>
+                Open Gyms
+              </button>
+            </>
+          )}
         </div>
       </div>
     )
@@ -334,6 +450,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   return (
     <div className="aw">
       <div className="aw-top-row">
+        {selectedGymAbbreviation && <span className="aw-gym-badge">{selectedGymAbbreviation}</span>}
         {exercise?.id && (
           <Link
             className="aw-history-link"

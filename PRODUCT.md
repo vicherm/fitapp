@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.5
+Version: 3.12
 Last Updated: 2026-08-07
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -165,7 +165,17 @@ The Active Workout screen does not include a manual Finish Workout button.
 
 The screen includes a direct Home link.
 
+When starting a workout, user must select a gym first.
+
+The selected gym abbreviation is shown at the top of the Active Workout screen as plain muted gray text (non-interactive).
+
+If an open workout has no gym assignment (for example older historical records), Active Workout asks user to select and assign a gym before continuing.
+
+If gym reference is present but the gym record cannot be resolved, the abbreviation shown is `UNKN`.
+
 When an exercise is selected, the screen provides access to Exercise Details.
+
+In Exercise Details, each workout header shows workout date and gym abbreviation, with abbreviation right-aligned in the same typography as the date.
 
 The input area is compact:
 

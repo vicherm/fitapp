@@ -22,6 +22,33 @@
   justify-items: center;
 }
 
+.aw-start-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.aw-start-select {
+  width: min(340px, 86vw);
+  font-size: 1rem;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+}
+
+.aw-start-select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.aw-start-hint {
+  margin: 0;
+  color: var(--text);
+}
+
 .aw-start-btn {
   font-size: 1.2rem;
   padding: 14px 34px;
@@ -32,10 +59,26 @@
   cursor: pointer;
 }
 
+.aw-start-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .aw-top-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
+}
+
+.aw-gym-badge {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  user-select: none;
+  pointer-events: none;
 }
 
 .aw-home-link {

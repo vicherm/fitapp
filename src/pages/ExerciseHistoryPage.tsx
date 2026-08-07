@@ -6,6 +6,7 @@ import './ExerciseHistoryPage.css'
 
 interface WorkoutGroup {
   workout: Workout
+  gymAbbreviation: string
   sets: WorkoutSet[]
 }
 
@@ -23,6 +24,11 @@ function formatSetTime(input: Date): string {
   const hours = String(input.getHours()).padStart(2, '0')
   const minutes = String(input.getMinutes()).padStart(2, '0')
   return `${hours}:${minutes}`
+}
+
+function resolveGymAbbreviation(gymId: number | undefined, gymById: Map<number, string>): string {
+  if (!gymId) return 'UNKN'
+  return gymById.get(gymId) ?? 'UNKN'
 }
 
 function parseWeightInput(value: string): number | null {
@@ -90,6 +96,11 @@ export default function ExerciseHistoryPage() {
     const workoutIds = Array.from(new Set(workoutExercises.map((we) => we.workoutId)))
     const workouts = await db.workouts.where('id').anyOf(workoutIds).toArray()
     const workoutById = new Map(workouts.map((workout) => [workout.id!, workout]))
+    const gymIds = Array.from(
+      new Set(workouts.map((workout) => workout.gymId).filter((gymId): gymId is number => Boolean(gymId))),
+    )
+    const gyms = gymIds.length > 0 ? await db.gyms.where('id').anyOf(gymIds).toArray() : []
+    const gymById = new Map(gyms.map((gym) => [gym.id!, gym.abbreviation]))
     const workoutIdByWorkoutExerciseId = new Map(workoutExercises.map((we) => [we.id!, we.workoutId]))
 
     const setsByWorkoutId = new Map<number, WorkoutSet[]>()
@@ -106,6 +117,7 @@ export default function ExerciseHistoryPage() {
     const grouped = Array.from(setsByWorkoutId.entries())
       .map(([workoutId, sets]) => ({
         workout: workoutById.get(workoutId),
+        gymAbbreviation: resolveGymAbbreviation(workoutById.get(workoutId)?.gymId, gymById),
         sets: [...sets].sort((a, b) => {
           if (a.setNumber !== b.setNumber) return a.setNumber - b.setNumber
           return a.timestamp.getTime() - b.timestamp.getTime()
@@ -300,7 +312,10 @@ export default function ExerciseHistoryPage() {
         ) : (
           groups.map((group) => (
             <section key={group.workout.id} className="eh-workout">
-              <h2>{formatWorkoutDate(group.workout.startTime)}</h2>
+              <h2>
+                <span>{formatWorkoutDate(group.workout.startTime)}</span>
+                <span className="eh-workout-gym">{group.gymAbbreviation}</span>
+              </h2>
               {group.sets.map((set) => {
                 const isEditing = Boolean(set.id && editingSetId === set.id)
                 return (
