@@ -9,6 +9,10 @@ const navItems = [
     to: '/',
   },
   {
+    title: 'History',
+    to: '/history',
+  },
+  {
     title: 'Body Part Editor',
     to: '/body-part-groups',
   },

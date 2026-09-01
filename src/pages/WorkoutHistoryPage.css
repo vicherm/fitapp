@@ -1,0 +1,137 @@
+.wh {
+  height: 100svh;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 10px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wh-loading {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wh-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wh-back {
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wh-header h1 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wh-calendar {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.wh-calendar h2 {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 0.76rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.wh-calendar-weekdays,
+.wh-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.wh-calendar-weekdays {
+  margin-bottom: 3px;
+  color: var(--text);
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wh-calendar-days {
+  gap: 3px 0;
+}
+
+.wh-calendar-days span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  color: var(--text-h);
+  font-size: 0.82rem;
+}
+
+.wh-calendar-days .has-workout {
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.wh-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.wh-workout {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.wh-workout h2 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 0.76rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.wh-workout ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-h);
+}
+
+.wh-no-exercises,
+.wh-empty {
+  margin: 0;
+  color: var(--text);
+}
+
+.wh-empty {
+  margin-top: 8px;
+}

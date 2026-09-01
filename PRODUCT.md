@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.13
+Version: 3.16
 Last Updated: 2026-09-01
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -104,9 +104,14 @@ The Home screen displays the GymLog logo and simple navigation buttons.
 The user can navigate from Home to:
 
 - Active Workout
+- History
 - Body Part Groups
 - Exercises
 - Gyms
+
+## History
+
+The History screen shows a swipeable calendar above a scrollable workout list. Days with workouts are highlighted and the calendar remains visible while the list scrolls. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. The list shows all workouts, newest first; each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order.
 
 Exercises from Home opens an Exercise Management screen where the user can:
 
