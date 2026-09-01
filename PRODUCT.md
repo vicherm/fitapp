@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.16
+Version: 3.24
 Last Updated: 2026-09-01
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -111,7 +111,7 @@ The user can navigate from Home to:
 
 ## History
 
-The History screen shows a swipeable calendar above a scrollable workout list. Days with workouts are highlighted and the calendar remains visible while the list scrolls. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. The list shows all workouts, newest first; each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order.
+The full-width History screen shows a compact, swipeable calendar above a paginated workout list. Days with workouts are highlighted and the calendar remains visible while viewing workout pages. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. Selecting a calendar date resets the list so it begins with workouts logged on that date. The list is synchronized with the displayed calendar month and resets to that month's first page when the calendar changes; its pagination continues across earlier month boundaries. Workout history is shown three workouts at a time; the list responds to left and right drag gestures to move between pages. Each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order.
 
 Exercises from Home opens an Exercise Management screen where the user can:
 

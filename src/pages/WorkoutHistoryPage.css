@@ -1,8 +1,7 @@
 .wh {
   height: 100svh;
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 10px 12px 14px;
+  width: 100%;
+  padding: 10px 0 14px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -41,14 +40,14 @@
 }
 
 .wh-calendar {
-  padding: 10px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
   touch-action: pan-y;
   user-select: none;
 }
 
 .wh-calendar h2 {
-  margin: 0 0 6px;
+  margin: 0 0 3px;
   color: var(--text);
   font-size: 0.76rem;
   letter-spacing: 0.09em;
@@ -63,7 +62,7 @@
 }
 
 .wh-calendar-weekdays {
-  margin-bottom: 3px;
+  margin-bottom: 1px;
   color: var(--text);
   font-size: 0.65rem;
   letter-spacing: 0.04em;
@@ -71,22 +70,34 @@
 }
 
 .wh-calendar-days {
-  gap: 3px 0;
+  gap: 1px 0;
 }
 
-.wh-calendar-days span {
+.wh-calendar-days button {
   display: grid;
   place-items: center;
-  aspect-ratio: 1;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--text-h);
-  font-size: 0.82rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
 }
 
-.wh-calendar-days .has-workout {
+.wh-calendar-days .has-workout,
+.wh-calendar-days .is-selected {
   border-radius: 50%;
   background: var(--accent);
   color: var(--bg);
   font-weight: 700;
+}
+
+.wh-calendar-days .is-selected:not(.has-workout) {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--text-h);
 }
 
 .wh-list {
@@ -97,6 +108,8 @@
   min-height: 0;
   overflow-y: auto;
   padding-right: 2px;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .wh-workout {
@@ -135,3 +148,4 @@
 .wh-empty {
   margin-top: 8px;
 }
+
