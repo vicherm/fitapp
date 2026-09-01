@@ -1,4 +1,4 @@
-import { type PointerEvent, useEffect, useRef, useState } from 'react'
+import { type MouseEvent, type PointerEvent, type TouchEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db } from '../db/db'
 import type { Workout } from '../db/types'
@@ -28,6 +28,7 @@ export default function WorkoutHistoryPage() {
   const currentMonth = useRef(new Date())
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const listSwipeStart = useRef<{ x: number; y: number } | null>(null)
+  const suppressWorkoutClick = useRef(false)
   const [isLoading, setIsLoading] = useState(true)
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([])
   const [workoutDates, setWorkoutDates] = useState<Date[]>([])
@@ -123,25 +124,66 @@ export default function WorkoutHistoryPage() {
   }
 
   function handleListPointerDown(event: PointerEvent<HTMLElement>) {
+    // Touch gestures are handled separately below. Keeping the pointer path for
+    // mouse/stylus makes desktop testing and accessibility tools work as well.
+    if (event.pointerType === 'touch' || event.pointerType === 'mouse') return
     listSwipeStart.current = { x: event.clientX, y: event.clientY }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
   function handleListPointerUp(event: PointerEvent<HTMLElement>) {
+    if (event.pointerType === 'touch' || event.pointerType === 'mouse') return
     const start = listSwipeStart.current
     listSwipeStart.current = null
-    event.currentTarget.releasePointerCapture(event.pointerId)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
     if (!start) return
 
-    const horizontalDistance = event.clientX - start.x
-    const verticalDistance = event.clientY - start.y
+    handleListSwipe(start.x, start.y, event.clientX, event.clientY)
+  }
+
+  function handleListMouseDown(event: MouseEvent<HTMLElement>) {
+    if (event.button !== 0) return
+    suppressWorkoutClick.current = false
+    listSwipeStart.current = { x: event.clientX, y: event.clientY }
+  }
+
+  function handleListMouseUp(event: MouseEvent<HTMLElement>) {
+    const start = listSwipeStart.current
+    listSwipeStart.current = null
+    if (!start) return
+    handleListSwipe(start.x, start.y, event.clientX, event.clientY)
+  }
+
+  function handleListSwipe(startX: number, startY: number, endX: number, endY: number) {
+    const horizontalDistance = endX - startX
+    const verticalDistance = endY - startY
     if (Math.abs(horizontalDistance) < 48 || Math.abs(horizontalDistance) <= Math.abs(verticalDistance)) return
+
+    suppressWorkoutClick.current = true
 
     if (horizontalDistance > 0 && page > 0) {
       setPage((current) => current - 1)
     } else if (horizontalDistance < 0 && (page + 1) * WORKOUTS_PER_PAGE < workoutCount) {
       setPage((current) => current + 1)
     }
+  }
+
+  function handleListTouchStart(event: TouchEvent<HTMLElement>) {
+    const touch = event.changedTouches[0]
+    if (touch) {
+      suppressWorkoutClick.current = false
+      listSwipeStart.current = { x: touch.clientX, y: touch.clientY }
+    }
+  }
+
+  function handleListTouchEnd(event: TouchEvent<HTMLElement>) {
+    const start = listSwipeStart.current
+    listSwipeStart.current = null
+    const touch = event.changedTouches[0]
+    if (!start || !touch) return
+    handleListSwipe(start.x, start.y, touch.clientX, touch.clientY)
   }
 
   if (isLoading) {
@@ -202,22 +244,53 @@ export default function WorkoutHistoryPage() {
         aria-label="Workout history"
         onPointerDown={handleListPointerDown}
         onPointerUp={handleListPointerUp}
+        onMouseDown={handleListMouseDown}
+        onMouseUp={handleListMouseUp}
+        onTouchStart={handleListTouchStart}
+        onTouchEnd={handleListTouchEnd}
         onPointerCancel={(event) => {
+          if (event.pointerType === 'touch') return
           listSwipeStart.current = null
-          event.currentTarget.releasePointerCapture(event.pointerId)
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId)
+          }
         }}
       >
         {workouts.length === 0 ? (
           <p className="wh-empty">No workouts recorded yet.</p>
         ) : (
           workouts.map(({ workout, gymAbbreviation, exerciseNames }) => (
-            <article key={workout.id} className="wh-workout">
-              <h2>{formatWorkoutDate(workout.startTime)} <span>{gymAbbreviation}</span></h2>
+            <article
+              key={workout.id}
+              className="wh-workout"
+              role="link"
+              tabIndex={0}
+              onClick={() => {
+                if (suppressWorkoutClick.current) {
+                  suppressWorkoutClick.current = false
+                  return
+                }
+                if (workout.id) navigate(`/history/${workout.id}`)
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                if (workout.id) navigate(`/history/${workout.id}`)
+              }}
+            >
+              <h2>
+                <span>
+                  {formatWorkoutDate(workout.startTime)}
+                </span>
+                <span>{gymAbbreviation}</span>
+              </h2>
               {exerciseNames.length === 0 ? (
                 <p className="wh-no-exercises">No exercises logged.</p>
               ) : (
                 <ul>
-                  {exerciseNames.map((name, index) => <li key={`${workout.id}-${index}`}>{name}</li>)}
+                  {exerciseNames.map((name, index) => (
+                    <li key={`${workout.id}-${index}`}>{name}</li>
+                  ))}
                 </ul>
               )}
             </article>

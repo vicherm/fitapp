@@ -9,6 +9,7 @@ import ExerciseManagementPage from './pages/ExerciseManagementPage'
 import GymsPage from './pages/GymsPage'
 import GymEditorPage from './pages/GymEditorPage'
 import WorkoutHistoryPage from './pages/WorkoutHistoryPage'
+import WorkoutSummaryPage from './pages/WorkoutSummaryPage'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/" element={<ActiveWorkoutPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/history" element={<WorkoutHistoryPage />} />
+        <Route path="/history/:id" element={<WorkoutSummaryPage />} />
         <Route path="/exercise-management" element={<ExerciseManagementPage />} />
         <Route path="/exercises" element={<ExerciseSelectionPage />} />
         <Route path="/exercises/:id" element={<ExerciseHistoryPage />} />

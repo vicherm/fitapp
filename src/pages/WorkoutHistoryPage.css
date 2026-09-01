@@ -1,10 +1,9 @@
 .wh {
-  height: 100svh;
+  min-height: 100svh;
   width: 100%;
   padding: 10px 0 14px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .wh-loading {
@@ -105,8 +104,6 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 10px;
-  min-height: 0;
-  overflow-y: auto;
   padding-right: 2px;
   touch-action: pan-y;
   user-select: none;
@@ -117,6 +114,12 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
+  cursor: pointer;
+}
+
+.wh-workout:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .wh-workout h2 {
@@ -127,6 +130,10 @@
   font-size: 0.76rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
+}
+
+.wh-workout:hover {
+  color: var(--accent);
 }
 
 .wh-workout ul {

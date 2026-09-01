@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.24
+Version: 3.27
 Last Updated: 2026-09-01
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -111,7 +111,14 @@ The user can navigate from Home to:
 
 ## History
 
-The full-width History screen shows a compact, swipeable calendar above a paginated workout list. Days with workouts are highlighted and the calendar remains visible while viewing workout pages. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. Selecting a calendar date resets the list so it begins with workouts logged on that date. The list is synchronized with the displayed calendar month and resets to that month's first page when the calendar changes; its pagination continues across earlier month boundaries. Workout history is shown three workouts at a time; the list responds to left and right drag gestures to move between pages. Each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order.
+The full-width History screen shows a compact, swipeable calendar above a paginated workout list. Days with workouts are highlighted and the calendar remains visible while viewing workout pages. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. Selecting a calendar date resets the list so it begins with workouts logged on that date. The list is synchronized with the displayed calendar month and resets to that month's first page when the calendar changes; its pagination continues across earlier month boundaries. Workout history is shown three workouts at a time; the list responds to left and right drag gestures to move between pages. Each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order. Clicking anywhere on a workout card opens its Workout Summary page.
+
+## Workout Summary
+
+The compact Workout Summary page is opened by clicking anywhere on a workout card in the History list.
+
+Its header shows the workout date, gym name, start time, and duration. Below the header, exercises are listed in recorded order;
+each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values.
 
 Exercises from Home opens an Exercise Management screen where the user can:
 
