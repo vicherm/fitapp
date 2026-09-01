@@ -467,7 +467,11 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       {/* Exercise selector */}
       <button
         className="aw-exercise-btn"
-        onClick={() => navigate('/exercises')}
+        onClick={() =>
+          navigate('/exercises', {
+            state: { workoutId: w?.id, currentExerciseId: exercise?.id },
+          })
+        }
       >
         {exercise ? exercise.name : 'Select Exercise'}
       </button>

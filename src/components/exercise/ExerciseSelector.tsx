@@ -9,11 +9,84 @@ interface ExerciseGroup {
   exercises: Exercise[]
 }
 
-export default function ExerciseSelector() {
+interface Props {
+  workoutId?: number
+  currentExerciseId?: number
+}
+
+const HOT_PICK_RECENT_COUNT = 3
+const HOT_PICK_FOLLOWUP_COUNT = 2
+const FOLLOWUP_LOOKBACK_MONTHS = 6
+
+async function computeHotPicks(workoutId?: number, currentExerciseId?: number): Promise<Exercise[]> {
+  const usedIds = new Set<number>()
+  if (currentExerciseId) usedIds.add(currentExerciseId)
+  const picks: Exercise[] = []
+
+  // Most recently added exercises within the current workout (for supersets).
+  if (workoutId) {
+    const workoutExercises = await db.workoutExercises.where('workoutId').equals(workoutId).sortBy('order')
+    const recentIds: number[] = []
+    for (let i = workoutExercises.length - 1; i >= 0 && recentIds.length < HOT_PICK_RECENT_COUNT; i--) {
+      const exerciseId = workoutExercises[i].exerciseId
+      if (usedIds.has(exerciseId) || recentIds.includes(exerciseId)) continue
+      recentIds.push(exerciseId)
+    }
+    for (const id of recentIds) {
+      const ex = await db.exercises.get(id)
+      if (ex) {
+        picks.push(ex)
+        usedIds.add(id)
+      }
+    }
+  }
+
+  // Exercises that most often followed the current exercise in past workouts.
+  if (currentExerciseId) {
+    const since = new Date()
+    since.setMonth(since.getMonth() - FOLLOWUP_LOOKBACK_MONTHS)
+    const recentWorkouts = await db.workouts.where('startTime').aboveOrEqual(since).toArray()
+
+    const followCounts = new Map<number, number>()
+    for (const recentWorkout of recentWorkouts) {
+      if (!recentWorkout.id) continue
+      const sequence = await db.workoutExercises
+        .where('workoutId')
+        .equals(recentWorkout.id)
+        .sortBy('order')
+      for (let i = 0; i < sequence.length - 1; i++) {
+        if (sequence[i].exerciseId !== currentExerciseId) continue
+        const nextId = sequence[i + 1].exerciseId
+        if (nextId === currentExerciseId) continue
+        followCounts.set(nextId, (followCounts.get(nextId) ?? 0) + 1)
+      }
+    }
+
+    const followIds = Array.from(followCounts.entries())
+      .filter(([id]) => !usedIds.has(id))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, HOT_PICK_FOLLOWUP_COUNT)
+      .map(([id]) => id)
+
+    for (const id of followIds) {
+      const ex = await db.exercises.get(id)
+      if (ex) {
+        picks.push(ex)
+        usedIds.add(id)
+      }
+    }
+  }
+
+  return picks
+}
+
+export default function ExerciseSelector({ workoutId, currentExerciseId }: Props) {
   const navigate = useNavigate()
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
   const [query, setQuery] = useState('')
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<number>>(new Set())
+  const [hotPicks, setHotPicks] = useState<Exercise[]>([])
 
   useEffect(() => {
     void Promise.all([
@@ -24,6 +97,10 @@ export default function ExerciseSelector() {
       setBodyPartGroups(nextBodyPartGroups)
     })
   }, [])
+
+  useEffect(() => {
+    void computeHotPicks(workoutId, currentExerciseId).then(setHotPicks)
+  }, [workoutId, currentExerciseId])
 
   const filtered = query
     ? exercises.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()))
@@ -45,6 +122,20 @@ export default function ExerciseSelector() {
     .filter((group): group is ExerciseGroup => Boolean(group))
     .sort((a, b) => a.bodyPartGroup.name.localeCompare(b.bodyPartGroup.name))
 
+  function toggleGroup(groupId: number) {
+    setExpandedGroupIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }
+
+  function selectExercise(exercise: Exercise) {
+    navigate('/', { state: { selectedExercise: exercise } })
+  }
+
+
   return (
     <div className="es">
       <div className="es-header">
@@ -65,30 +156,55 @@ export default function ExerciseSelector() {
       </div>
 
       <div className="es-list">
-        {groupedExercises.map((group) => (
-          <section key={group.bodyPartGroup.id} className="es-group">
-            <h2 className="es-group-title">{group.bodyPartGroup.name}</h2>
-            <ul className="es-group-list">
-              {group.exercises.map((exercise) => (
+        {query.length === 0 && hotPicks.length > 0 && (
+          <section className="es-hotpicks">
+            <ul className="es-hotpicks-list">
+              {hotPicks.map((exercise) => (
                 <li key={exercise.id}>
-                  <button
-                    className="es-item"
-                    onClick={() => navigate('/', { state: { selectedExercise: exercise } })}
-                  >
+                  <button className="es-hotpick-item" onClick={() => selectExercise(exercise)}>
                     {exercise.name}
-                  </button>
-                  <button
-                    className="es-edit"
-                    onClick={() => navigate(`/exercises/${exercise.id}`)}
-                    aria-label={`Edit ${exercise.name}`}
-                  >
-                    ⋯
                   </button>
                 </li>
               ))}
             </ul>
           </section>
-        ))}
+        )}
+        {groupedExercises.map((group) => {
+          const isExpanded = query.length > 0 || expandedGroupIds.has(group.bodyPartGroup.id!)
+          return (
+            <section key={group.bodyPartGroup.id} className="es-group">
+              <button
+                className="es-group-title"
+                onClick={() => toggleGroup(group.bodyPartGroup.id!)}
+                aria-expanded={isExpanded}
+              >
+                <span className={`es-group-chevron ${isExpanded ? 'expanded' : ''}`}>›</span>
+                {group.bodyPartGroup.name}
+              </button>
+              {isExpanded && (
+                <ul className="es-group-list">
+                  {group.exercises.map((exercise) => (
+                    <li key={exercise.id}>
+                      <button
+                        className="es-item"
+                        onClick={() => selectExercise(exercise)}
+                      >
+                        {exercise.name}
+                      </button>
+                      <button
+                        className="es-edit"
+                        onClick={() => navigate(`/exercises/${exercise.id}`)}
+                        aria-label={`Edit ${exercise.name}`}
+                      >
+                        ⋯
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )
+        })}
         {filtered.length === 0 && (
           <li className="es-empty">No exercises found</li>
         )}

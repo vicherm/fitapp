@@ -42,18 +42,68 @@
   padding-bottom: 8px;
 }
 
+.es-hotpicks {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.es-hotpicks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.es-hotpicks-list li {
+  border-bottom: 1px solid var(--border);
+}
+
+.es-hotpicks-list li:last-child {
+  border-bottom: none;
+}
+
+.es-hotpick-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 0.92rem;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
 .es-group {
   border-bottom: 1px solid var(--border);
 }
 
 .es-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   margin: 0;
-  padding: 10px 14px 5px;
+  padding: 10px 14px;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-h);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.es-group-chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.es-group-chevron.expanded {
+  transform: rotate(90deg);
 }
 
 .es-group-list {

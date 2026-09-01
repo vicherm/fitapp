@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.12
-Last Updated: 2026-08-07
+Version: 3.13
+Last Updated: 2026-09-01
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -295,9 +295,20 @@ The history is read-only and serves as a reference while logging new sets.
 
 Search box
 
-Recent exercises
+Hot Picks
 
-All exercises
+- shown above the body part groups, only while the search box is empty
+- listed as a plain list, one exercise per row, without button styling
+- contains up to 5 exercises:
+  - the 3 most recently added exercises in the current workout (to support supersets)
+  - the 2 exercises that most often immediately followed the currently selected exercise in workouts from the past 6 months
+- an exercise already selected as the current exercise is excluded from Hot Picks
+
+Exercises grouped by body part group, sorted alphabetically at both group and exercise level
+
+- each group is collapsed by default
+- tapping the group name folds/unfolds its exercise list
+- while a search query is active, all groups with matching exercises are automatically expanded
 
 ---
 
