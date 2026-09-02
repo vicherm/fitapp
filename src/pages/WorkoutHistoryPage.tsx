@@ -1,5 +1,5 @@
 import { type MouseEvent, type PointerEvent, type TouchEvent, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { db } from '../db/db'
 import type { Workout } from '../db/types'
 import './WorkoutHistoryPage.css'
@@ -11,6 +11,13 @@ interface WorkoutHistoryItem {
 }
 
 const WORKOUTS_PER_PAGE = 3
+
+export interface HistoryViewState {
+  displayedYear: number
+  displayedMonth: number
+  page: number
+  selectedDate: string | null
+}
 
 function formatWorkoutDate(input: Date): string {
   const year = input.getFullYear()
@@ -25,6 +32,8 @@ function formatMonth(input: Date): string {
 
 export default function WorkoutHistoryPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const incomingState = location.state as { historyView?: HistoryViewState } | null
   const currentMonth = useRef(new Date())
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const listSwipeStart = useRef<{ x: number; y: number } | null>(null)
@@ -34,9 +43,15 @@ export default function WorkoutHistoryPage() {
   const [workoutDates, setWorkoutDates] = useState<Date[]>([])
   const [page, setPage] = useState(0)
   const [workoutCount, setWorkoutCount] = useState(0)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => (
+    incomingState?.historyView?.selectedDate
+      ? new Date(incomingState.historyView.selectedDate)
+      : null
+  ))
   const [displayedMonth, setDisplayedMonth] = useState(
-    () => new Date(currentMonth.current.getFullYear(), currentMonth.current.getMonth(), 1),
+    () => incomingState?.historyView
+      ? new Date(incomingState.historyView.displayedYear, incomingState.historyView.displayedMonth, 1)
+      : new Date(currentMonth.current.getFullYear(), currentMonth.current.getMonth(), 1),
   )
 
   useEffect(() => {
@@ -55,11 +70,14 @@ export default function WorkoutHistoryPage() {
       const listEnd = selectedDate
         ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1)
         : nextMonthStart
-      const workoutsBeforeDate = db.workouts.where('startTime').below(listEnd)
-      const [count, pageWorkouts] = await Promise.all([
-        workoutsBeforeDate.count(),
-        workoutsBeforeDate.reverse().offset(page * WORKOUTS_PER_PAGE).limit(WORKOUTS_PER_PAGE).toArray(),
-      ])
+      const matchingWorkouts = (await db.workouts.toArray())
+        .filter((workout) => workout.startTime < listEnd)
+        .sort((left, right) => right.startTime.getTime() - left.startTime.getTime())
+      const count = matchingWorkouts.length
+      const pageWorkouts = matchingWorkouts.slice(
+        page * WORKOUTS_PER_PAGE,
+        (page + 1) * WORKOUTS_PER_PAGE,
+      )
       const workoutIds = pageWorkouts.flatMap((workout) => (workout.id ? [workout.id] : []))
       const workoutExercises = workoutIds.length > 0
         ? await db.workoutExercises.where('workoutId').anyOf(workoutIds).toArray()
@@ -159,13 +177,21 @@ export default function WorkoutHistoryPage() {
   function handleListSwipe(startX: number, startY: number, endX: number, endY: number) {
     const horizontalDistance = endX - startX
     const verticalDistance = endY - startY
-    if (Math.abs(horizontalDistance) < 48 || Math.abs(horizontalDistance) <= Math.abs(verticalDistance)) return
+    const isHorizontalSwipe =
+      Math.abs(horizontalDistance) >= 48 && Math.abs(horizontalDistance) > Math.abs(verticalDistance)
+    const isVerticalSwipe =
+      Math.abs(verticalDistance) >= 48 && Math.abs(verticalDistance) > Math.abs(horizontalDistance)
+
+    if (!isHorizontalSwipe && !isVerticalSwipe) return
 
     suppressWorkoutClick.current = true
 
-    if (horizontalDistance > 0 && page > 0) {
+    const moveToPrevious = isHorizontalSwipe ? horizontalDistance < 0 : verticalDistance > 0
+    const moveToNext = isHorizontalSwipe ? horizontalDistance > 0 : verticalDistance < 0
+
+    if (moveToPrevious && page > 0) {
       setPage((current) => current - 1)
-    } else if (horizontalDistance < 0 && (page + 1) * WORKOUTS_PER_PAGE < workoutCount) {
+    } else if (moveToNext && (page + 1) * WORKOUTS_PER_PAGE < workoutCount) {
       setPage((current) => current + 1)
     }
   }
@@ -184,6 +210,20 @@ export default function WorkoutHistoryPage() {
     const touch = event.changedTouches[0]
     if (!start || !touch) return
     handleListSwipe(start.x, start.y, touch.clientX, touch.clientY)
+  }
+
+  function openWorkoutSummary(workoutId?: number) {
+    if (!workoutId) return
+    navigate(`/history/${workoutId}`, {
+      state: {
+        historyView: {
+          displayedYear: displayedMonth.getFullYear(),
+          displayedMonth: displayedMonth.getMonth(),
+          page,
+          selectedDate: selectedDate?.toISOString() ?? null,
+        } satisfies HistoryViewState,
+      },
+    })
   }
 
   if (isLoading) {
@@ -270,12 +310,12 @@ export default function WorkoutHistoryPage() {
                   suppressWorkoutClick.current = false
                   return
                 }
-                if (workout.id) navigate(`/history/${workout.id}`)
+                openWorkoutSummary(workout.id)
               }}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return
                 event.preventDefault()
-                if (workout.id) navigate(`/history/${workout.id}`)
+                openWorkoutSummary(workout.id)
               }}
             >
               <h2>

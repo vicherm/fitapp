@@ -304,6 +304,23 @@ export default function ExerciseHistoryPage() {
             <span className="eh-meta-value">{exercise?.notes?.trim() ? exercise.notes : 'No note'}</span>
           )}
         </div>
+
+        <label className="eh-meta-row eh-machine-row">
+          <span className="eh-meta-label">Machine</span>
+          <span className="eh-meta-value eh-machine-value">
+            <input
+              type="checkbox"
+              checked={exercise?.machine === true}
+              onChange={(event) => {
+                if (!exercise?.id) return
+                const machine = event.target.checked
+                void db.exercises.update(exercise.id, { machine })
+                setExercise((prev) => (prev ? { ...prev, machine } : prev))
+              }}
+            />
+            {exercise?.machine === true ? 'Yes' : 'No'}
+          </span>
+        </label>
       </section>
 
       <main className="eh-list">

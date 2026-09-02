@@ -92,7 +92,7 @@ export async function exportAllDataToJson(): Promise<void> {
     data: {
       settings,
       bodyPartGroups,
-      exercises,
+      exercises: exercises.map((exercise) => ({ ...exercise, machine: exercise.machine === true })),
       gyms,
       workouts: workouts.map((w) => ({
         ...w,
@@ -128,7 +128,10 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   const data = parsed.data as BackupData
   const settings = ensureArray<Settings>(data.settings, 'settings')
   const bodyPartGroups = ensureArray<BodyPartGroup>(data.bodyPartGroups, 'bodyPartGroups')
-  const exercises = ensureArray<Exercise>(data.exercises, 'exercises')
+  const exercises = ensureArray<Exercise>(data.exercises, 'exercises').map((exercise) => ({
+    ...exercise,
+    machine: exercise.machine === true,
+  }))
   const gyms = ensureArray<Gym>(data.gyms, 'gyms').map(toGym)
   const workoutsRaw = ensureArray<SerializedWorkout>(data.workouts, 'workouts')
   const workoutExercises = ensureArray<WorkoutExercise>(data.workoutExercises, 'workoutExercises')

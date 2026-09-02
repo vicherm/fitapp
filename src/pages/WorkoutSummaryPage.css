@@ -30,9 +30,18 @@
   border: none;
   background: transparent;
   color: var(--accent);
-  font-size: 1.2rem;
+  font-size: 1.4rem;
+  font-weight: 800;
   line-height: 1;
   cursor: pointer;
+  user-select: none;
+  caret-color: transparent;
+}
+
+.ws-back:hover,
+.ws-back:focus-visible {
+  color: var(--text-h);
+  outline: none;
 }
 
 .ws-kicker {
@@ -117,6 +126,10 @@
   color: var(--text-h);
   font-size: 0.86rem;
   line-height: 1.35;
+}
+
+.ws-set-row {
+  min-height: 1.15em;
 }
 
 .ws-no-exercises {

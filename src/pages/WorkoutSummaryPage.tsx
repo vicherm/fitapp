@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
 import type { BodyPartGroup, Exercise, Gym, Workout, WorkoutSet } from '../db/types'
+import type { HistoryViewState } from './WorkoutHistoryPage'
 import './WorkoutSummaryPage.css'
 
 interface SummaryExercise {
@@ -77,6 +78,8 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
 
 export default function WorkoutSummaryPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const historyView = (location.state as { historyView?: HistoryViewState } | null)?.historyView
   const { id } = useParams<{ id: string }>()
   const workoutId = Number(id)
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
@@ -99,7 +102,11 @@ export default function WorkoutSummaryPage() {
   if (!summary) {
     return (
       <main className="ws ws-empty-page">
-        <button className="ws-back" onClick={() => navigate('/history')} aria-label="Back to History">
+        <button
+          className="ws-back"
+          onClick={() => navigate('/history', { state: { historyView } })}
+          aria-label="Back to History"
+        >
           ←
         </button>
         <p>Workout not found.</p>
@@ -112,7 +119,11 @@ export default function WorkoutSummaryPage() {
   return (
     <main className="ws">
       <header className="ws-header">
-        <button className="ws-back" onClick={() => navigate('/history')} aria-label="Back to History">
+        <button
+          className="ws-back"
+          onClick={() => navigate('/history', { state: { historyView } })}
+          aria-label="Back to History"
+        >
           ←
         </button>
         <div>
@@ -147,9 +158,15 @@ export default function WorkoutSummaryPage() {
                 <h2>{exercise.exerciseName}</h2>
               </div>
               <div className="ws-sets">
-                {exercise.sets.length > 0
-                  ? exercise.sets.map((set) => `${set.weight} kg × ${set.reps}`).join(' · ')
-                  : 'No sets logged'}
+                {exercise.sets.length > 0 ? (
+                  exercise.sets.map((set) => (
+                    <div className="ws-set-row" key={set.id}>
+                      {set.weight} kg × {set.reps}
+                    </div>
+                  ))
+                ) : (
+                  <div className="ws-set-row">No sets logged</div>
+                )}
               </div>
             </article>
           ))

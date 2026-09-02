@@ -40,11 +40,18 @@ button {
   font-family: inherit;
 }
 
+/* Back arrows are text controls; keep them visually bold without a caret. */
+button[class$='-back'] {
+  font-weight: 800 !important;
+  text-shadow: 0.35px 0 currentColor;
+  user-select: none;
+  caret-color: transparent;
+}
+
 h1,
 h2,
 h3 {
   margin: 0;
   color: var(--text-h);
 }
-
 

@@ -49,6 +49,25 @@ db.version(2)
     }
   })
 
+db.version(3)
+  .stores({
+    settings: '++id',
+    bodyPartGroups: '++id, name',
+    exercises: '++id, name, bodyPartGroupId',
+    gyms: '++id, name, abbreviation',
+    workouts: '++id, gymId, startTime',
+    workoutExercises: '++id, workoutId, exerciseId, order',
+    workoutSets: '++id, workoutExerciseId, timestamp',
+  })
+  .upgrade(async (tx) => {
+    const exercisesTable = tx.table<Exercise, number>('exercises')
+    const exercises = await exercisesTable.toArray()
+
+    for (const exercise of exercises) {
+      await exercisesTable.update(exercise.id!, { machine: exercise.machine === true })
+    }
+  })
+
 /** Seed default settings on first run */
 db.on('populate', async () => {
   await db.settings.add({ gymDetectionRadius: 200, theme: 'dark' })

@@ -13,6 +13,7 @@ export interface Exercise {
   id?: number
   name: string
   bodyPartGroupId: number
+  machine: boolean
   notes?: string
 }
 

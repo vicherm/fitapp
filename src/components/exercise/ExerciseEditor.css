@@ -88,6 +88,23 @@
   font-family: inherit;
 }
 
+.ee-machine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ee-machine input,
+.eh-machine-value input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
 .ee-save-btn {
   font-size: 1rem;
   font-weight: 600;

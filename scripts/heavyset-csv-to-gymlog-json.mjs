@@ -198,6 +198,7 @@ function buildBackup(rows, gapMinutes) {
       id: exercises.length + 1,
       name: parsed.normalizedName,
       bodyPartGroupId: group.id,
+      machine: false,
       ...(row.notes ? { notes: row.notes } : {}),
     }
 

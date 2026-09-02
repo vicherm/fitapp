@@ -14,6 +14,7 @@ export default function ExerciseEditor({ exerciseId }: Props) {
 
   const [name, setName] = useState('')
   const [bodyPartGroupId, setBodyPartGroupId] = useState<number | ''>('')
+  const [machine, setMachine] = useState(false)
   const [notes, setNotes] = useState('')
   const [groups, setGroups] = useState<BodyPartGroup[]>([])
   const [error, setError] = useState('')
@@ -25,6 +26,7 @@ export default function ExerciseEditor({ exerciseId }: Props) {
         if (ex) {
           setName(ex.name)
           setBodyPartGroupId(ex.bodyPartGroupId)
+          setMachine(ex.machine === true)
           setNotes(ex.notes ?? '')
         }
       })
@@ -43,9 +45,9 @@ export default function ExerciseEditor({ exerciseId }: Props) {
     }
 
     if (isNew) {
-      await db.exercises.add({ name: trimmed, bodyPartGroupId: bodyPartGroupId as number, notes: notes.trim() || undefined })
+      await db.exercises.add({ name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
     } else {
-      await db.exercises.update(exerciseId!, { name: trimmed, bodyPartGroupId: bodyPartGroupId as number, notes: notes.trim() || undefined })
+      await db.exercises.update(exerciseId!, { name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
     }
     navigate(-1)
   }
@@ -78,6 +80,15 @@ export default function ExerciseEditor({ exerciseId }: Props) {
             placeholder="e.g. Bench Press"
             autoFocus={isNew}
           />
+        </label>
+
+        <label className="ee-machine">
+          <input
+            type="checkbox"
+            checked={machine}
+            onChange={(e) => setMachine(e.target.checked)}
+          />
+          Machine
         </label>
 
         <label className="ee-label">

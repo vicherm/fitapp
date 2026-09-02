@@ -183,6 +183,22 @@
   cursor: pointer;
 }
 
+.eh-machine-row {
+  cursor: default;
+}
+
+.eh-machine-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eh-machine-value input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
 .eh-row:not(.is-editing):hover {
   background: rgba(255, 255, 255, 0.03);
 }
