@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.37
+Version: 3.38
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -120,7 +120,7 @@ For horizontal list swipes, swiping right moves to older workouts and swiping le
 The compact Workout Summary page is opened by clicking anywhere on a workout card in the History list. Returning to History
 restores the same calendar month, selected date, and workout-list position.
 
-Its header shows the workout date, gym name, start time, and duration. Below the header, exercises are listed in recorded order;
+Its header shows the workout date, gym name, start time, and duration from workout start to the latest logged set. Below the header, exercises are listed in recorded order;
  each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values, with each set on a separate row.
 
 Exercises from Home opens an Exercise Management screen where the user can:

@@ -17,29 +17,45 @@ function isSameLocalDay(a: Date, b: Date): boolean {
   )
 }
 
-function endOfLocalDay(input: Date): Date {
-  const value = new Date(input)
-  value.setHours(23, 59, 59, 999)
-  return value
-}
-
 export default function useWorkout(): WorkoutState {
   const [workout, setWorkout] = useState<Workout | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function loadWorkout() {
-      const latest = await db.workouts.orderBy('startTime').reverse().first()
-      if (!latest || latest.endTime) return
-
       const now = new Date()
-      if (isSameLocalDay(latest.startTime, now)) {
-        setWorkout(latest)
-        return
+      const openWorkouts = await db.workouts
+        .filter((candidate) => !candidate.endTime)
+        .toArray()
+      const currentDayWorkouts = openWorkouts
+        .filter((candidate) => isSameLocalDay(candidate.startTime, now))
+        .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
+
+      if (currentDayWorkouts[0]) {
+        setWorkout(currentDayWorkouts[0])
       }
 
-      // Any unfinished workout from a previous day is automatically closed.
-      await db.workouts.update(latest.id!, { endTime: endOfLocalDay(latest.startTime) })
+      // Any unfinished workouts from previous days are automatically closed at
+      // the time of their last logged set.
+      await Promise.all(
+        openWorkouts
+          .filter((candidate) => !isSameLocalDay(candidate.startTime, now))
+          .map(async (candidate) => {
+            const workoutExercises = await db.workoutExercises
+              .where('workoutId')
+              .equals(candidate.id!)
+              .toArray()
+            const workoutExerciseIds = workoutExercises.map((entry) => entry.id!)
+            const sets = workoutExerciseIds.length > 0
+              ? await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).toArray()
+              : []
+            const lastSet = sets.reduce<Date | undefined>(
+              (latest, set) => (!latest || set.timestamp > latest ? set.timestamp : latest),
+              undefined,
+            )
+            await db.workouts.update(candidate.id!, { endTime: lastSet ?? candidate.startTime })
+          }),
+      )
     }
 
     loadWorkout().finally(() => setIsLoading(false))

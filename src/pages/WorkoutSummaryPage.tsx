@@ -31,7 +31,7 @@ function formatTime(input: Date): string {
 }
 
 function formatDuration(startTime: Date, endTime?: Date): string {
-  const end = endTime ?? new Date()
+  const end = endTime ?? startTime
   const minutes = Math.max(0, Math.floor((end.getTime() - startTime.getTime()) / 60000))
   const hours = Math.floor(minutes / 60)
   const remainingMinutes = minutes % 60
@@ -115,6 +115,12 @@ export default function WorkoutSummaryPage() {
   }
 
   const { workout } = summary
+  const lastSetTime = summary.exercises
+    .flatMap((exercise) => exercise.sets)
+    .reduce<Date | undefined>(
+      (latest, set) => (!latest || set.timestamp > latest ? set.timestamp : latest),
+      undefined,
+    )
 
   return (
     <main className="ws">
@@ -143,7 +149,7 @@ export default function WorkoutSummaryPage() {
         </div>
         <div>
           <span>Duration</span>
-          <strong>{formatDuration(workout.startTime, workout.endTime)}</strong>
+          <strong>{formatDuration(workout.startTime, lastSetTime ?? workout.endTime)}</strong>
         </div>
       </section>
 
