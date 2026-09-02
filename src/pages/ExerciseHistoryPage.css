@@ -183,6 +183,37 @@
   cursor: pointer;
 }
 
+.eh-records {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.eh-records h2 {
+  margin-bottom: 3px;
+  color: var(--text);
+  font-size: 0.76rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.eh-record-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.eh-record-row strong {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
 .eh-machine-row {
   cursor: default;
 }

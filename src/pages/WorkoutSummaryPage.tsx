@@ -3,12 +3,14 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
 import type { BodyPartGroup, Exercise, Gym, Workout, WorkoutSet } from '../db/types'
 import type { HistoryViewState } from './WorkoutHistoryPage'
+import { calculatePersonalRecords } from '../features/personalRecords'
 import './WorkoutSummaryPage.css'
 
 interface SummaryExercise {
   bodyPartName: string
   exerciseName: string
   sets: WorkoutSet[]
+  markedSetIds: Set<number>
 }
 
 interface WorkoutSummary {
@@ -64,11 +66,20 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
         .where('workoutExerciseId')
         .equals(workoutExercise.id!)
         .sortBy('setNumber')
+      const allExerciseWorkoutExercises = await db.workoutExercises
+        .where('exerciseId')
+        .equals(workoutExercise.exerciseId)
+        .toArray()
+      const allExerciseSets = await db.workoutSets
+        .where('workoutExerciseId')
+        .anyOf(allExerciseWorkoutExercises.map((entry) => entry.id!))
+        .toArray()
 
       return {
         bodyPartName: exercise ? groupById.get(exercise.bodyPartGroupId)?.name ?? 'Unassigned' : 'Unknown',
         exerciseName: exercise?.name ?? 'Unknown exercise',
         sets,
+        markedSetIds: calculatePersonalRecords(allExerciseSets).markedSetIds,
       }
     }),
   )
@@ -167,7 +178,7 @@ export default function WorkoutSummaryPage() {
                 {exercise.sets.length > 0 ? (
                   exercise.sets.map((set) => (
                     <div className="ws-set-row" key={set.id}>
-                      {set.weight} kg × {set.reps}
+                      {set.weight} kg × {set.reps}{exercise.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}
                     </div>
                   ))
                 ) : (

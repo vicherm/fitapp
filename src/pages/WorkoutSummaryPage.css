@@ -132,6 +132,11 @@
   min-height: 1.15em;
 }
 
+.pr-star {
+  color: var(--accent);
+  font-size: 0.82em;
+}
+
 .ws-no-exercises {
   margin: 8px 10px;
   color: var(--text);

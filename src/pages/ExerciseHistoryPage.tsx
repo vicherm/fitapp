@@ -2,6 +2,7 @@ import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'rea
 import { useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
 import type { BodyPartGroup, Exercise, Workout, WorkoutSet } from '../db/types'
+import { calculatePersonalRecords, type PersonalRecords } from '../features/personalRecords'
 import './ExerciseHistoryPage.css'
 
 interface WorkoutGroup {
@@ -54,6 +55,7 @@ export default function ExerciseHistoryPage() {
   const [exercise, setExercise] = useState<Exercise | null>(null)
   const [groups, setGroups] = useState<WorkoutGroup[]>([])
   const [drafts, setDrafts] = useState<SetDraftMap>({})
+  const [personalRecords, setPersonalRecords] = useState<PersonalRecords>(() => calculatePersonalRecords([]))
   const [editingSetId, setEditingSetId] = useState<number | null>(null)
   const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
   const [editingMetaField, setEditingMetaField] = useState<MetaField>(null)
@@ -85,6 +87,7 @@ export default function ExerciseHistoryPage() {
 
     if (workoutExercises.length === 0) {
       setGroups([])
+      setPersonalRecords(calculatePersonalRecords([]))
       setDrafts({})
       setIsLoading(false)
       return
@@ -92,6 +95,7 @@ export default function ExerciseHistoryPage() {
 
     const workoutExerciseIds = workoutExercises.map((we) => we.id!)
     const allSets = await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).toArray()
+    setPersonalRecords(calculatePersonalRecords(allSets))
 
     const workoutIds = Array.from(new Set(workoutExercises.map((we) => we.workoutId)))
     const workouts = await db.workouts.where('id').anyOf(workoutIds).toArray()
@@ -152,6 +156,16 @@ export default function ExerciseHistoryPage() {
     )
   }
 
+  async function refreshPersonalRecords() {
+    if (!exercise?.id) return
+    const workoutExercises = await db.workoutExercises.where('exerciseId').equals(exercise.id).toArray()
+    const sets = await db.workoutSets
+      .where('workoutExerciseId')
+      .anyOf(workoutExercises.map((entry) => entry.id!))
+      .toArray()
+    setPersonalRecords(calculatePersonalRecords(sets))
+  }
+
   async function handleExerciseNameChange(event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.value
     setExerciseNameDraft(value)
@@ -191,6 +205,7 @@ export default function ExerciseHistoryPage() {
     if (parsed === null) return
     await db.workoutSets.update(setId, { weight: parsed })
     updateSetState(setId, { weight: parsed })
+    await refreshPersonalRecords()
   }
 
   async function handleRepsChange(setId: number, event: ChangeEvent<HTMLInputElement>) {
@@ -204,6 +219,7 @@ export default function ExerciseHistoryPage() {
     if (parsed === null) return
     await db.workoutSets.update(setId, { reps: parsed })
     updateSetState(setId, { reps: parsed })
+    await refreshPersonalRecords()
   }
 
   async function handleDeleteSet(set: WorkoutSet) {
@@ -323,6 +339,25 @@ export default function ExerciseHistoryPage() {
         </label>
       </section>
 
+      <section className="eh-records" aria-label="Current personal records">
+        <h2>Personal Records</h2>
+        {personalRecords.maximumWeight && (
+          <div className="eh-record-row">
+            <span>Maximum Weight</span>
+            <strong>{personalRecords.maximumWeight.weight} × {personalRecords.maximumWeight.reps}</strong>
+          </div>
+        )}
+        {[...personalRecords.maximumWeightByRepetitions.entries()]
+          .sort(([left], [right]) => left - right)
+          .map(([repetitions, set]) => (
+            <div className="eh-record-row" key={repetitions}>
+              <span>{repetitions} {repetitions === 1 ? 'rep' : 'reps'}</span>
+              <strong>{set.weight} kg</strong>
+            </div>
+          ))}
+        {!personalRecords.maximumWeight && <p className="eh-empty">No records yet.</p>}
+      </section>
+
       <main className="eh-list">
         {groups.length === 0 ? (
           <p className="eh-empty">No previous sets found.</p>
@@ -362,6 +397,7 @@ export default function ExerciseHistoryPage() {
                             onChange={(event) => set.id && void handleRepsChange(set.id, event)}
                             aria-label="Repetitions"
                           />
+                          {personalRecords.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record">★</span>}
                         </div>
                         <span className="eh-time">{formatSetTime(set.timestamp)}</span>
                         <div className="eh-actions">
@@ -389,7 +425,7 @@ export default function ExerciseHistoryPage() {
                       </>
                     ) : (
                       <>
-                        <span className="eh-value-text">{set.weight} × {set.reps}</span>
+                        <span className="eh-value-text">{set.weight} × {set.reps}{personalRecords.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}</span>
                         <span className="eh-time">{formatSetTime(set.timestamp)}</span>
                       </>
                     )}

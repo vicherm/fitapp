@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.40
+Version: 3.42
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -473,3 +473,259 @@ Otherwise, the user can
 
 # 8. Restore
 - Importing a JSON backup replaces all current local data
+
+
+# Personal Records
+
+GymLog tracks personal records (PRs) separately for each exercise.
+
+Personal records are derived from the complete chronological history of logged sets for the exercise.
+
+## Record Types
+
+GymLog tracks two types of personal records.
+
+### Maximum Weight
+
+The highest weight logged for the exercise, regardless of the number of repetitions.
+
+For example, given:
+
+`80 × 10`
+`90 × 5`
+`100 × 2`
+`105 × 1`
+
+the Maximum Weight record is:
+
+`105 kg × 1`
+
+A set establishes a new Maximum Weight PR when its weight is greater than the Maximum Weight established by all earlier sets for the exercise.
+
+The number of repetitions does not affect this comparison.
+
+A set with the same weight as the existing Maximum Weight does not establish a new Maximum Weight PR.
+
+### Maximum Weight by Repetitions
+
+For each number of repetitions, GymLog tracks the highest weight logged for exactly that number of repetitions.
+
+Each repetition count therefore has its own independent record.
+
+For example:
+
+* 1 rep: `105 kg`
+* 2 reps: `100 kg`
+* 3 reps: `97.5 kg`
+* 5 reps: `90 kg`
+* 8 reps: `85 kg`
+* 10 reps: `80 kg`
+
+A set establishes a new Maximum Weight by Repetitions PR when its weight is greater than the record established by all earlier sets for the exercise with exactly the same number of repetitions.
+
+For example, if the current 5-repetition record is:
+
+`90 × 5`
+
+then:
+
+`87.5 × 5` does not establish a PR
+`90 × 5` does not establish a PR
+`92.5 × 5` establishes a new 5-repetition PR
+
+A repetition count for which no earlier set exists has no existing record. The first logged set for that repetition count establishes its initial Maximum Weight by Repetitions PR.
+
+## PR Detection
+
+PRs are evaluated when a set is logged.
+
+The new set is compared with all chronologically earlier sets for the same exercise.
+
+A single set may establish:
+
+* only a new Maximum Weight PR
+* only a new Maximum Weight by Repetitions PR
+* both types of PR
+* no PR
+
+For example, assume the current records are:
+
+Maximum Weight: `100 × 1`
+5 repetitions: `90 × 5`
+
+Logging:
+
+`92.5 × 5`
+
+establishes a new Maximum Weight by Repetitions PR but does not establish a new Maximum Weight PR.
+
+Logging:
+
+`105 × 5`
+
+establishes both a new Maximum Weight PR and a new Maximum Weight by Repetitions PR.
+
+## New PR Notification
+
+When a newly logged set establishes a personal record, GymLog immediately shows a prominent, non-blocking in-app notification.
+
+The notification identifies the achieved record.
+
+Examples:
+
+`New PR: Maximum Weight — 105 kg`
+
+`New PR: 5 reps — 92.5 kg`
+
+If the same set establishes both record types, both achievements are communicated in a single notification.
+
+For example:
+
+`New PR: Maximum Weight + 5 reps — 105 kg`
+
+The notification uses a visually striking orange-accented card with a trophy icon, a clear `NEW PERSONAL RECORD` heading, and the achieved record details. It does not interrupt workout logging.
+
+The user remains on Active Workout and can immediately continue entering the next set.
+
+Matching an existing record does not trigger a notification.
+
+## PR Set Marker
+
+Every set that establishes a personal record at its chronological position in workout history is marked with a small star (`★`).
+
+A star is shown if the set establishes at least one of:
+
+* a new Maximum Weight PR
+* a new Maximum Weight by Repetitions PR
+
+Only one star is shown when a set establishes both record types.
+
+The star indicates that the set established a new personal record at that point in the exercise's history. It does not indicate that the set is still the current personal record.
+
+For example, if the chronological progression of 5-repetition sets is:
+
+`80 × 5`
+`85 × 5`
+`85 × 5`
+`82.5 × 5`
+`90 × 5`
+
+they are displayed as:
+
+`80 × 5 ★`
+`85 × 5 ★`
+`85 × 5`
+`82.5 × 5`
+`90 × 5 ★`
+
+The first `80 × 5` establishes the initial 5-repetition record.
+
+The first `85 × 5` improves it.
+
+The second `85 × 5` only matches the existing record and therefore does not receive a star.
+
+The `90 × 5` establishes another new record.
+
+A set receives only one star even if it establishes both PR types.
+
+## PR Markers in Set Lists
+
+The PR star is displayed consistently wherever individual workout sets are shown.
+
+This includes:
+
+* Current Workout column in Active Workout
+* Previous Workout columns in Active Workout
+* Exercise Details
+* Workout Summary
+* any other screen that displays individual historical sets
+
+The star is displayed as a small visual marker next to the `kg × reps` value and must not significantly increase the height of the set row.
+
+Example:
+
+`90 × 5 ★`
+
+Sets that did not establish a PR are displayed normally:
+
+`90 × 5`
+
+## Historical PR Calculation
+
+PR status is derived from workout history rather than permanently stored as an immutable property of a set.
+
+Sets for each exercise are evaluated in chronological order.
+
+For each set, GymLog determines the records established by all earlier sets for that exercise and then determines whether the set establishes a new record.
+
+This makes it possible to reconstruct the PR progression for the exercise and identify every set that established a record at the time it was performed.
+
+## Editing and Deleting Sets
+
+When a historical set is edited or deleted, GymLog recalculates personal records and PR markers for the affected exercise.
+
+The recalculation uses the resulting chronological workout history.
+
+This may:
+
+* add a PR star to a historical set
+* remove a PR star from a historical set
+* change the current Maximum Weight record
+* change one or more Maximum Weight by Repetitions records
+
+For example, if the history contains:
+
+`80 × 5 ★`
+`85 × 5 ★`
+`90 × 5 ★`
+
+and `85 × 5` is deleted, the resulting history is:
+
+`80 × 5 ★`
+`90 × 5 ★`
+
+If instead `85 × 5` is edited to `95 × 5`, the PR progression is recalculated according to the new chronological sequence.
+
+Editing or deleting historical sets does not display a new-PR notification. Notifications are shown only when a newly logged set establishes a PR.
+
+## Current Personal Records
+
+Exercise Details displays the current personal records for the exercise.
+
+The records section shows:
+
+* Maximum Weight
+* Maximum Weight by Repetitions
+
+Maximum Weight shows the current highest-weight set.
+
+Example:
+
+`Maximum Weight    105 × 1`
+
+Maximum Weight by Repetitions lists the current record for every repetition count that exists in the exercise history.
+
+For example:
+
+`1 rep     105 kg`
+`2 reps    100 kg`
+`3 reps     97.5 kg`
+`5 reps     92.5 kg`
+`8 reps     85 kg`
+`10 reps    80 kg`
+
+Only repetition counts that have logged sets are displayed.
+
+The records are read-only and are calculated from stored workout sets.
+
+## PR Scope
+
+Personal records are exercise-specific.
+
+Sets from different exercises are never compared with each other.
+
+Records include sets from all workouts and all gyms.
+
+Machine and non-machine exercises remain separate because they are represented by separate exercises in GymLog.
+
+Personal records require no manually maintained PR data. They are always derived from the existing workout-set history.

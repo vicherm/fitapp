@@ -4,6 +4,7 @@ import { db } from '../../db/db'
 import type { Exercise, Gym, WorkoutExercise, WorkoutSet } from '../../db/types'
 import type { WorkoutState } from '../../hooks/useWorkout'
 import NumericKeypad from '../ui/NumericKeypad'
+import { calculatePersonalRecords, type PersonalRecords } from '../../features/personalRecords'
 import './ActiveWorkout.css'
 
 interface Props {
@@ -52,6 +53,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
   const [previousWorkoutSets, setPreviousWorkoutSets] = useState<WorkoutSet[][]>([[], []])
   const [previousWorkoutTitles, setPreviousWorkoutTitles] = useState<string[]>(['Previous', 'Previous'])
+  const [personalRecords, setPersonalRecords] = useState<PersonalRecords>(() => calculatePersonalRecords([]))
+  const [notification, setNotification] = useState<string | null>(null)
   const isHydratingDraftRef = useRef(false)
   const skipNextPrefillRef = useRef(false)
   const previousSequenceRef = useRef<WorkoutSet[]>([])
@@ -148,6 +151,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   useEffect(() => {
     if (!exercise?.id || !w?.id) {
       setCurrentSets([])
+      setPersonalRecords(calculatePersonalRecords([]))
       setPreviousWorkoutSets([[], []])
       setPreviousWorkoutTitles(['Previous', 'Previous'])
       previousSequenceRef.current = []
@@ -163,6 +167,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
       const weIds = weList.map((we) => we.id!)
       const allSets = await db.workoutSets.where('workoutExerciseId').anyOf(weIds).toArray()
+      setPersonalRecords(calculatePersonalRecords(allSets))
 
       const currentWeIds = new Set(
         weList.filter((we) => we.workoutId === w!.id).map((we) => we.id!),
@@ -295,6 +300,25 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     if (saved) {
       setCurrentSets((prev) => [...prev, saved])
 
+      const exerciseWorkoutExercises = await db.workoutExercises
+        .where('exerciseId')
+        .equals(exercise!.id!)
+        .toArray()
+      const exerciseSets = await db.workoutSets
+        .where('workoutExerciseId')
+        .anyOf(exerciseWorkoutExercises.map((entry) => entry.id!))
+        .toArray()
+      const nextRecords = calculatePersonalRecords(exerciseSets)
+      setPersonalRecords(nextRecords)
+      const event = nextRecords.events.get(saved.id!)
+      if (event && (event.maximumWeight || event.repetitions !== null)) {
+        const labels = [
+          event.maximumWeight ? 'Maximum Weight' : null,
+          event.repetitions !== null ? `${event.repetitions} reps` : null,
+        ].filter((label): label is string => label !== null)
+        setNotification(`New PR: ${labels.join(' + ')} — ${saved.weight} kg`)
+      }
+
       const sequence = previousSequenceRef.current
       const nextPosition = advancePrefillPosition(
         sequence,
@@ -322,6 +346,12 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       }
     }
   }
+
+  useEffect(() => {
+    if (!notification) return
+    const timeout = window.setTimeout(() => setNotification(null), 3500)
+    return () => window.clearTimeout(timeout)
+  }, [notification])
 
   function handleInputKey(key: string) {
     if (key === '') return
@@ -503,6 +533,15 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   return (
     <div className="aw">
+      {notification && (
+        <div className="aw-pr-notification" role="status" aria-live="polite">
+          <span className="aw-pr-icon" aria-hidden="true">🏆</span>
+          <span className="aw-pr-copy">
+            <strong>NEW PERSONAL RECORD</strong>
+            <span>{notification.replace('New PR: ', '')}</span>
+          </span>
+        </div>
+      )}
       <div className="aw-top-row">
         {selectedGymAbbreviation && <span className="aw-gym-badge">{selectedGymAbbreviation}</span>}
         {exercise?.id && (
@@ -575,7 +614,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
                 {column.sets.length > 0 ? (
                   column.sets.map((s) => (
                     <p key={s.id}>
-                      {s.weight} × {s.reps}
+                      {s.weight} × {s.reps}{personalRecords.markedSetIds.has(s.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}
                     </p>
                   ))
                 ) : (
