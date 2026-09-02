@@ -31,3 +31,56 @@
   text-decoration: none;
   user-select: none;
 }
+
+.more-danger {
+  max-width: 64rem;
+  margin: 1.5rem auto 0;
+  border-top: 1px solid rgba(248, 113, 113, 0.35);
+  padding-top: 1rem;
+}
+
+.more-reset-confirmation {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.more-reset-confirmation p {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.more-reset-btn,
+.more-cancel-btn {
+  width: 100%;
+  border-radius: 1rem;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.more-reset-btn {
+  border: 1px solid rgba(248, 113, 113, 0.75);
+  background: rgba(127, 29, 29, 0.35);
+  color: #fecaca;
+}
+
+.more-reset-btn:hover:not(:disabled),
+.more-reset-btn:focus-visible:not(:disabled) {
+  border-color: #fca5a5;
+  background: rgba(127, 29, 29, 0.6);
+}
+
+.more-reset-btn:disabled,
+.more-cancel-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.more-cancel-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-h);
+}

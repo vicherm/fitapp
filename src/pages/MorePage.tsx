@@ -1,6 +1,7 @@
-import { type ChangeEvent, useRef, useState } from 'react'
+import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { exportAllDataToJson, importAllDataFromJson } from '../db/backup'
+import { db } from '../db/db'
 import './HomePage.css'
 import './MorePage.css'
 
@@ -14,6 +15,15 @@ export default function MorePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isBusy, setIsBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [resetRequested, setResetRequested] = useState(false)
+  const [resetCountdown, setResetCountdown] = useState(5)
+
+  useEffect(() => {
+    if (!resetRequested || resetCountdown <= 0) return
+
+    const timer = window.setTimeout(() => setResetCountdown((current) => current - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [resetRequested, resetCountdown])
 
   async function handleExport() {
     setIsBusy(true)
@@ -43,6 +53,47 @@ export default function MorePage() {
       window.setTimeout(() => window.location.reload(), 500)
     } catch {
       setMessage('Import failed. Please select a valid backup JSON file.')
+      setIsBusy(false)
+    }
+  }
+
+  function requestReset() {
+    setMessage('')
+    setResetCountdown(5)
+    setResetRequested(true)
+  }
+
+  async function confirmReset() {
+    if (resetCountdown > 0 || isBusy) return
+
+    setIsBusy(true)
+    try {
+      await db.transaction(
+        'rw',
+        [
+          db.settings,
+          db.bodyPartGroups,
+          db.exercises,
+          db.gyms,
+          db.workouts,
+          db.workoutExercises,
+          db.workoutSets,
+        ],
+        async () => {
+          await db.workoutSets.clear()
+          await db.workoutExercises.clear()
+          await db.workouts.clear()
+          await db.exercises.clear()
+          await db.bodyPartGroups.clear()
+          await db.gyms.clear()
+          await db.settings.clear()
+        },
+      )
+      sessionStorage.removeItem('gymlog-active-workout-draft-v1')
+      window.location.reload()
+    } catch {
+      setMessage('Reset failed. Please try again.')
+      setResetRequested(false)
       setIsBusy(false)
     }
   }
@@ -79,6 +130,32 @@ export default function MorePage() {
           onChange={handleImportSelected}
         />
         {message && <p className="home-data-message">{message}</p>}
+      </section>
+
+      <section className="more-danger" aria-label="Delete all data">
+        {!resetRequested ? (
+          <button className="more-reset-btn" onClick={requestReset} disabled={isBusy}>
+            Reset All Data
+          </button>
+        ) : (
+          <div className="more-reset-confirmation">
+            <p>This permanently deletes all workouts, exercises, gyms, groups, and settings.</p>
+            <button
+              className="more-reset-btn"
+              onClick={() => void confirmReset()}
+              disabled={resetCountdown > 0 || isBusy}
+            >
+              {resetCountdown > 0 ? `Confirm Reset (${resetCountdown})` : 'Confirm Reset'}
+            </button>
+            <button
+              className="more-cancel-btn"
+              onClick={() => setResetRequested(false)}
+              disabled={isBusy}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </section>
     </main>
   )

@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.35
+Version: 3.36
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -135,6 +135,8 @@ More also provides data backup actions:
 
 - Export all local data to a JSON backup file
 - Import all local data from a JSON backup file (replaces local data)
+- Reset all local data
+- Reset requires a secondary confirmation after a short countdown before deletion is enabled
 
 Route behavior:
 
