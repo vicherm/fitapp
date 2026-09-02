@@ -1,0 +1,33 @@
+.more-page {
+  min-height: 100dvh;
+  padding: clamp(1.25rem, 2.5vw, 2.5rem);
+  color: #f6f7fb;
+  background:
+    radial-gradient(circle at 15% 12%, rgba(255, 153, 0, 0.28), transparent 36%),
+    radial-gradient(circle at 78% 22%, rgba(255, 255, 255, 0.11), transparent 40%),
+    linear-gradient(165deg, #0b0d12 0%, #171a21 54%, #0f1118 100%);
+}
+
+.more-header {
+  max-width: 64rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.more-header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.more-back {
+  color: var(--accent);
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  user-select: none;
+}

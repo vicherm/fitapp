@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.34
+Version: 3.35
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -105,9 +105,9 @@ The user can navigate from Home to:
 
 - Active Workout
 - History
-- Body Part Groups
-- Exercises
-- Gyms
+- More
+
+The More page provides navigation to Body Part Groups, Exercises, and Gyms, plus JSON import and export actions.
 
 ## History
 
@@ -131,7 +131,7 @@ Exercises from Home opens an Exercise Management screen where the user can:
 Exercise Management groups exercises by body part group using the same collapsed, alphabetically sorted group and exercise
 layout as Exercise Selection.
 
-Home also provides data backup actions:
+More also provides data backup actions:
 
 - Export all local data to a JSON backup file
 - Import all local data from a JSON backup file (replaces local data)
