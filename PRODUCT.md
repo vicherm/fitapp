@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.39
+Version: 3.40
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -176,6 +176,9 @@ Each gym stores:
 - Name
 - Abbreviation (case-preserving; lowercase letters are allowed)
 - GPS coordinates (latitude, longitude)
+
+When creating a gym, GymLog requests the device position and prefills the GPS coordinate fields when location is available.
+The user can edit or enter the coordinates manually if location access is unavailable.
 
 Old imported workouts that have no gym assignment show the gym as 'Unknown' with abbreviation shown `UNKN`.
 

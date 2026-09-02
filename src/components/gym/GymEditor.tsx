@@ -58,9 +58,30 @@ export default function GymEditor({ gymId }: Props) {
   const [form, setForm] = useState<GymFormState>(EMPTY_FORM)
   const [isLoading, setIsLoading] = useState(Boolean(gymId))
   const [error, setError] = useState('')
+  const [locationMessage, setLocationMessage] = useState('')
 
   useEffect(() => {
     void loadData()
+  }, [gymId])
+
+  useEffect(() => {
+    if (gymId !== undefined || !navigator.geolocation) return
+
+    setLocationMessage('Getting device location...')
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm((previous) => ({
+          ...previous,
+          latitude: previous.latitude || formatCoordinate(position.coords.latitude),
+          longitude: previous.longitude || formatCoordinate(position.coords.longitude),
+        }))
+        setLocationMessage('Coordinates filled from device location.')
+      },
+      () => {
+        setLocationMessage('Device location unavailable. Enter coordinates manually.')
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    )
   }, [gymId])
 
   const canSave = useMemo(() => {
@@ -187,6 +208,7 @@ export default function GymEditor({ gymId }: Props) {
 
       <div className="gym-editor-content">
         {error && <p className="gym-editor-error">{error}</p>}
+        {locationMessage && <p className="gym-editor-location">{locationMessage}</p>}
 
         <div className="gym-editor-form">
           <input
