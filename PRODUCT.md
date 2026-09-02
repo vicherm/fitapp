@@ -39,10 +39,9 @@ Primary goals
 - Minimize typing
 - Track long-term progress
 - Automatically detect gym location
-- Export all data to Excel / CSV
 - Keep complete ownership of all data
 
-Version: 3.0
+Non-goals
 
 - Social features
 - User accounts
@@ -60,8 +59,13 @@ The application stores six primary entities plus application settings.
 - Workout
 - Workout Exercise
 - Workout Set
+- Exercise
+- Body Part Group
+- Gym
+
+- Settings
+
 ---
-In the exercise picker used from Active Workout, exercises are grouped by body part group and sorted alphabetically at both group and exercise level.
 
 # 4. Main Workflow
 
@@ -69,13 +73,7 @@ Start Workout
 
 ↓
 
-↓
-
-Select Exercise
-
-↓
-
-Log Sets
+Detect/select gym
 
 ↓
 
@@ -87,9 +85,17 @@ Log Sets
 
 ↓
 
-Finish Workout
+Select Exercise
 
-Note: workouts that remain open past midnight are automatically considered finished.
+↓
+
+Log Sets
+
+↓
+
+The workout automatically finishes when the calendar day ends. The timestamp of the last logged set is considered the workout end time.
+
+Only one workout can be active at a time. If a workout already exists for the current calendar day, opening Active Workout resumes that workout.
 
 Almost the entire workout should be performed from the Active Workout screen.
 
@@ -100,6 +106,7 @@ Almost the entire workout should be performed from the Active Workout screen.
 ## Home
 
 The Home screen displays the GymLog logo and simple navigation buttons.
+- Home is available at a separate route (`/home`)
 
 The user can navigate from Home to:
 
@@ -107,7 +114,15 @@ The user can navigate from Home to:
 - History
 - More
 
-The More page provides navigation to Body Part Groups, Exercises, and Gyms, plus JSON import and export actions.
+## More
+The More page provides navigation to:
+- Body Part Groups 
+- Exercises 
+- Gyms 
+- Backup
+- Restore
+- Settings
+- Reset Data
 
 ## History
 
@@ -123,25 +138,14 @@ restores the same calendar month, selected date, and workout-list position.
 Its header shows the workout date, gym name, start time, and duration from workout start to the latest logged set. Below the header, exercises are listed in recorded order;
  each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values, with each set on a separate row.
 
-Exercises from Home opens an Exercise Management screen where the user can:
+## Exercise Management
+Exercises from More opens an Exercise Management screen where the user can:
 
 - create a new exercise (opens Exercise Editor form)
 - select an existing exercise from a list (opens Exercise Details for editing)
 
 Exercise Management groups exercises by body part group using the same collapsed, alphabetically sorted group and exercise
 layout as Exercise Selection.
-
-More also provides data backup actions:
-
-- Export all local data to a JSON backup file
-- Import all local data from a JSON backup file (replaces local data)
-- Reset all local data
-- Reset requires a secondary confirmation after a short countdown before deletion is enabled
-
-Route behavior:
-
-- Active Workout remains the default route (`/`)
-- Home is available at a separate route (`/home`)
 
 ## Gyms
 
@@ -173,25 +177,25 @@ Each gym stores:
 - Abbreviation (case-preserving; lowercase letters are allowed)
 - GPS coordinates (latitude, longitude)
 
+Old imported workouts that have no gym assignment show the gym as 'Unknown' with abbreviation shown `UNKN`.
+
 ## Active Workout (Primary Screen)
 
 The Active Workout screen is the central screen of the application.
 
+Active Workout remains the default route (`/`)
+
 The user should be able to log an entire workout with minimal navigation.
 
-Any workout left open from a previous calendar day is automatically considered finished.
+A workout belongs to a single calendar day. When Active Workout is opened, any active workout from a previous calendar day is considered finished. The timestamp of its last logged set is considered its end time.
 
 The Active Workout screen does not include a manual Finish Workout button.
 
 The screen includes a direct Home link.
 
-When starting a workout, user must select a gym first.
+A gym must be assigned before workout logging begins. GymLog first attempts to detect and assign a gym automatically. If no gym is detected, the user must select an existing gym or create a new one.
 
 The selected gym abbreviation is shown at the top of the Active Workout screen as plain muted gray text (non-interactive).
-
-If an open workout has no gym assignment (for example older historical records), Active Workout asks user to select and assign a gym before continuing.
-
-If gym reference is present but the gym record cannot be resolved, the abbreviation shown is `UNKN`.
 
 When an exercise is selected, the screen provides access to Exercise Details.
 
@@ -407,19 +411,12 @@ Validation rules
 Application settings
 
 - Global gym detection radius
-- Theme
-
-Gyms
-
-Import
-
-Export
-
-Backup
-
-Restore
 
 ---
+
+## Reset Data
+- Reset all local data
+- Reset requires a secondary confirmation after a short countdown before deletion is enabled
 
 # 6. Gym Detection
 
@@ -437,55 +434,15 @@ If distance <= configured global radius
 
 select nearest gym automatically.
 
-Otherwise
-
-Gym = Unknown.
-
-User can
-
+Otherwise, the user can
 - choose existing gym
 - create a new gym using current location
 
 ---
 
-# 7. Progress Tracking
+# 7. Backup
+- Exports all local tables (settings, exercises, body part groups, gyms, workouts, workout exercises, workout sets) in JSON format
 
-For every exercise
-
-Show
-
-- Maximum weight
-- Estimated 1RM
-- Graph
-
----
-
-# 8. Export
-
-CSV
-
-One row per workout set.
-
-Details to be finalized.
-
-XLSX
-
-Workbook contains sheets
-
-- Exercises
-- Body Part Groups
-- Gyms
-- Workouts
-- Workout Exercises
-- Workout Sets
-- Statistics
-
-JSON Backup
-
-- Exports all local tables (settings, exercises, body part groups, gyms, workouts, workout exercises, workout sets)
+# 8. Restore
 - Importing a JSON backup replaces all current local data
 
-CSV Migration Tooling
-
-- A CLI conversion script is provided to transform HeavySet CSV exports into GymLog JSON backup format for import
-- Encoded exercise prefixes (for example `LEG`, `BIC`) are mapped to body part groups during conversion
