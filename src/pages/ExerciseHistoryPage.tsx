@@ -14,6 +14,11 @@ interface WorkoutGroup {
 type SetDraftMap = Record<number, { weight: string; reps: string }>
 type MetaField = 'name' | 'bodyPartGroupId' | 'notes' | null
 
+function summarizePersonalRecords(records: Map<number, WorkoutSet>): Array<[number, WorkoutSet]> {
+  const entries = [...records.entries()].sort(([left], [right]) => left - right)
+  return entries.filter(([, set], index) => index === entries.length - 1 || set.weight !== entries[index + 1][1].weight)
+}
+
 function formatWorkoutDate(input: Date): string {
   const year = input.getFullYear()
   const month = String(input.getMonth() + 1).padStart(2, '0')
@@ -347,8 +352,7 @@ export default function ExerciseHistoryPage() {
             <strong>{personalRecords.maximumWeight.weight} × {personalRecords.maximumWeight.reps}</strong>
           </div>
         )}
-        {[...personalRecords.maximumWeightByRepetitions.entries()]
-          .sort(([left], [right]) => left - right)
+        {summarizePersonalRecords(personalRecords.maximumWeightByRepetitions)
           .map(([repetitions, set]) => (
             <div className="eh-record-row" key={repetitions}>
               <span>{repetitions} {repetitions === 1 ? 'rep' : 'reps'}</span>

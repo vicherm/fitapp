@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.43
+Version: 3.44
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -695,7 +695,7 @@ Example:
 
 `Maximum Weight    105 × 1`
 
-Maximum Weight by Repetitions lists the highest weight logged for at least each displayed number of repetitions.
+Maximum Weight by Repetitions lists the highest weight logged for at least each displayed number of repetitions. To keep the section compact, consecutive repetition counts with the same weight are grouped and shown only once, using the highest repetition count in that group.
 
 For example, if the relevant historical sets are:
 
@@ -705,15 +705,8 @@ For example, if the relevant historical sets are:
 
 the records are displayed as:
 
-`1 rep     100 kg`  
-`2 reps    100 kg`  
-`3 reps    100 kg`  
-`4 reps    100 kg`  
 `5 reps    100 kg`  
-`6 reps     90 kg`  
-`7 reps     90 kg`  
 `8 reps     90 kg`  
-`9 reps     70 kg`  
 `10 reps    70 kg`
 
 Only repetition counts up to the highest number of repetitions represented in the exercise history are displayed.
