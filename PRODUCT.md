@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.33
+Version: 3.34
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -127,6 +127,9 @@ Exercises from Home opens an Exercise Management screen where the user can:
 
 - create a new exercise (opens Exercise Editor form)
 - select an existing exercise from a list (opens Exercise Details for editing)
+
+Exercise Management groups exercises by body part group using the same collapsed, alphabetically sorted group and exercise
+layout as Exercise Selection.
 
 Home also provides data backup actions:
 
