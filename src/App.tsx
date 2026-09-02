@@ -11,6 +11,7 @@ import GymEditorPage from './pages/GymEditorPage'
 import WorkoutHistoryPage from './pages/WorkoutHistoryPage'
 import WorkoutSummaryPage from './pages/WorkoutSummaryPage'
 import MorePage from './pages/MorePage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<ActiveWorkoutPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/more" element={<MorePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/history" element={<WorkoutHistoryPage />} />
         <Route path="/history/:id" element={<WorkoutSummaryPage />} />
         <Route path="/exercise-management" element={<ExerciseManagementPage />} />

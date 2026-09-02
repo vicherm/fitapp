@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.38
+Version: 3.39
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -410,7 +410,7 @@ Validation rules
 
 Application settings
 
-- Global gym detection radius
+- Global gym detection radius, editable in metres and saved locally
 
 ---
 
@@ -445,4 +445,3 @@ Otherwise, the user can
 
 # 8. Restore
 - Importing a JSON backup replaces all current local data
-

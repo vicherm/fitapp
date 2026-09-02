@@ -9,6 +9,7 @@ const moreItems = [
   { title: 'Body Part Groups', to: '/body-part-groups' },
   { title: 'Exercises', to: '/exercise-management' },
   { title: 'Gyms', to: '/gyms' },
+  { title: 'Settings', to: '/settings' },
 ]
 
 export default function MorePage() {
@@ -117,10 +118,10 @@ export default function MorePage() {
 
       <section className="home-data" aria-label="Data backup">
         <button className="home-data-btn" onClick={handleExport} disabled={isBusy}>
-          Export JSON
+          Backup
         </button>
         <button className="home-data-btn" onClick={() => fileInputRef.current?.click()} disabled={isBusy}>
-          Import JSON
+          Restore
         </button>
         <input
           ref={fileInputRef}

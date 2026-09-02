@@ -1,0 +1,100 @@
+.settings-page {
+  min-height: 100dvh;
+  padding: 10px 12px 14px;
+  color: var(--text-h);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-back {
+  color: var(--accent);
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  user-select: none;
+}
+
+.settings-card {
+  max-width: 520px;
+  margin: 14px auto 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.settings-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-h);
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.settings-input {
+  width: 120px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-h);
+  font: inherit;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.settings-save {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-error,
+.settings-message {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.settings-error {
+  color: #f87171;
+}
+
+.settings-message {
+  color: var(--text);
+}
