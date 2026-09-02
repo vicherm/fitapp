@@ -311,10 +311,10 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       const nextRecords = calculatePersonalRecords(exerciseSets)
       setPersonalRecords(nextRecords)
       const event = nextRecords.events.get(saved.id!)
-      if (event && (event.maximumWeight || event.repetitions !== null)) {
+      if (event && (event.maximumWeight || event.repetitions.length > 0)) {
         const labels = [
           event.maximumWeight ? 'Maximum Weight' : null,
-          event.repetitions !== null ? `${event.repetitions} reps` : null,
+          event.repetitions.length > 0 ? formatRepetitionRecords(event.repetitions) : null,
         ].filter((label): label is string => label !== null)
         setNotification(`New PR: ${labels.join(' + ')} — ${saved.weight} kg`)
       }
@@ -345,6 +345,13 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         setReps(String(rNum))
       }
     }
+  }
+
+  function formatRepetitionRecords(repetitions: number[]): string {
+    if (repetitions.length === 1) return `${repetitions[0]} rep`
+    const sorted = [...repetitions].sort((left, right) => left - right)
+    const isContiguous = sorted.every((value, index) => index === 0 || value === sorted[index - 1] + 1)
+    return isContiguous ? `${sorted[0]}–${sorted[sorted.length - 1]} reps` : `${sorted.join(', ')} reps`
   }
 
   useEffect(() => {

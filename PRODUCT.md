@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.42
+Version: 3.43
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -474,7 +474,6 @@ Otherwise, the user can
 # 8. Restore
 - Importing a JSON backup replaces all current local data
 
-
 # Personal Records
 
 GymLog tracks personal records (PRs) separately for each exercise.
@@ -491,9 +490,9 @@ The highest weight logged for the exercise, regardless of the number of repetiti
 
 For example, given:
 
-`80 × 10`
-`90 × 5`
-`100 × 2`
+`80 × 10`  
+`90 × 5`  
+`100 × 2`  
 `105 × 1`
 
 the Maximum Weight record is:
@@ -508,32 +507,50 @@ A set with the same weight as the existing Maximum Weight does not establish a n
 
 ### Maximum Weight by Repetitions
 
-For each number of repetitions, GymLog tracks the highest weight logged for exactly that number of repetitions.
+For each number of repetitions, GymLog tracks the highest weight logged for at least that number of repetitions.
 
-Each repetition count therefore has its own independent record.
+A set performed for `N` repetitions therefore qualifies for the records for every repetition count from `1` through `N`.
 
 For example:
 
-* 1 rep: `105 kg`
+`100 × 5`
+
+qualifies as:
+
+* 1 rep: `100 kg`
 * 2 reps: `100 kg`
-* 3 reps: `97.5 kg`
-* 5 reps: `90 kg`
-* 8 reps: `85 kg`
-* 10 reps: `80 kg`
+* 3 reps: `100 kg`
+* 4 reps: `100 kg`
+* 5 reps: `100 kg`
 
-A set establishes a new Maximum Weight by Repetitions PR when its weight is greater than the record established by all earlier sets for the exercise with exactly the same number of repetitions.
+It does not qualify for the 6-repetition record or higher.
 
-For example, if the current 5-repetition record is:
+For each repetition count, the record is the maximum weight among all sets containing that number of repetitions or more.
 
-`90 × 5`
+For example, given:
 
-then:
+`100 × 5`  
+`90 × 8`  
+`70 × 10`
 
-`87.5 × 5` does not establish a PR
-`90 × 5` does not establish a PR
-`92.5 × 5` establishes a new 5-repetition PR
+the records are:
 
-A repetition count for which no earlier set exists has no existing record. The first logged set for that repetition count establishes its initial Maximum Weight by Repetitions PR.
+* 1 rep: `100 kg`
+* 2 reps: `100 kg`
+* 3 reps: `100 kg`
+* 4 reps: `100 kg`
+* 5 reps: `100 kg`
+* 6 reps: `90 kg`
+* 7 reps: `90 kg`
+* 8 reps: `90 kg`
+* 9 reps: `70 kg`
+* 10 reps: `70 kg`
+
+A set establishes a new Maximum Weight by Repetitions PR for each repetition count from `1` through the number of repetitions performed for which its weight is greater than the record established by all earlier qualifying sets.
+
+Matching an existing record does not establish a new PR.
+
+As a consequence, Maximum Weight by Repetitions records can never increase as the repetition count increases.
 
 ## PR Detection
 
@@ -543,45 +560,51 @@ The new set is compared with all chronologically earlier sets for the same exerc
 
 A single set may establish:
 
-* only a new Maximum Weight PR
-* only a new Maximum Weight by Repetitions PR
+* a new Maximum Weight PR
+* one or more Maximum Weight by Repetitions PRs
 * both types of PR
 * no PR
 
+For Maximum Weight by Repetitions, a set with `N` repetitions is evaluated against the existing records for repetition counts `1` through `N`.
+
 For example, assume the current records are:
 
-Maximum Weight: `100 × 1`
-5 repetitions: `90 × 5`
+* Maximum Weight: `100 kg`
+* 5 reps: `100 kg`
+* 6 reps: `90 kg`
+* 7 reps: `90 kg`
+* 8 reps: `90 kg`
 
 Logging:
 
-`92.5 × 5`
+`95 × 7`
 
-establishes a new Maximum Weight by Repetitions PR but does not establish a new Maximum Weight PR.
+establishes new Maximum Weight by Repetitions PRs for:
+
+* 6 reps: `95 kg`
+* 7 reps: `95 kg`
+
+It does not establish records for 1–5 reps because the existing `100 kg` records are higher.
+
+It does not affect the 8-repetition record because only 7 repetitions were performed.
 
 Logging:
 
 `105 × 5`
 
-establishes both a new Maximum Weight PR and a new Maximum Weight by Repetitions PR.
+establishes a new Maximum Weight PR and new Maximum Weight by Repetitions PRs for repetition counts 1 through 5.
 
 ## New PR Notification
 
-When a newly logged set establishes a personal record, GymLog immediately shows a prominent, non-blocking in-app notification.
+When a newly logged set establishes one or more personal records, GymLog immediately shows a prominent, non-blocking in-app notification.
 
-The notification identifies the achieved record.
+The notification identifies the achieved record or records.
 
-Examples:
+A single set may establish Maximum Weight by Repetitions records for multiple repetition counts. These achievements are communicated together rather than producing separate notifications.
 
-`New PR: Maximum Weight — 105 kg`
+For example, if `95 × 7` establishes new records for 6 and 7 repetitions, GymLog shows a single PR notification for the logged set.
 
-`New PR: 5 reps — 92.5 kg`
-
-If the same set establishes both record types, both achievements are communicated in a single notification.
-
-For example:
-
-`New PR: Maximum Weight + 5 reps — 105 kg`
+If a set also establishes a new Maximum Weight record, this is included in the same notification.
 
 The notification uses a visually striking orange-accented card with a trophy icon, a clear `NEW PERSONAL RECORD` heading, and the achieved record details. It does not interrupt workout logging.
 
@@ -596,37 +619,17 @@ Every set that establishes a personal record at its chronological position in wo
 A star is shown if the set establishes at least one of:
 
 * a new Maximum Weight PR
-* a new Maximum Weight by Repetitions PR
+* one or more new Maximum Weight by Repetitions PRs
 
-Only one star is shown when a set establishes both record types.
+Only one star is shown when a set establishes both record types or multiple repetition-count records.
 
 The star indicates that the set established a new personal record at that point in the exercise's history. It does not indicate that the set is still the current personal record.
 
-For example, if the chronological progression of 5-repetition sets is:
+A set receives only one star regardless of how many repetition-count records it establishes.
 
-`80 × 5`
-`85 × 5`
-`85 × 5`
-`82.5 × 5`
-`90 × 5`
+For example, if `95 × 7` establishes new records for both 6 and 7 repetitions, the set is displayed as:
 
-they are displayed as:
-
-`80 × 5 ★`
-`85 × 5 ★`
-`85 × 5`
-`82.5 × 5`
-`90 × 5 ★`
-
-The first `80 × 5` establishes the initial 5-repetition record.
-
-The first `85 × 5` improves it.
-
-The second `85 × 5` only matches the existing record and therefore does not receive a star.
-
-The `90 × 5` establishes another new record.
-
-A set receives only one star even if it establishes both PR types.
+`95 × 7 ★`
 
 ## PR Markers in Set Lists
 
@@ -658,6 +661,8 @@ Sets for each exercise are evaluated in chronological order.
 
 For each set, GymLog determines the records established by all earlier sets for that exercise and then determines whether the set establishes a new record.
 
+For a repetition count `N`, its current record is the maximum weight among all sets for the exercise where `reps >= N`.
+
 This makes it possible to reconstruct the PR progression for the exercise and identify every set that established a record at the time it was performed.
 
 ## Editing and Deleting Sets
@@ -672,19 +677,6 @@ This may:
 * remove a PR star from a historical set
 * change the current Maximum Weight record
 * change one or more Maximum Weight by Repetitions records
-
-For example, if the history contains:
-
-`80 × 5 ★`
-`85 × 5 ★`
-`90 × 5 ★`
-
-and `85 × 5` is deleted, the resulting history is:
-
-`80 × 5 ★`
-`90 × 5 ★`
-
-If instead `85 × 5` is edited to `95 × 5`, the PR progression is recalculated according to the new chronological sequence.
 
 Editing or deleting historical sets does not display a new-PR notification. Notifications are shown only when a newly logged set establishes a PR.
 
@@ -703,18 +695,28 @@ Example:
 
 `Maximum Weight    105 × 1`
 
-Maximum Weight by Repetitions lists the current record for every repetition count that exists in the exercise history.
+Maximum Weight by Repetitions lists the highest weight logged for at least each displayed number of repetitions.
 
-For example:
+For example, if the relevant historical sets are:
 
-`1 rep     105 kg`
-`2 reps    100 kg`
-`3 reps     97.5 kg`
-`5 reps     92.5 kg`
-`8 reps     85 kg`
-`10 reps    80 kg`
+`100 × 5`  
+`90 × 8`  
+`70 × 10`
 
-Only repetition counts that have logged sets are displayed.
+the records are displayed as:
+
+`1 rep     100 kg`  
+`2 reps    100 kg`  
+`3 reps    100 kg`  
+`4 reps    100 kg`  
+`5 reps    100 kg`  
+`6 reps     90 kg`  
+`7 reps     90 kg`  
+`8 reps     90 kg`  
+`9 reps     70 kg`  
+`10 reps    70 kg`
+
+Only repetition counts up to the highest number of repetitions represented in the exercise history are displayed.
 
 The records are read-only and are calculated from stored workout sets.
 

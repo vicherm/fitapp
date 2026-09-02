@@ -2,7 +2,7 @@ import type { WorkoutSet } from '../db/types'
 
 export interface PersonalRecordEvent {
   maximumWeight: boolean
-  repetitions: number | null
+  repetitions: number[]
 }
 
 export interface PersonalRecords {
@@ -23,20 +23,24 @@ export function calculatePersonalRecords(sets: WorkoutSet[]): PersonalRecords {
 
   for (const set of chronologicalSets) {
     const isMaximumWeight = maximumWeight === null || set.weight > maximumWeight.weight
-    const previousByRepetitions = byRepetitions.get(set.reps)
-    const isMaximumWeightByRepetitions =
-      previousByRepetitions === undefined || set.weight > previousByRepetitions.weight
+    const newRepetitionRecords: number[] = []
+    for (let repetitions = 1; repetitions <= set.reps; repetitions += 1) {
+      const previousByRepetitions = byRepetitions.get(repetitions)
+      if (previousByRepetitions === undefined || set.weight > previousByRepetitions.weight) {
+        newRepetitionRecords.push(repetitions)
+        byRepetitions.set(repetitions, set)
+      }
+    }
 
     if (set.id !== undefined) {
       events.set(set.id, {
         maximumWeight: isMaximumWeight,
-        repetitions: isMaximumWeightByRepetitions ? set.reps : null,
+        repetitions: newRepetitionRecords,
       })
-      if (isMaximumWeight || isMaximumWeightByRepetitions) markedSetIds.add(set.id)
+      if (isMaximumWeight || newRepetitionRecords.length > 0) markedSetIds.add(set.id)
     }
 
     if (isMaximumWeight) maximumWeight = set
-    if (isMaximumWeightByRepetitions) byRepetitions.set(set.reps, set)
   }
 
   return {
