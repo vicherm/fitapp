@@ -227,8 +227,6 @@ After selecting an exercise, the selection is immediately transferred back to Ac
 
 Numeric input field for the current set weight.
 
-The value is pre-filled using the previous set of the same exercise whenever available.
-
 When the field is selected, its value is cleared so the user can enter a fresh value quickly.
 
 ---
@@ -237,12 +235,39 @@ When the field is selected, its value is cleared so the user can enter a fresh v
 
 Numeric input field for the number of repetitions.
 
-The value is pre-filled using the previous set of the same exercise whenever available.
-
 When the field is selected, its value is cleared so the user can enter a fresh value quickly.
 
 ---
 
+### Previous-Set Prefill
+
+GymLog predicts the weight and repetitions for the next set using the sets from the most recent previous workout containing the selected exercise.
+
+The previous workout is treated as a sequence of sets. GymLog tracks the current position within this sequence and suggests the next set from it.
+
+After a set is logged:
+
+* if the logged weight matches the currently suggested set, GymLog advances to the next set in the previous workout sequence
+* if the logged weight does not match, GymLog searches forward from the current position for the first set with the same weight
+* if a matching set is found, GymLog considers any preceding sets in the sequence skipped and continues with the set following the matched set
+* when the same weight occurs multiple times, the first matching set at or after the current position is used
+* if no matching set is found, GymLog continues from the current position in the previous workout sequence
+
+For example, if the previous workout contains:
+
+`20 × 10 → 40 × 10 → 50 × 10 → 60 × 6 → 60 × 6 → 60 × 6 → 60 × 5 → 50 × 10`
+
+GymLog initially suggests `20 × 10`, followed by `40 × 10`.
+
+If the user skips `40 × 10` and instead logs `50 × 10`, GymLog matches this to the next `50 kg` set in the previous workout sequence and next suggests `60 × 6`.
+
+Sequence matching uses exact weight matches. Repetitions are not used to determine the position within the previous workout sequence. GymLog does not attempt to infer changes in working weight or otherwise modify the historical sequence.
+
+When the end of the previous workout sequence is reached, the weight and repetitions from the most recently logged set of the exercise in the current workout are prefilled.
+
+If there is no previous workout containing the exercise, weight and repetitions are initially empty.
+
+---
 ### Log Button
 
 Stores the entered set.

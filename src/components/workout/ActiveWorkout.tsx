@@ -22,6 +22,14 @@ interface ActiveWorkoutDraft {
   activeField: Field
 }
 
+function advancePrefillPosition(sequence: WorkoutSet[], position: number, weight: number): number | null {
+  if (position >= sequence.length) return position
+  if (sequence[position].weight === weight) return position + 1
+
+  const matchingIndex = sequence.findIndex((set, index) => index >= position && set.weight === weight)
+  return matchingIndex >= 0 ? matchingIndex + 1 : null
+}
+
 function formatWorkoutDate(input: Date): string {
   const year = input.getFullYear()
   const month = String(input.getMonth() + 1).padStart(2, '0')
@@ -46,6 +54,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [previousWorkoutTitles, setPreviousWorkoutTitles] = useState<string[]>(['Previous', 'Previous'])
   const isHydratingDraftRef = useRef(false)
   const skipNextPrefillRef = useRef(false)
+  const previousSequenceRef = useRef<WorkoutSet[]>([])
+  const previousSequencePositionRef = useRef(0)
 
   useEffect(() => {
     db.gyms.orderBy('name').toArray().then(setGyms)
@@ -140,6 +150,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       setCurrentSets([])
       setPreviousWorkoutSets([[], []])
       setPreviousWorkoutTitles(['Previous', 'Previous'])
+      previousSequenceRef.current = []
+      previousSequencePositionRef.current = 0
       return
     }
 
@@ -196,28 +208,42 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           : 'Previous',
       ])
 
+      const previousSequence = previousColumns[0] ?? []
+      let previousSequencePosition = 0
+      let sequenceMatchingStopped = false
+      const currentWorkoutSets = allSets
+        .filter((s) => currentWeIds.has(s.workoutExerciseId))
+        .sort((a, b) => a.setNumber - b.setNumber)
+      for (const currentSet of currentWorkoutSets) {
+        const nextPosition = advancePrefillPosition(
+          previousSequence,
+          previousSequencePosition,
+          currentSet.weight,
+        )
+        if (nextPosition === null) {
+          sequenceMatchingStopped = true
+          break
+        }
+        previousSequencePosition = nextPosition
+      }
+      previousSequenceRef.current = sequenceMatchingStopped ? [] : previousSequence
+      previousSequencePositionRef.current = sequenceMatchingStopped ? 0 : previousSequencePosition
+
       // Avoid overriding restored draft values once after hydration.
       if (skipNextPrefillRef.current) {
         skipNextPrefillRef.current = false
       } else {
-        // Pre-fill from last set of this exercise.
-        const lastSet = [...allSets]
-          .filter((s) => currentWeIds.has(s.workoutExerciseId))
-          .sort((a, b) => b.setNumber - a.setNumber)[0]
-        if (lastSet) {
-          setWeight(String(lastSet.weight))
-          setReps(String(lastSet.reps))
-        } else if (priorWorkoutIds[0]) {
-          const latestPriorWorkoutExerciseIds = weList
-            .filter((we) => we.workoutId === priorWorkoutIds[0])
-            .map((we) => we.id!)
-          const lastPrev = allSets
-            .filter((s) => latestPriorWorkoutExerciseIds.includes(s.workoutExerciseId))
-            .sort((a, b) => b.setNumber - a.setNumber)[0]
-          if (lastPrev) {
-            setWeight(String(lastPrev.weight))
-            setReps(String(lastPrev.reps))
-          }
+        const suggestedSet = previousSequence[previousSequencePosition]
+        if (suggestedSet) {
+          setWeight(String(suggestedSet.weight))
+          setReps(String(suggestedSet.reps))
+        } else if (currentWorkoutSets.length > 0) {
+          const lastCurrentSet = currentWorkoutSets[currentWorkoutSets.length - 1]
+          setWeight(String(lastCurrentSet.weight))
+          setReps(String(lastCurrentSet.reps))
+        } else {
+          setWeight('')
+          setReps('')
         }
       }
     }
@@ -266,7 +292,35 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       timestamp: new Date(),
     })
     const saved = await db.workoutSets.get(id)
-    if (saved) setCurrentSets((prev) => [...prev, saved])
+    if (saved) {
+      setCurrentSets((prev) => [...prev, saved])
+
+      const sequence = previousSequenceRef.current
+      const nextPosition = advancePrefillPosition(
+        sequence,
+        previousSequencePositionRef.current,
+        wNum,
+      )
+
+      if (nextPosition === null) {
+        previousSequenceRef.current = []
+        previousSequencePositionRef.current = 0
+        setWeight(String(wNum))
+        setReps(String(rNum))
+        return
+      }
+
+      previousSequencePositionRef.current = nextPosition
+      const nextSuggestedSet = sequence[nextPosition]
+
+      if (nextSuggestedSet) {
+        setWeight(String(nextSuggestedSet.weight))
+        setReps(String(nextSuggestedSet.reps))
+      } else {
+        setWeight(String(wNum))
+        setReps(String(rNum))
+      }
+    }
   }
 
   function handleInputKey(key: string) {
