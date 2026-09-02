@@ -15,6 +15,8 @@ const WORKOUTS_PER_PAGE = 3
 export interface HistoryViewState {
   displayedYear: number
   displayedMonth: number
+  listAnchorYear?: number
+  listAnchorMonth?: number
   page: number
   selectedDate: string | null
 }
@@ -53,6 +55,11 @@ export default function WorkoutHistoryPage() {
       ? new Date(incomingState.historyView.displayedYear, incomingState.historyView.displayedMonth, 1)
       : new Date(currentMonth.current.getFullYear(), currentMonth.current.getMonth(), 1),
   )
+  const [listMonth, setListMonth] = useState(
+    () => incomingState?.historyView?.listAnchorYear !== undefined && incomingState.historyView.listAnchorMonth !== undefined
+      ? new Date(incomingState.historyView.listAnchorYear, incomingState.historyView.listAnchorMonth, 1)
+      : new Date(currentMonth.current.getFullYear(), currentMonth.current.getMonth(), 1),
+  )
 
   useEffect(() => {
     async function loadWorkoutDates() {
@@ -66,7 +73,7 @@ export default function WorkoutHistoryPage() {
   useEffect(() => {
     async function loadWorkouts() {
       setIsLoading(true)
-      const nextMonthStart = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 1)
+      const nextMonthStart = new Date(listMonth.getFullYear(), listMonth.getMonth() + 1, 1)
       const listEnd = selectedDate
         ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1)
         : nextMonthStart
@@ -106,11 +113,16 @@ export default function WorkoutHistoryPage() {
           .map((workoutExercise) => exerciseNameById.get(workoutExercise.exerciseId) ?? 'Unknown exercise'),
       })))
       setWorkoutCount(count)
+      const firstWorkout = pageWorkouts[0]
+      if (firstWorkout) {
+        const workoutMonth = new Date(firstWorkout.startTime.getFullYear(), firstWorkout.startTime.getMonth(), 1)
+        setDisplayedMonth(workoutMonth)
+      }
       setIsLoading(false)
     }
 
     void loadWorkouts()
-  }, [displayedMonth, page, selectedDate])
+  }, [listMonth, page, selectedDate])
 
   function handleCalendarPointerDown(event: PointerEvent<HTMLElement>) {
     swipeStart.current = { x: event.clientX, y: event.clientY }
@@ -132,6 +144,7 @@ export default function WorkoutHistoryPage() {
       if (nextMonth > latestMonth) return month
       setPage(0)
       setSelectedDate(null)
+      setListMonth(nextMonth)
       return nextMonth
     })
   }
@@ -139,6 +152,7 @@ export default function WorkoutHistoryPage() {
   function handleDateClick(day: number) {
     setPage(0)
     setSelectedDate(new Date(displayedMonth.getFullYear(), displayedMonth.getMonth(), day))
+    setListMonth(displayedMonth)
   }
 
   function handleListPointerDown(event: PointerEvent<HTMLElement>) {
@@ -219,6 +233,8 @@ export default function WorkoutHistoryPage() {
         historyView: {
           displayedYear: displayedMonth.getFullYear(),
           displayedMonth: displayedMonth.getMonth(),
+          listAnchorYear: listMonth.getFullYear(),
+          listAnchorMonth: listMonth.getMonth(),
           page,
           selectedDate: selectedDate?.toISOString() ?? null,
         } satisfies HistoryViewState,

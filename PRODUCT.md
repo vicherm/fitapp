@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.36
+Version: 3.37
 Last Updated: 2026-09-02
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -111,7 +111,7 @@ The More page provides navigation to Body Part Groups, Exercises, and Gyms, plus
 
 ## History
 
-The full-width History screen shows a compact, swipeable calendar above a paginated workout list. Days with workouts are highlighted and the calendar remains visible while viewing workout pages. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. Selecting a calendar date resets the list so it begins with workouts logged on that date. The list is synchronized with the displayed calendar month and resets to that month's first page when the calendar changes; its pagination continues across earlier month boundaries. Workout history is shown three workouts at a time; the list responds to left and right drag gestures, as well as up and down drag gestures, to move between pages. Dragging up moves to older workouts; dragging down moves to newer workouts. Each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order. Clicking anywhere on a workout card opens its Workout Summary page.
+The full-width History screen shows a compact, swipeable calendar above a paginated workout list. Days with workouts are highlighted and the calendar remains visible while viewing workout pages. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. Selecting a calendar date resets the list so it begins with workouts logged on that date. The calendar is synchronized with the list’s initial and current page, showing the month of the newest workout on that page. The list is synchronized with the displayed calendar month and resets to that month's first page when the calendar changes; its pagination continues across earlier month boundaries. Workout history is shown three workouts at a time; the list responds to left and right drag gestures, as well as up and down drag gestures, to move between pages. Dragging up moves to older workouts; dragging down moves to newer workouts. Each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order. Clicking anywhere on a workout card opens its Workout Summary page.
 
 For horizontal list swipes, swiping right moves to older workouts and swiping left moves to newer workouts.
 
