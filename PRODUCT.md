@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.46
+Version: 3.47
 Last Updated: 2026-09-03
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -372,6 +372,7 @@ Top section:
 
 - exercise name is used as the page title
 - exercise name is editable inline
+- exercise name editing displays and preserves the entered upper/lower case letters
 - body part group is shown and editable inline
 - machine flag is shown and editable inline
 - exercise note is shown and editable inline
