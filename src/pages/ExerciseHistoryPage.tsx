@@ -2,7 +2,12 @@ import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'rea
 import { useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
 import type { BodyPartGroup, Exercise, Workout, WorkoutSet } from '../db/types'
-import { calculatePersonalRecords, type PersonalRecords } from '../features/personalRecords'
+import {
+  calculatePersonalRecords,
+  calculatePersonalRecordsByGym,
+  getPersonalRecordGroupKey,
+  type PersonalRecords,
+} from '../features/personalRecords'
 import './ExerciseHistoryPage.css'
 
 interface WorkoutGroup {
@@ -60,7 +65,11 @@ export default function ExerciseHistoryPage() {
   const [exercise, setExercise] = useState<Exercise | null>(null)
   const [groups, setGroups] = useState<WorkoutGroup[]>([])
   const [drafts, setDrafts] = useState<SetDraftMap>({})
-  const [personalRecords, setPersonalRecords] = useState<PersonalRecords>(() => calculatePersonalRecords([]))
+  const [personalRecordsByGym, setPersonalRecordsByGym] = useState<Map<string, PersonalRecords>>(
+    () => new Map([['all', calculatePersonalRecords([])]]),
+  )
+  const [personalRecordGroupKeyBySetId, setPersonalRecordGroupKeyBySetId] = useState<Map<number, string>>(new Map())
+  const [personalRecordGymLabels, setPersonalRecordGymLabels] = useState<Map<string, string>>(new Map())
   const [editingSetId, setEditingSetId] = useState<number | null>(null)
   const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
   const [editingMetaField, setEditingMetaField] = useState<MetaField>(null)
@@ -92,7 +101,8 @@ export default function ExerciseHistoryPage() {
 
     if (workoutExercises.length === 0) {
       setGroups([])
-      setPersonalRecords(calculatePersonalRecords([]))
+      setPersonalRecordsByGym(new Map([['all', calculatePersonalRecords([])]]))
+      setPersonalRecordGroupKeyBySetId(new Map())
       setDrafts({})
       setIsLoading(false)
       return
@@ -100,7 +110,6 @@ export default function ExerciseHistoryPage() {
 
     const workoutExerciseIds = workoutExercises.map((we) => we.id!)
     const allSets = await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).toArray()
-    setPersonalRecords(calculatePersonalRecords(allSets))
 
     const workoutIds = Array.from(new Set(workoutExercises.map((we) => we.workoutId)))
     const workouts = await db.workouts.where('id').anyOf(workoutIds).toArray()
@@ -110,6 +119,25 @@ export default function ExerciseHistoryPage() {
     )
     const gyms = gymIds.length > 0 ? await db.gyms.where('id').anyOf(gymIds).toArray() : []
     const gymById = new Map(gyms.map((gym) => [gym.id!, gym.abbreviation]))
+    const gymIdByWorkoutExerciseId = new Map(
+      workoutExercises.map((workoutExercise) => [workoutExercise.id!, workoutById.get(workoutExercise.workoutId)?.gymId]),
+    )
+    const separateByGym = ex.machine === true
+    setPersonalRecordsByGym(calculatePersonalRecordsByGym(allSets, gymIdByWorkoutExerciseId, separateByGym))
+    setPersonalRecordGroupKeyBySetId(
+      new Map(
+        allSets.map((set) => [
+          set.id!,
+          getPersonalRecordGroupKey(gymIdByWorkoutExerciseId.get(set.workoutExerciseId), separateByGym),
+        ]),
+      ),
+    )
+    setPersonalRecordGymLabels(
+      new Map([
+        ['unknown', 'Unknown gym'],
+        ...gyms.map((gym) => [String(gym.id), gym.name] as [string, string]),
+      ]),
+    )
     const workoutIdByWorkoutExerciseId = new Map(workoutExercises.map((we) => [we.id!, we.workoutId]))
 
     const setsByWorkoutId = new Map<number, WorkoutSet[]>()
@@ -168,7 +196,15 @@ export default function ExerciseHistoryPage() {
       .where('workoutExerciseId')
       .anyOf(workoutExercises.map((entry) => entry.id!))
       .toArray()
-    setPersonalRecords(calculatePersonalRecords(sets))
+    const workouts = await db.workouts.where('id').anyOf(workoutExercises.map((entry) => entry.workoutId)).toArray()
+    const gymIdByWorkoutExerciseId = new Map(
+      workoutExercises.map((entry) => [entry.id!, workouts.find((workout) => workout.id === entry.workoutId)?.gymId]),
+    )
+    setPersonalRecordsByGym(calculatePersonalRecordsByGym(
+      sets,
+      gymIdByWorkoutExerciseId,
+      exercise.machine === true,
+    ))
   }
 
   async function handleExerciseNameChange(event: ChangeEvent<HTMLInputElement>) {
@@ -345,21 +381,24 @@ export default function ExerciseHistoryPage() {
       </section>
 
       <section className="eh-records" aria-label="Current personal records">
-        <h2>Personal Records</h2>
-        {personalRecords.maximumWeight && (
-          <div className="eh-record-row">
-            <span>Maximum Weight</span>
-            <strong>{personalRecords.maximumWeight.weight} × {personalRecords.maximumWeight.reps}</strong>
+        {[...personalRecordsByGym.entries()].map(([groupKey, personalRecords]) => (
+          <div className="eh-record-group" key={groupKey}>
+            {personalRecordsByGym.size > 1 && <h3>{personalRecordGymLabels.get(groupKey) ?? groupKey}</h3>}
+            {personalRecords.maximumWeight && (
+              <div className="eh-record-row">
+                <span>Maximum Weight</span>
+                <strong>{personalRecords.maximumWeight.weight} × {personalRecords.maximumWeight.reps}</strong>
+              </div>
+            )}
+            {summarizePersonalRecords(personalRecords.maximumWeightByRepetitions).map(([repetitions, set]) => (
+              <div className="eh-record-row" key={repetitions}>
+                <span>{repetitions} {repetitions === 1 ? 'rep' : 'reps'}</span>
+                <strong>{set.weight} kg</strong>
+              </div>
+            ))}
+            {!personalRecords.maximumWeight && <p className="eh-empty">No records yet.</p>}
           </div>
-        )}
-        {summarizePersonalRecords(personalRecords.maximumWeightByRepetitions)
-          .map(([repetitions, set]) => (
-            <div className="eh-record-row" key={repetitions}>
-              <span>{repetitions} {repetitions === 1 ? 'rep' : 'reps'}</span>
-              <strong>{set.weight} kg</strong>
-            </div>
-          ))}
-        {!personalRecords.maximumWeight && <p className="eh-empty">No records yet.</p>}
+        ))}
       </section>
 
       <main className="eh-list">
@@ -401,7 +440,7 @@ export default function ExerciseHistoryPage() {
                             onChange={(event) => set.id && void handleRepsChange(set.id, event)}
                             aria-label="Repetitions"
                           />
-                          {personalRecords.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record">★</span>}
+                          {personalRecordsByGym.get(personalRecordGroupKeyBySetId.get(set.id!) ?? 'all')?.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record">★</span>}
                         </div>
                         <span className="eh-time">{formatSetTime(set.timestamp)}</span>
                         <div className="eh-actions">
@@ -429,7 +468,7 @@ export default function ExerciseHistoryPage() {
                       </>
                     ) : (
                       <>
-                        <span className="eh-value-text">{set.weight} × {set.reps}{personalRecords.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}</span>
+                        <span className="eh-value-text">{set.weight} × {set.reps}{personalRecordsByGym.get(personalRecordGroupKeyBySetId.get(set.id!) ?? 'all')?.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}</span>
                         <span className="eh-time">{formatSetTime(set.timestamp)}</span>
                       </>
                     )}

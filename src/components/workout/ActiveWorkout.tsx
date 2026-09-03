@@ -4,7 +4,12 @@ import { db } from '../../db/db'
 import type { Exercise, Gym, WorkoutExercise, WorkoutSet } from '../../db/types'
 import type { WorkoutState } from '../../hooks/useWorkout'
 import NumericKeypad from '../ui/NumericKeypad'
-import { calculatePersonalRecords, type PersonalRecords } from '../../features/personalRecords'
+import {
+  calculatePersonalRecords,
+  calculatePersonalRecordsByGym,
+  getPersonalRecordGroupKey,
+  type PersonalRecords,
+} from '../../features/personalRecords'
 import './ActiveWorkout.css'
 
 interface Props {
@@ -53,7 +58,10 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
   const [previousWorkoutSets, setPreviousWorkoutSets] = useState<WorkoutSet[][]>([[], []])
   const [previousWorkoutTitles, setPreviousWorkoutTitles] = useState<string[]>(['Previous', 'Previous'])
-  const [personalRecords, setPersonalRecords] = useState<PersonalRecords>(() => calculatePersonalRecords([]))
+  const [personalRecordsByGym, setPersonalRecordsByGym] = useState<Map<string, PersonalRecords>>(
+    () => new Map([['all', calculatePersonalRecords([])]]),
+  )
+  const [personalRecordGroupKeyBySetId, setPersonalRecordGroupKeyBySetId] = useState<Map<number, string>>(new Map())
   const [notification, setNotification] = useState<string | null>(null)
   const isHydratingDraftRef = useRef(false)
   const skipNextPrefillRef = useRef(false)
@@ -151,7 +159,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   useEffect(() => {
     if (!exercise?.id || !w?.id) {
       setCurrentSets([])
-      setPersonalRecords(calculatePersonalRecords([]))
+      setPersonalRecordsByGym(new Map([['all', calculatePersonalRecords([])]]))
+      setPersonalRecordGroupKeyBySetId(new Map())
       setPreviousWorkoutSets([[], []])
       setPreviousWorkoutTitles(['Previous', 'Previous'])
       previousSequenceRef.current = []
@@ -167,7 +176,19 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
       const weIds = weList.map((we) => we.id!)
       const allSets = await db.workoutSets.where('workoutExerciseId').anyOf(weIds).toArray()
-      setPersonalRecords(calculatePersonalRecords(allSets))
+      const allWorkouts = await db.workouts.where('id').anyOf(weList.map((entry) => entry.workoutId)).toArray()
+      const workoutById = new Map(allWorkouts.map((workout) => [workout.id!, workout]))
+      const gymIdByWorkoutExerciseId = new Map(
+        weList.map((entry) => [entry.id!, workoutById.get(entry.workoutId)?.gymId]),
+      )
+      const separateByGym = exercise?.machine === true
+      setPersonalRecordsByGym(calculatePersonalRecordsByGym(allSets, gymIdByWorkoutExerciseId, separateByGym))
+      setPersonalRecordGroupKeyBySetId(
+        new Map(allSets.map((set) => [
+          set.id!,
+          getPersonalRecordGroupKey(gymIdByWorkoutExerciseId.get(set.workoutExerciseId), separateByGym),
+        ])),
+      )
 
       const currentWeIds = new Set(
         weList.filter((we) => we.workoutId === w!.id).map((we) => we.id!),
@@ -308,9 +329,20 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         .where('workoutExerciseId')
         .anyOf(exerciseWorkoutExercises.map((entry) => entry.id!))
         .toArray()
-      const nextRecords = calculatePersonalRecords(exerciseSets)
-      setPersonalRecords(nextRecords)
-      const event = nextRecords.events.get(saved.id!)
+      const exerciseWorkouts = await db.workouts.where('id').anyOf(exerciseWorkoutExercises.map((entry) => entry.workoutId)).toArray()
+      const workoutById = new Map(exerciseWorkouts.map((workout) => [workout.id!, workout]))
+      const gymIdByWorkoutExerciseId = new Map(
+        exerciseWorkoutExercises.map((entry) => [entry.id!, workoutById.get(entry.workoutId)?.gymId]),
+      )
+      const separateByGym = exercise!.machine === true
+      const nextRecordsByGym = calculatePersonalRecordsByGym(exerciseSets, gymIdByWorkoutExerciseId, separateByGym)
+      setPersonalRecordsByGym(nextRecordsByGym)
+      setPersonalRecordGroupKeyBySetId(new Map(exerciseSets.map((set) => [
+        set.id!,
+        getPersonalRecordGroupKey(gymIdByWorkoutExerciseId.get(set.workoutExerciseId), separateByGym),
+      ])))
+      const eventGroupKey = getPersonalRecordGroupKey(gymIdByWorkoutExerciseId.get(saved.workoutExerciseId), separateByGym)
+      const event = nextRecordsByGym.get(eventGroupKey)?.events.get(saved.id!)
       if (event && (event.maximumWeight || event.repetitions.length > 0)) {
         const labels = [
           event.maximumWeight ? 'Maximum Weight' : null,
@@ -621,7 +653,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
                 {column.sets.length > 0 ? (
                   column.sets.map((s) => (
                     <p key={s.id}>
-                      {s.weight} × {s.reps}{personalRecords.markedSetIds.has(s.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}
+                      {s.weight} × {s.reps}{personalRecordsByGym.get(personalRecordGroupKeyBySetId.get(s.id!) ?? 'all')?.markedSetIds.has(s.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}
                     </p>
                   ))
                 ) : (

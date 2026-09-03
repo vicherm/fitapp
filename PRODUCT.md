@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.44
-Last Updated: 2026-09-02
+Version: 3.45
+Last Updated: 2026-09-03
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -719,7 +719,9 @@ Personal records are exercise-specific.
 
 Sets from different exercises are never compared with each other.
 
-Records include sets from all workouts and all gyms.
+For non-machine exercises, records include sets from all workouts and all gyms.
+
+For machine exercises, records are calculated separately for each gym. Sets from workouts without a gym assignment are grouped under `Unknown gym`.
 
 Machine and non-machine exercises remain separate because they are represented by separate exercises in GymLog.
 

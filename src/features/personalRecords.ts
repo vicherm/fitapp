@@ -12,6 +12,27 @@ export interface PersonalRecords {
   maximumWeightByRepetitions: Map<number, WorkoutSet>
 }
 
+export function getPersonalRecordGroupKey(gymId: number | undefined, separateByGym: boolean): string {
+  if (!separateByGym) return 'all'
+  return gymId === undefined ? 'unknown' : String(gymId)
+}
+
+export function calculatePersonalRecordsByGym(
+  sets: WorkoutSet[],
+  gymIdByWorkoutExerciseId: Map<number, number | undefined>,
+  separateByGym: boolean,
+): Map<string, PersonalRecords> {
+  const setsByGroup = new Map<string, WorkoutSet[]>()
+  for (const set of sets) {
+    const key = getPersonalRecordGroupKey(gymIdByWorkoutExerciseId.get(set.workoutExerciseId), separateByGym)
+    const groupSets = setsByGroup.get(key) ?? []
+    groupSets.push(set)
+    setsByGroup.set(key, groupSets)
+  }
+
+  return new Map([...setsByGroup.entries()].map(([key, groupSets]) => [key, calculatePersonalRecords(groupSets)]))
+}
+
 /** Derive PR progression from the complete chronological set history. */
 export function calculatePersonalRecords(sets: WorkoutSet[]): PersonalRecords {
   const events = new Map<number, PersonalRecordEvent>()

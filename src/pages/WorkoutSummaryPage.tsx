@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
 import type { BodyPartGroup, Exercise, Gym, Workout, WorkoutSet } from '../db/types'
 import type { HistoryViewState } from './WorkoutHistoryPage'
-import { calculatePersonalRecords } from '../features/personalRecords'
+import { calculatePersonalRecordsByGym, getPersonalRecordGroupKey } from '../features/personalRecords'
 import './WorkoutSummaryPage.css'
 
 interface SummaryExercise {
@@ -74,12 +74,26 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
         .where('workoutExerciseId')
         .anyOf(allExerciseWorkoutExercises.map((entry) => entry.id!))
         .toArray()
+      const allExerciseWorkouts = await db.workouts
+        .where('id')
+        .anyOf(allExerciseWorkoutExercises.map((entry) => entry.workoutId))
+        .toArray()
+      const workoutById = new Map(allExerciseWorkouts.map((entry) => [entry.id!, entry]))
+      const gymIdByWorkoutExerciseId = new Map(
+        allExerciseWorkoutExercises.map((entry) => [entry.id!, workoutById.get(entry.workoutId)?.gymId]),
+      )
+      const recordsByGym = calculatePersonalRecordsByGym(
+        allExerciseSets,
+        gymIdByWorkoutExerciseId,
+        exercise?.machine === true,
+      )
+      const currentGroupKey = getPersonalRecordGroupKey(workout.gymId, exercise?.machine === true)
 
       return {
         bodyPartName: exercise ? groupById.get(exercise.bodyPartGroupId)?.name ?? 'Unassigned' : 'Unknown',
         exerciseName: exercise?.name ?? 'Unknown exercise',
         sets,
-        markedSetIds: calculatePersonalRecords(allExerciseSets).markedSetIds,
+        markedSetIds: recordsByGym.get(currentGroupKey)?.markedSetIds ?? new Set(),
       }
     }),
   )
