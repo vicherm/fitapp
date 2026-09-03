@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.45
+Version: 3.46
 Last Updated: 2026-09-03
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -196,7 +196,7 @@ The Active Workout screen does not include a manual Finish Workout button.
 
 The screen includes a direct Home link.
 
-A gym must be assigned before workout logging begins. GymLog first attempts to detect and assign a gym automatically. If no gym is detected, the user must select an existing gym or create a new one.
+A gym must be assigned before workout logging begins. When starting a new workout, GymLog preselects the nearest configured gym within the detection radius using the device GPS position. If GPS is unavailable or no configured gym is within the radius, GymLog preselects the gym used by the most recent previous workout when one exists. The user can change the preselected gym or create a new one.
 
 The selected gym abbreviation is shown at the top of the Active Workout screen as plain muted gray text (non-interactive).
 
@@ -461,6 +461,8 @@ calculate distance.
 If distance <= configured global radius
 
 select nearest gym automatically.
+
+When GPS detection is unavailable or no gym matches the configured radius, preselect the gym from the most recent previous workout if one exists.
 
 Otherwise, the user can
 - choose existing gym

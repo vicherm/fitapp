@@ -43,6 +43,16 @@ function formatWorkoutDate(input: Date): string {
   return `${year}-${month}-${day}`
 }
 
+function distanceInMetres(latitude1: number, longitude1: number, latitude2: number, longitude2: number): number {
+  const earthRadius = 6371000
+  const latitudeDelta = (latitude2 - latitude1) * Math.PI / 180
+  const longitudeDelta = (longitude2 - longitude1) * Math.PI / 180
+  const a = Math.sin(latitudeDelta / 2) ** 2
+    + Math.cos(latitude1 * Math.PI / 180) * Math.cos(latitude2 * Math.PI / 180)
+      * Math.sin(longitudeDelta / 2) ** 2
+  return 2 * earthRadius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const navigate = useNavigate()
   const { workout: w, isLoading, startWorkout, assignGymToWorkout } = workout
@@ -71,6 +81,58 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   useEffect(() => {
     db.gyms.orderBy('name').toArray().then(setGyms)
   }, [])
+
+  useEffect(() => {
+    if (isLoading || w?.id || gyms.length === 0) return
+
+    let isActive = true
+
+    async function prefillGym(previousGymId?: number) {
+      const settings = await db.settings.toArray()
+      const radius = settings[0]?.gymDetectionRadius ?? 200
+
+      const applyPreviousGym = () => {
+        if (isActive) setSelectedGymId(previousGymId ?? '')
+      }
+
+      if (!navigator.geolocation) {
+        applyPreviousGym()
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          if (!isActive) return
+          const nearestGym = gyms
+            .map((gym) => ({
+              gym,
+              distance: distanceInMetres(
+                position.coords.latitude,
+                position.coords.longitude,
+                gym.latitude,
+                gym.longitude,
+              ),
+            }))
+            .filter(({ distance }) => distance <= radius)
+            .sort((left, right) => left.distance - right.distance)[0]
+          setSelectedGymId(nearestGym?.gym.id ?? previousGymId ?? '')
+        },
+        applyPreviousGym,
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+      )
+    }
+
+    db.workouts
+      .orderBy('startTime')
+      .reverse()
+      .filter((workout) => typeof workout.gymId === 'number')
+      .first()
+      .then((previousWorkout) => prefillGym(previousWorkout?.gymId))
+
+    return () => {
+      isActive = false
+    }
+  }, [gyms, isLoading, w?.id])
 
   useEffect(() => {
     if (!w?.id) {
