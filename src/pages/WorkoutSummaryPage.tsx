@@ -124,7 +124,9 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
 export default function WorkoutSummaryPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const historyView = (location.state as { historyView?: HistoryViewState } | null)?.historyView
+  const summaryState = location.state as { historyView?: HistoryViewState; returnToActiveWorkout?: boolean } | null
+  const historyView = summaryState?.historyView
+  const returnToActiveWorkout = summaryState?.returnToActiveWorkout === true
   const { id } = useParams<{ id: string }>()
   const workoutId = Number(id)
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
@@ -149,8 +151,8 @@ export default function WorkoutSummaryPage() {
       <main className="ws ws-empty-page">
         <button
           className="ws-back"
-          onClick={() => navigate('/history', { state: { historyView } })}
-          aria-label="Back to History"
+          onClick={() => navigate(returnToActiveWorkout ? '/' : '/history', { state: { historyView } })}
+          aria-label={returnToActiveWorkout ? 'Back to Active Workout' : 'Back to History'}
         >
           ←
         </button>
@@ -173,8 +175,8 @@ export default function WorkoutSummaryPage() {
       <header className="ws-header">
         <button
           className="ws-back"
-          onClick={() => navigate('/history', { state: { historyView } })}
-          aria-label="Back to History"
+          onClick={() => navigate(returnToActiveWorkout ? '/' : '/history', { state: { historyView } })}
+          aria-label={returnToActiveWorkout ? 'Back to Active Workout' : 'Back to History'}
         >
           ←
         </button>

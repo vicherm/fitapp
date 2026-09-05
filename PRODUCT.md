@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.58
+Version: 3.59
 Last Updated: 2026-09-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -133,7 +133,7 @@ For horizontal list swipes, swiping right moves to older workouts and swiping le
 ## Workout Summary
 
 The compact Workout Summary page is opened by clicking anywhere on a workout card in the History list. Returning to History
-restores the same calendar month, selected date, and workout-list position.
+restores the same calendar month, selected date, and workout-list position. Active Workout provides a Today action that opens the current workout's summary; its back action returns to Active Workout.
 
 Its header shows the workout date, gym name, start time, and duration from workout start to the latest logged set. Below the header, exercises are listed by their earliest logged set, first to last;
  each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values with each set's local time, on separate rows.
@@ -200,7 +200,7 @@ A gym must be assigned before workout logging begins. When starting a new workou
 
 The selected gym abbreviation is shown at the top left of the Active Workout screen. Tapping it opens a gym selector so the gym assigned to the active workout can be corrected without leaving the screen.
 
-When an exercise is selected, the screen provides access to Exercise Details. Exercise Details allows the exercise name, body part group, note, and Machine setting to be corrected. While editing a logged set, its time and personal-record marker are hidden, and a correction control beside Done and Delete opens the existing exercise selection screen to choose a different exercise for that set. When the target exercise already has sets in that workout, the sets are combined in recorded-time order.
+The Today action at the top of Active Workout opens the current workout's summary. Exercise Details allows the exercise name, body part group, note, and Machine setting to be corrected. While editing a logged set, its time and personal-record marker are hidden, and a correction control beside Done and Delete opens the existing exercise selection screen to choose a different exercise for that set. When the target exercise already has sets in that workout, the sets are combined in recorded-time order.
 
 In Exercise Details, each workout header shows workout date and gym abbreviation, with abbreviation right-aligned in the same typography as the date.
 

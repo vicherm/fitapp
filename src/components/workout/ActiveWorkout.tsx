@@ -685,12 +685,13 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
             {selectedGymAbbreviation}
           </button>
         )}
-        {exercise?.id && (
+        {w.id && (
           <Link
             className="aw-history-link"
-            to={`/exercises/${exercise.id}`}
+            to={`/history/${w.id}`}
+            state={{ returnToActiveWorkout: true }}
           >
-            Details
+            Today
           </Link>
         )}
         <Link className="aw-home-link" to="/home">
