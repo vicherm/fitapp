@@ -65,6 +65,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [gyms, setGyms] = useState<Gym[]>([])
   const [selectedGymId, setSelectedGymId] = useState<number | ''>('')
   const [selectedGymAbbreviation, setSelectedGymAbbreviation] = useState('')
+  const [isGymPickerOpen, setIsGymPickerOpen] = useState(false)
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
   const [previousWorkoutSets, setPreviousWorkoutSets] = useState<WorkoutSet[][]>([[], []])
   const [previousWorkoutTitles, setPreviousWorkoutTitles] = useState<string[]>(['Previous', 'Previous'])
@@ -516,6 +517,17 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     setReps('')
   }
 
+  function handleGymChange(gymId: number) {
+    if (!w?.id || gymId === w.gymId) {
+      setIsGymPickerOpen(false)
+      return
+    }
+
+    void assignGymToWorkout(w.id, gymId).then(() => {
+      setIsGymPickerOpen(false)
+    })
+  }
+
   if (isLoading) return <div className="aw-loading">Loading…</div>
 
   if (!w) {
@@ -644,7 +656,17 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         </div>
       )}
       <div className="aw-top-row">
-        {selectedGymAbbreviation && <span className="aw-gym-badge">{selectedGymAbbreviation}</span>}
+        {selectedGymAbbreviation && (
+          <button
+            className="aw-gym-badge"
+            type="button"
+            onClick={() => setIsGymPickerOpen((isOpen) => !isOpen)}
+            aria-expanded={isGymPickerOpen}
+            aria-controls="aw-active-gym-select"
+          >
+            {selectedGymAbbreviation}
+          </button>
+        )}
         {exercise?.id && (
           <Link
             className="aw-history-link"
@@ -657,6 +679,23 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           Home
         </Link>
       </div>
+
+      {isGymPickerOpen && (
+        <label className="aw-active-gym-picker" htmlFor="aw-active-gym-select">
+          Gym
+          <select
+            id="aw-active-gym-select"
+            value={w.gymId}
+            onChange={(event) => handleGymChange(Number.parseInt(event.target.value, 10))}
+          >
+            {gyms.map((gym) => (
+              <option key={gym.id} value={gym.id}>
+                {gym.abbreviation} {gym.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {/* Exercise selector */}
       <button

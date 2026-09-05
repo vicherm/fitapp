@@ -131,13 +131,49 @@
 }
 
 .aw-gym-badge {
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--text);
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   user-select: none;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.aw-gym-badge:hover,
+.aw-gym-badge:focus-visible {
+  color: var(--text-h);
+  outline: none;
+}
+
+.aw-active-gym-picker {
+  display: grid;
+  gap: 4px;
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aw-active-gym-picker select {
+  width: min(340px, 100%);
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-h);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.aw-active-gym-picker select:focus {
+  border-color: var(--accent);
+  outline: none;
 }
 
 .aw-home-link {

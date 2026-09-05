@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-09-03T08:55:16.661Z",
+  "data": {
+    "settings": [
+      {
+        "gymDetectionRadius": 200,
+        "theme": "dark",
+        "id": 1
+      }
+    ],
+    "bodyPartGroups": [
+      {
+        "name": "Legs",
+        "id": 1
+      },
+      {
+        "name": "Biceps",
+        "id": 2
+      },
+      {
+        "name": "Chest",
+        "id": 3
+      },
+      {
+        "name": "Back",
+        "id": 4
+      },
+      {
+        "name": "Shoulders",
+        "id": 5
+      },
+      {
+        "name": "Triceps",
+        "id": 6
+      },
+      {
+        "name": "Extensors",
+        "id": 7
+      },
+      {
+        "name": "Full body",
+        "id": 8
+      }
+    ],
+    "exercises": [
+      {
+        "name": "Squat",
+        "bodyPartGroupId": 1,
+        "machine": false,
+        "id": 1
+      },
+      {
+        "name": "Bench press",
+        "bodyPartGroupId": 3,
+        "machine": false,
+        "id": 2
+      },
+      {
+        "name": "Military Press",
+        "bodyPartGroupId": 5,
+        "machine": false,
+        "id": 3
+      }
+    ],
+    "gyms": [
+      {
+        "name": "CGI",
+        "abbreviation": "CGI",
+        "latitude": 50.048041,
+        "longitude": 14.304391,
+        "id": 1
+      }
+    ],
+    "workouts": [
+      {
+        "startTime": "2026-09-03T08:34:28.167Z",
+        "gymId": 1,
+        "id": 1
+      }
+    ],
+    "workoutExercises": [
+      {
+        "workoutId": 1,
+        "exerciseId": 2,
+        "order": 0,
+        "id": 1
+      }
+    ],
+    "workoutSets": []
+  }
+}

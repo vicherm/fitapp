@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.47
-Last Updated: 2026-09-03
+Version: 3.48
+Last Updated: 2026-09-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -198,7 +198,7 @@ The screen includes a direct Home link.
 
 A gym must be assigned before workout logging begins. When starting a new workout, GymLog preselects the nearest configured gym within the detection radius using the device GPS position. If GPS is unavailable or no configured gym is within the radius, GymLog preselects the gym used by the most recent previous workout when one exists. The user can change the preselected gym or create a new one.
 
-The selected gym abbreviation is shown at the top of the Active Workout screen as plain muted gray text (non-interactive).
+The selected gym abbreviation is shown at the top left of the Active Workout screen. Tapping it opens a gym selector so the gym assigned to the active workout can be corrected without leaving the screen.
 
 When an exercise is selected, the screen provides access to Exercise Details.
 
