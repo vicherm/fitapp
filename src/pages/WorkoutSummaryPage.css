@@ -129,7 +129,17 @@
 }
 
 .ws-set-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
   min-height: 1.15em;
+}
+
+.ws-set-row time {
+  flex: 0 0 auto;
+  color: var(--text);
+  font-size: 0.8rem;
 }
 
 .pr-star {

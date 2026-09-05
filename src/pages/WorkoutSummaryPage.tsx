@@ -97,9 +97,28 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
         markedSetIds: recordsByGym.get(currentGroupKey)?.markedSetIds ?? new Set(),
       }
     }),
-  )).filter((exercise) => exercise.sets.length > 0)
+  ))
+    .filter((exercise) => exercise.sets.length > 0)
+    .sort((left, right) => {
+      const leftFirstSetTime = Math.min(...left.sets.map((set) => set.timestamp.getTime()))
+      const rightFirstSetTime = Math.min(...right.sets.map((set) => set.timestamp.getTime()))
+      return leftFirstSetTime - rightFirstSetTime || left.exerciseName.localeCompare(right.exerciseName)
+    })
 
-  return { workout, gym: gym ?? null, exercises: summaryExercises }
+  const firstSetTime = summaryExercises
+    .flatMap((exercise) => exercise.sets)
+    .reduce<Date | undefined>(
+      (earliest, set) => (!earliest || set.timestamp < earliest ? set.timestamp : earliest),
+      undefined,
+    )
+  const correctedWorkout = firstSetTime && workout.startTime.getTime() !== firstSetTime.getTime()
+    ? { ...workout, startTime: firstSetTime }
+    : workout
+  if (correctedWorkout !== workout) {
+    await db.workouts.update(workoutId, { startTime: firstSetTime })
+  }
+
+  return { workout: correctedWorkout, gym: gym ?? null, exercises: summaryExercises }
 }
 
 export default function WorkoutSummaryPage() {
@@ -193,7 +212,8 @@ export default function WorkoutSummaryPage() {
               <div className="ws-sets">
                 {exercise.sets.map((set) => (
                   <div className="ws-set-row" key={set.id}>
-                    {set.weight} kg × {set.reps}{exercise.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}
+                    <span>{set.weight} kg × {set.reps}{exercise.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}</span>
+                    <time dateTime={set.timestamp.toISOString()}>{formatTime(set.timestamp)}</time>
                   </div>
                 ))}
               </div>

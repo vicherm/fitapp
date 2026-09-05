@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.53
+Version: 3.57
 Last Updated: 2026-09-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -93,7 +93,7 @@ Log Sets
 
 ↓
 
-The workout automatically finishes when the calendar day ends. The timestamp of the last logged set is considered the workout end time.
+The workout automatically finishes when the calendar day ends. The timestamp of the first logged set is considered the workout start time, and the timestamp of the last logged set is considered the workout end time. When viewing an older workout summary, GymLog corrects its stored start time to the earliest logged set when needed.
 
 Only one workout can be active at a time. If a workout already exists for the current calendar day, opening Active Workout resumes that workout.
 
@@ -135,8 +135,8 @@ For horizontal list swipes, swiping right moves to older workouts and swiping le
 The compact Workout Summary page is opened by clicking anywhere on a workout card in the History list. Returning to History
 restores the same calendar month, selected date, and workout-list position.
 
-Its header shows the workout date, gym name, start time, and duration from workout start to the latest logged set. Below the header, exercises are listed in recorded order;
- each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values, with each set on a separate row.
+Its header shows the workout date, gym name, start time, and duration from workout start to the latest logged set. Below the header, exercises are listed by their earliest logged set, first to last;
+ each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values with each set's local time, on separate rows.
 
 ## Exercise Management
 Exercises from More opens an Exercise Management screen where the user can:

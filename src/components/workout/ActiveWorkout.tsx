@@ -382,14 +382,22 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     }
     if (!activeWorkoutExercise?.id) return
 
+    const loggedAt = new Date()
+    const workoutExercises = await db.workoutExercises.where('workoutId').equals(w.id).toArray()
+    const workoutExerciseIds = workoutExercises.map((entry) => entry.id!)
+    const hasLoggedSet = workoutExerciseIds.length > 0
+      && await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).count() > 0
     const setNumber = currentSets.length + 1
     const id = await db.workoutSets.add({
       workoutExerciseId: activeWorkoutExercise.id,
       setNumber,
       weight: wNum,
       reps: rNum,
-      timestamp: new Date(),
+      timestamp: loggedAt,
     })
+    if (!hasLoggedSet) {
+      await db.workouts.update(w.id, { startTime: loggedAt })
+    }
     const saved = await db.workoutSets.get(id)
     if (saved) {
       setCurrentSets((prev) => [...prev, saved])
