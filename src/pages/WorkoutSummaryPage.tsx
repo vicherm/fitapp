@@ -44,9 +44,9 @@ function formatDuration(startTime: Date, endTime?: Date): string {
 }
 
 async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
+  await removeEmptyWorkoutExercises(workoutId)
   const workout = await db.workouts.get(workoutId)
   if (!workout) return null
-  await removeEmptyWorkoutExercises(workoutId)
 
   const [gym, workoutExercises] = await Promise.all([
     workout.gymId ? db.gyms.get(workout.gymId) : Promise.resolve(undefined),

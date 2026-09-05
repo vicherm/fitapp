@@ -87,6 +87,18 @@ async function removeEmptyWorkoutExercises(workoutId?: number): Promise<void> {
       .filter((entry) => !workoutExerciseIdsWithSets.has(entry.id!))
       .map((entry) => entry.id!),
   )
+
+  if (workoutId !== undefined) {
+    const remainingExercises = await db.workoutExercises.where('workoutId').equals(workoutId).count()
+    if (remainingExercises === 0) await db.workouts.delete(workoutId)
+    return
+  }
+
+  const workoutIdsWithExercises = new Set((await db.workoutExercises.toArray()).map((entry) => entry.workoutId))
+  const emptyWorkoutIds = (await db.workouts.toArray())
+    .filter((workout) => !workoutIdsWithExercises.has(workout.id!))
+    .map((workout) => workout.id!)
+  await db.workouts.bulkDelete(emptyWorkoutIds)
 }
 
 export { db, removeEmptyWorkoutExercises }
