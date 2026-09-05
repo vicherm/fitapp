@@ -164,6 +164,23 @@
   font-weight: inherit;
 }
 
+.eh-correct-exercise {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.66rem;
+  cursor: pointer;
+}
+
+.eh-correct-exercise:hover,
+.eh-correct-exercise:focus-visible {
+  color: var(--text-h);
+  border-color: var(--accent);
+}
+
 .eh-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -176,7 +193,7 @@
 }
 
 .eh-row.is-editing {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .eh-row:not(.is-editing) {
@@ -268,6 +285,9 @@
 
 .eh-actions {
   display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
 }
 
@@ -303,8 +323,8 @@
   }
 
   .eh-row.is-editing {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: 'values time delete';
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'values delete';
   }
 
   .eh-value-edit {

@@ -12,6 +12,11 @@ interface ExerciseGroup {
 interface Props {
   workoutId?: number
   currentExerciseId?: number
+  correction?: {
+    sourceExerciseId: number
+    workoutId: number
+    setId: number
+  }
 }
 
 const HOT_PICK_RECENT_COUNT = 3
@@ -80,7 +85,7 @@ async function computeHotPicks(workoutId?: number, currentExerciseId?: number): 
   return picks
 }
 
-export default function ExerciseSelector({ workoutId, currentExerciseId }: Props) {
+export default function ExerciseSelector({ workoutId, currentExerciseId, correction }: Props) {
   const navigate = useNavigate()
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
@@ -132,6 +137,12 @@ export default function ExerciseSelector({ workoutId, currentExerciseId }: Props
   }
 
   function selectExercise(exercise: Exercise) {
+    if (correction) {
+      navigate(`/exercises/${correction.sourceExerciseId}`, {
+        state: { correction: { ...correction, targetExerciseId: exercise.id } },
+      })
+      return
+    }
     navigate('/', { state: { selectedExercise: exercise } })
   }
 

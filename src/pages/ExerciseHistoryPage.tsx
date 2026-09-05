@@ -1,5 +1,5 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
 import type { BodyPartGroup, Exercise, Workout, WorkoutSet } from '../db/types'
 import {
@@ -18,6 +18,12 @@ interface WorkoutGroup {
 
 type SetDraftMap = Record<number, { weight: string; reps: string }>
 type MetaField = 'name' | 'bodyPartGroupId' | 'notes' | null
+interface SetCorrection {
+  sourceExerciseId: number
+  workoutId: number
+  setId: number
+  targetExerciseId?: number
+}
 
 function summarizePersonalRecords(records: Map<number, WorkoutSet>): Array<[number, WorkoutSet]> {
   const entries = [...records.entries()].sort(([left], [right]) => left - right)
@@ -58,6 +64,7 @@ function parseRepsInput(value: string): number | null {
 
 export default function ExerciseHistoryPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams<{ id: string }>()
 
   const exerciseId = useMemo(() => Number(id), [id])
@@ -278,6 +285,64 @@ export default function ExerciseHistoryPage() {
     await loadHistory()
   }
 
+  async function handleCorrectExercise(workoutId: number, setId: number, exerciseId: number) {
+    if (!exercise?.id || exerciseId === exercise.id) {
+      return
+    }
+
+    await db.transaction('rw', db.workoutExercises, db.workoutSets, async () => {
+      const set = await db.workoutSets.get(setId)
+      if (!set) return
+      const workoutExercises = await db.workoutExercises
+        .where('workoutId')
+        .equals(workoutId)
+        .toArray()
+      const sourceWorkoutExercise = workoutExercises.find((workoutExercise) => workoutExercise.id === set.workoutExerciseId)
+      if (!sourceWorkoutExercise) return
+
+      let targetWorkoutExercise = workoutExercises.find((workoutExercise) => workoutExercise.exerciseId === exerciseId)
+      if (!targetWorkoutExercise) {
+        const order = Math.max(-1, ...workoutExercises.map((workoutExercise) => workoutExercise.order)) + 1
+        const targetWorkoutExerciseId = await db.workoutExercises.add({
+          workoutId,
+          exerciseId,
+          order,
+        })
+        targetWorkoutExercise = await db.workoutExercises.get(targetWorkoutExerciseId)
+      }
+      if (!targetWorkoutExercise) return
+
+      await db.workoutSets.update(set.id!, { workoutExerciseId: targetWorkoutExercise.id! })
+
+      const targetSets = await db.workoutSets.where('workoutExerciseId').equals(targetWorkoutExercise.id!).toArray()
+      await db.workoutSets.bulkPut(targetSets
+        .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
+        .map((set, index) => ({
+          ...set,
+          setNumber: index + 1,
+        })))
+
+      const remainingSourceSets = await db.workoutSets.where('workoutExerciseId').equals(sourceWorkoutExercise.id!).toArray()
+      if (remainingSourceSets.length === 0) {
+        await db.workoutExercises.delete(sourceWorkoutExercise.id!)
+        return
+      }
+      await db.workoutSets.bulkPut(remainingSourceSets
+        .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
+        .map((sourceSet, index) => ({ ...sourceSet, setNumber: index + 1 })))
+    })
+
+    await loadHistory()
+  }
+
+  const correction = location.state?.correction as SetCorrection | undefined
+  useEffect(() => {
+    if (isLoading || !correction?.targetExerciseId || correction.sourceExerciseId !== exerciseId) return
+
+    navigate(location.pathname, { replace: true })
+    void handleCorrectExercise(correction.workoutId, correction.setId, correction.targetExerciseId)
+  }, [correction, exerciseId, isLoading, location.pathname, navigate]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (isLoading) {
     return <div className="eh-loading">Loading…</div>
   }
@@ -372,7 +437,7 @@ export default function ExerciseHistoryPage() {
                 if (!exercise?.id) return
                 const machine = event.target.checked
                 void db.exercises.update(exercise.id, { machine })
-                setExercise((prev) => (prev ? { ...prev, machine } : prev))
+                setExercise((previous) => (previous ? { ...previous, machine } : previous))
               }}
             />
             {exercise?.machine === true ? 'Yes' : 'No'}
@@ -440,9 +505,7 @@ export default function ExerciseHistoryPage() {
                             onChange={(event) => set.id && void handleRepsChange(set.id, event)}
                             aria-label="Repetitions"
                           />
-                          {personalRecordsByGym.get(personalRecordGroupKeyBySetId.get(set.id!) ?? 'all')?.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record">★</span>}
                         </div>
-                        <span className="eh-time">{formatSetTime(set.timestamp)}</span>
                         <div className="eh-actions">
                           <button
                             className="eh-done"
@@ -453,6 +516,24 @@ export default function ExerciseHistoryPage() {
                             aria-label="Done editing set"
                           >
                             Done
+                          </button>
+                          <button
+                            className="eh-correct-exercise"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              navigate('/exercises', {
+                                state: {
+                                  correction: {
+                                    sourceExerciseId: exercise!.id!,
+                                    workoutId: group.workout.id!,
+                                    setId: set.id!,
+                                  } satisfies SetCorrection,
+                                },
+                              })
+                            }}
+                          >
+                            Correct exercise
                           </button>
                           <button
                             className="eh-delete"

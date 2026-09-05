@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.48
+Version: 3.52
 Last Updated: 2026-09-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -200,7 +200,7 @@ A gym must be assigned before workout logging begins. When starting a new workou
 
 The selected gym abbreviation is shown at the top left of the Active Workout screen. Tapping it opens a gym selector so the gym assigned to the active workout can be corrected without leaving the screen.
 
-When an exercise is selected, the screen provides access to Exercise Details.
+When an exercise is selected, the screen provides access to Exercise Details. Exercise Details allows the exercise name, body part group, note, and Machine setting to be corrected. While editing a logged set, its time and personal-record marker are hidden, and a correction control beside Done and Delete opens the existing exercise selection screen to choose a different exercise for that set. When the target exercise already has sets in that workout, the sets are combined in recorded-time order.
 
 In Exercise Details, each workout header shows workout date and gym abbreviation, with abbreviation right-aligned in the same typography as the date.
 
@@ -374,7 +374,7 @@ Top section:
 - exercise name is editable inline
 - exercise name editing displays and preserves the entered upper/lower case letters
 - body part group is shown and editable inline
-- machine flag is shown and editable inline
+- Machine is shown as an inline checkbox with a Yes/No value
 - exercise note is shown and editable inline
 
 The screen lists all sets for that exercise, including the current workout, grouped by workout.
@@ -383,6 +383,7 @@ For each set, one row displays:
 
 - `kg × reps`
 - set time (`HH:MM`)
+- a personal-record star when applicable
 
 `kg × reps` and time are shown on the same row.
 
@@ -393,7 +394,10 @@ Set editing:
 - `kg` and `reps` are editable inline in editing mode
 - when edit mode opens, focus starts in the `kg` input
 - changes are saved automatically (no explicit Save button)
-- a set can be deleted directly from the row
+- the set time and personal-record star are hidden while editing
+- Done and Delete actions are available directly in the row
+- Correct exercise beside Done and Delete opens Exercise Selection; choosing an exercise returns to Exercise Details and reassigns only that set
+- when the target exercise already has sets in the same workout, the moved set is combined with them in recorded-time order
 
 Workouts are ordered with the most recent on top.
 
