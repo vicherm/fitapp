@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { db } from '../db/db'
+import { db, removeEmptyWorkoutExercises } from '../db/db'
 import type { BodyPartGroup, Exercise, Gym, Workout, WorkoutSet } from '../db/types'
 import type { HistoryViewState } from './WorkoutHistoryPage'
 import { calculatePersonalRecordsByGym, getPersonalRecordGroupKey } from '../features/personalRecords'
@@ -46,6 +46,7 @@ function formatDuration(startTime: Date, endTime?: Date): string {
 async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
   const workout = await db.workouts.get(workoutId)
   if (!workout) return null
+  await removeEmptyWorkoutExercises(workoutId)
 
   const [gym, workoutExercises] = await Promise.all([
     workout.gymId ? db.gyms.get(workout.gymId) : Promise.resolve(undefined),
@@ -59,7 +60,7 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
   const exerciseById = new Map<number, Exercise>(exercises.map((exercise) => [exercise.id!, exercise]))
   const groupById = new Map<number, BodyPartGroup>(groups.map((group) => [group.id!, group]))
 
-  const summaryExercises = await Promise.all(
+  const summaryExercises = (await Promise.all(
     orderedWorkoutExercises.map(async (workoutExercise) => {
       const exercise = exerciseById.get(workoutExercise.exerciseId)
       const sets = await db.workoutSets
@@ -96,7 +97,7 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
         markedSetIds: recordsByGym.get(currentGroupKey)?.markedSetIds ?? new Set(),
       }
     }),
-  )
+  )).filter((exercise) => exercise.sets.length > 0)
 
   return { workout, gym: gym ?? null, exercises: summaryExercises }
 }
@@ -140,7 +141,8 @@ export default function WorkoutSummaryPage() {
   }
 
   const { workout } = summary
-  const lastSetTime = summary.exercises
+  const exercisesWithSets = summary.exercises.filter((exercise) => exercise.sets.length > 0)
+  const lastSetTime = exercisesWithSets
     .flatMap((exercise) => exercise.sets)
     .reduce<Date | undefined>(
       (latest, set) => (!latest || set.timestamp > latest ? set.timestamp : latest),
@@ -179,25 +181,21 @@ export default function WorkoutSummaryPage() {
       </section>
 
       <section className="ws-exercises" aria-label="Exercises">
-        {summary.exercises.length === 0 ? (
+        {exercisesWithSets.length === 0 ? (
           <p className="ws-no-exercises">No exercises logged.</p>
         ) : (
-          summary.exercises.map((exercise, index) => (
+          exercisesWithSets.map((exercise, index) => (
             <article className="ws-exercise" key={`${exercise.exerciseName}-${index}`}>
               <div className="ws-exercise-heading">
                 <span className="ws-body-part">{exercise.bodyPartName}</span>
                 <h2>{exercise.exerciseName}</h2>
               </div>
               <div className="ws-sets">
-                {exercise.sets.length > 0 ? (
-                  exercise.sets.map((set) => (
-                    <div className="ws-set-row" key={set.id}>
-                      {set.weight} kg × {set.reps}{exercise.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}
-                    </div>
-                  ))
-                ) : (
-                  <div className="ws-set-row">No sets logged</div>
-                )}
+                {exercise.sets.map((set) => (
+                  <div className="ws-set-row" key={set.id}>
+                    {set.weight} kg × {set.reps}{exercise.markedSetIds.has(set.id!) && <span className="pr-star" aria-label="Personal record"> ★</span>}
+                  </div>
+                ))}
               </div>
             </article>
           ))

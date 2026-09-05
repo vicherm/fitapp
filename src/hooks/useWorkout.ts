@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { db } from '../db/db'
+import { db, removeEmptyWorkoutExercises } from '../db/db'
 import type { Workout } from '../db/types'
 
 export interface WorkoutState {
@@ -23,6 +23,8 @@ export default function useWorkout(): WorkoutState {
 
   useEffect(() => {
     async function loadWorkout() {
+      await removeEmptyWorkoutExercises()
+
       const now = new Date()
       const openWorkouts = await db.workouts
         .filter((candidate) => !candidate.endTime)

@@ -73,4 +73,20 @@ db.on('populate', async () => {
   await db.settings.add({ gymDetectionRadius: 200, theme: 'dark' })
 })
 
-export { db }
+async function removeEmptyWorkoutExercises(workoutId?: number): Promise<void> {
+  const workoutExercises = workoutId === undefined
+    ? await db.workoutExercises.toArray()
+    : await db.workoutExercises.where('workoutId').equals(workoutId).toArray()
+  if (workoutExercises.length === 0) return
+
+  const workoutExerciseIds = workoutExercises.map((entry) => entry.id!)
+  const workoutSets = await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).toArray()
+  const workoutExerciseIdsWithSets = new Set(workoutSets.map((set) => set.workoutExerciseId))
+  await db.workoutExercises.bulkDelete(
+    workoutExercises
+      .filter((entry) => !workoutExerciseIdsWithSets.has(entry.id!))
+      .map((entry) => entry.id!),
+  )
+}
+
+export { db, removeEmptyWorkoutExercises }

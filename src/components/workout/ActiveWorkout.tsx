@@ -347,34 +347,44 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       return
     }
 
-    // Get or create the WorkoutExercise for this exercise in the current workout
-    let we = (
-      await db.workoutExercises
-        .where('workoutId')
-        .equals(w.id)
-        .and((r) => r.exerciseId === ex.id!)
-        .first()
-    )
-    if (!we) {
-      const count = await db.workoutExercises.where('workoutId').equals(w.id).count()
-      const id = await db.workoutExercises.add({
-        workoutId: w.id,
-        exerciseId: ex.id!,
-        order: count,
-      })
-      we = await db.workoutExercises.get(id)
-    }
-    setWorkoutExercise(we ?? null)
+    const workoutExercise = await db.workoutExercises
+      .where('workoutId')
+      .equals(w.id)
+      .and((r) => r.exerciseId === ex.id!)
+      .first()
+    setWorkoutExercise(workoutExercise ?? null)
   }
 
   async function logSet() {
     const wNum = parseFloat(weight)
     const rNum = parseInt(reps, 10)
-    if (!workoutExercise?.id || isNaN(wNum) || isNaN(rNum)) return
+    if (!exercise?.id || !w?.id || isNaN(wNum) || isNaN(rNum)) return
+
+    let activeWorkoutExercise = workoutExercise
+    if (!activeWorkoutExercise?.id) {
+      const existingWorkoutExercise = await db.workoutExercises
+        .where('workoutId')
+        .equals(w.id)
+        .and((entry) => entry.exerciseId === exercise.id)
+        .first()
+      if (existingWorkoutExercise) {
+        activeWorkoutExercise = existingWorkoutExercise
+      } else {
+        const order = await db.workoutExercises.where('workoutId').equals(w.id).count()
+        const workoutExerciseId = await db.workoutExercises.add({
+          workoutId: w.id,
+          exerciseId: exercise.id,
+          order,
+        })
+        activeWorkoutExercise = await db.workoutExercises.get(workoutExerciseId) ?? null
+      }
+      setWorkoutExercise(activeWorkoutExercise ?? null)
+    }
+    if (!activeWorkoutExercise?.id) return
 
     const setNumber = currentSets.length + 1
     const id = await db.workoutSets.add({
-      workoutExerciseId: workoutExercise.id,
+      workoutExerciseId: activeWorkoutExercise.id,
       setNumber,
       weight: wNum,
       reps: rNum,
@@ -731,7 +741,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         <button
           className="aw-log-btn"
           onClick={logSet}
-          disabled={!exercise || !workoutExercise || !w}
+          disabled={!exercise || !w}
         >
           LOG
         </button>

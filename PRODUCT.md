@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.52
+Version: 3.53
 Last Updated: 2026-09-05
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -223,6 +223,8 @@ If no exercise is selected, tapping the exercise name opens the Exercise Selecti
 The user can change the current exercise by tapping its name.
 
 After selecting an exercise, the selection is immediately transferred back to Active Workout and becomes the current exercise.
+
+Workout exercises with no logged sets are removed from local storage and are excluded from backup data.
 
 ---
 

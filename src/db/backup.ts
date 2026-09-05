@@ -1,4 +1,4 @@
-import { db } from './db'
+import { db, removeEmptyWorkoutExercises } from './db'
 import type {
   BodyPartGroup,
   Exercise,
@@ -68,6 +68,7 @@ function toGym(input: Gym): Gym {
 }
 
 export async function exportAllDataToJson(): Promise<void> {
+  await removeEmptyWorkoutExercises()
   const [
     settings,
     bodyPartGroups,
@@ -167,6 +168,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
       if (workouts.length > 0) await db.workouts.bulkPut(workouts)
       if (workoutExercises.length > 0) await db.workoutExercises.bulkPut(workoutExercises)
       if (workoutSets.length > 0) await db.workoutSets.bulkPut(workoutSets)
+      await removeEmptyWorkoutExercises()
     },
   )
 
