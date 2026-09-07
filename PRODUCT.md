@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.59
-Last Updated: 2026-09-05
+Version: 3.60
+Last Updated: 2026-09-07
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -107,6 +107,7 @@ Almost the entire workout should be performed from the Active Workout screen.
 
 The Home screen displays the GymLog logo and simple navigation buttons.
 - Home is available at a separate route (`/home`)
+- Home displays the date and local time of the application build beneath the logo.
 
 The user can navigate from Home to:
 

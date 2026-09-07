@@ -29,6 +29,13 @@
   filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.55));
 }
 
+.home-build {
+  margin: 0.65rem 0 0;
+  color: rgba(246, 247, 251, 0.68);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
 .home-nav {
   max-width: 64rem;
   margin: clamp(1rem, 2.5vw, 1.8rem) auto 0;
