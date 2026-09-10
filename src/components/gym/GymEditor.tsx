@@ -56,7 +56,7 @@ export default function GymEditor({ gymId }: Props) {
   const navigate = useNavigate()
   const [existingGyms, setExistingGyms] = useState<Array<{ id?: number; name: string; abbreviation: string }>>([])
   const [form, setForm] = useState<GymFormState>(EMPTY_FORM)
-  const [isLoading, setIsLoading] = useState(Boolean(gymId))
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [locationMessage, setLocationMessage] = useState('')
 
@@ -65,15 +65,24 @@ export default function GymEditor({ gymId }: Props) {
   }, [gymId])
 
   useEffect(() => {
-    if (gymId !== undefined || !navigator.geolocation) return
+    if (isLoading || gymId !== undefined || !navigator.geolocation) return
+
+    void requestCurrentLocation(false)
+  }, [gymId, isLoading])
+
+  function requestCurrentLocation(overwrite: boolean) {
+    if (!navigator.geolocation) {
+      setLocationMessage('Device location is unavailable. Enter coordinates manually.')
+      return
+    }
 
     setLocationMessage('Getting device location...')
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setForm((previous) => ({
           ...previous,
-          latitude: previous.latitude || formatCoordinate(position.coords.latitude),
-          longitude: previous.longitude || formatCoordinate(position.coords.longitude),
+          latitude: overwrite || !previous.latitude ? formatCoordinate(position.coords.latitude) : previous.latitude,
+          longitude: overwrite || !previous.longitude ? formatCoordinate(position.coords.longitude) : previous.longitude,
         }))
         setLocationMessage('Coordinates filled from device location.')
       },
@@ -82,7 +91,7 @@ export default function GymEditor({ gymId }: Props) {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
     )
-  }, [gymId])
+  }
 
   const canSave = useMemo(() => {
     return (
@@ -243,6 +252,15 @@ export default function GymEditor({ gymId }: Props) {
             value={form.longitude}
             onChange={(e) => setForm((prev) => ({ ...prev, longitude: e.target.value }))}
           />
+          {gymId !== undefined && (
+            <button
+              className="gym-editor-action gym-editor-location-button"
+              type="button"
+              onClick={() => requestCurrentLocation(true)}
+            >
+              Use Current Location
+            </button>
+          )}
           <button className="gym-editor-add" onClick={saveGym} disabled={!canSave}>
             {gymId ? 'Save Gym' : 'Create Gym'}
           </button>

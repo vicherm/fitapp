@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.60
-Last Updated: 2026-09-07
+Version: 3.62
+Last Updated: 2026-09-10
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -180,6 +180,7 @@ Each gym stores:
 
 When creating a gym, GymLog requests the device position and prefills the GPS coordinate fields when location is available.
 The user can edit or enter the coordinates manually if location access is unavailable.
+When editing a gym, the user can request the device's current position to replace both stored GPS coordinates.
 
 Old imported workouts that have no gym assignment show the gym as 'Unknown' with abbreviation shown `UNKN`.
 
