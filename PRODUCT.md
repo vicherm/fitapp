@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.66
-Last Updated: 2026-09-10
+Version: 3.69
+Last Updated: 2026-09-11
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -113,7 +113,17 @@ The user can navigate from Home to:
 
 - Active Workout
 - History
+- Statistics
 - More
+
+## Statistics
+
+Statistics is accessible from Home and displays:
+
+- average workouts per week across the inclusive calendar-week span covered by recorded workouts
+- total number of recorded workouts
+- average workout duration, using the latest logged set as the workout end when available
+- the top four gyms by workout count, with each gym's percentage of all workouts
 
 ## More
 The More page provides navigation to:
@@ -138,6 +148,7 @@ restores the same calendar month, selected date, and workout-list position. Acti
 
 Its header shows the workout date, gym name, start time, and duration from workout start to the latest logged set. Below the header, exercises are listed by their earliest logged set, first to last;
  each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values with each set's local time, on separate rows.
+The Workout Summary displays the gym name as text. Clicking the name reveals a gym dropdown; the selected gym is saved on the workout and applies to all workout exercises when calculating and displaying gym-specific information.
 
 ## Exercise Management
 Exercises from More opens an Exercise Management screen where the user can:

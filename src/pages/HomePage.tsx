@@ -11,6 +11,10 @@ const navItems = [
     to: '/history',
   },
   {
+    title: 'Statistics',
+    to: '/statistics',
+  },
+  {
     title: 'More ...',
     to: '/more',
   },

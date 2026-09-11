@@ -16,6 +16,7 @@ interface SummaryExercise {
 interface WorkoutSummary {
   workout: Workout
   gym: Gym | null
+  gyms: Gym[]
   exercises: SummaryExercise[]
 }
 
@@ -48,8 +49,9 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
   const workout = await db.workouts.get(workoutId)
   if (!workout) return null
 
-  const [gym, workoutExercises] = await Promise.all([
+  const [gym, gyms, workoutExercises] = await Promise.all([
     workout.gymId ? db.gyms.get(workout.gymId) : Promise.resolve(undefined),
+    db.gyms.orderBy('name').toArray(),
     db.workoutExercises.where('workoutId').equals(workoutId).toArray(),
   ])
   const orderedWorkoutExercises = workoutExercises.sort((left, right) => left.order - right.order)
@@ -118,7 +120,7 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
     await db.workouts.update(workoutId, { startTime: firstSetTime })
   }
 
-  return { workout: correctedWorkout, gym: gym ?? null, exercises: summaryExercises }
+  return { workout: correctedWorkout, gym: gym ?? null, gyms, exercises: summaryExercises }
 }
 
 export default function WorkoutSummaryPage() {
@@ -131,6 +133,8 @@ export default function WorkoutSummaryPage() {
   const workoutId = Number(id)
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSavingGym, setIsSavingGym] = useState(false)
+  const [isEditingGym, setIsEditingGym] = useState(false)
 
   useEffect(() => {
     if (!Number.isInteger(workoutId) || workoutId <= 0) {
@@ -143,6 +147,20 @@ export default function WorkoutSummaryPage() {
       setIsLoading(false)
     })
   }, [workoutId])
+
+  async function handleGymChange(gymId: string) {
+    if (!summary || !workoutId || isSavingGym) return
+
+    const nextGymId = gymId ? Number.parseInt(gymId, 10) : undefined
+    if (nextGymId !== undefined && !summary.gyms.some((gym) => gym.id === nextGymId)) return
+
+    setIsSavingGym(true)
+    await db.workouts.update(workoutId, { gymId: nextGymId })
+    const nextSummary = await loadSummary(workoutId)
+    setSummary(nextSummary)
+    setIsEditingGym(false)
+    setIsSavingGym(false)
+  }
 
   if (isLoading) return <div className="ws-loading">Loading...</div>
 
@@ -189,7 +207,33 @@ export default function WorkoutSummaryPage() {
       <section className="ws-meta" aria-label="Workout details">
         <div>
           <span>Gym</span>
-          <strong>{summary.gym?.name ?? 'Unknown gym'}</strong>
+          {isEditingGym ? (
+            <select
+              id="ws-gym-select"
+              className="ws-gym-select"
+              value={workout.gymId ?? ''}
+              onChange={(event) => void handleGymChange(event.target.value)}
+              disabled={isSavingGym}
+              autoFocus
+            >
+              <option value="">No gym</option>
+              {summary.gyms.map((gym) => (
+                <option key={gym.id} value={gym.id}>
+                  {gym.abbreviation} {gym.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <button
+              type="button"
+              className="ws-gym-value"
+              onClick={() => setIsEditingGym(true)}
+              disabled={isSavingGym}
+              aria-label="Change gym"
+            >
+              {summary.gym?.name ?? 'No gym'}
+            </button>
+          )}
         </div>
         <div>
           <span>Start</span>
