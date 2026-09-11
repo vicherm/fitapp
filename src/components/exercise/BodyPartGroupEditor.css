@@ -1,7 +1,8 @@
 .bpg {
   display: flex;
   flex-direction: column;
-  max-width: 420px;
+  max-width: 760px;
+  padding: 10px 12px 14px;
   margin: 0 auto;
   min-height: 100svh;
 }
@@ -9,8 +10,8 @@
 .bpg-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 0 0 8px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -25,15 +26,16 @@
 }
 
 .bpg-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .bpg-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 16px 24px;
+  gap: 10px;
+  padding: 10px 0 14px;
 }
 
 .bpg-error {

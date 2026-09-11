@@ -40,6 +40,11 @@ button {
   font-family: inherit;
 }
 
+/* GymLog buttons share the orange-accented outline used by Create New Exercise. */
+body button {
+  border: 1px solid var(--accent-border);
+}
+
 /* Back arrows are text controls; keep them visually bold without a caret. */
 button[class$='-back'] {
   font-weight: 800 !important;

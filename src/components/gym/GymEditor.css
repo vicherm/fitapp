@@ -1,7 +1,8 @@
 .gym-editor {
   display: flex;
   flex-direction: column;
-  max-width: 480px;
+  max-width: 760px;
+  padding: 10px 12px 14px;
   margin: 0 auto;
   min-height: 100svh;
 }
@@ -9,8 +10,8 @@
 .gym-editor-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 0 0 8px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -25,15 +26,16 @@
 }
 
 .gym-editor-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .gym-editor-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 16px 24px;
+  gap: 10px;
+  padding: 10px 0 14px;
 }
 
 .gym-editor-error {
@@ -50,14 +52,14 @@
 
 .gym-editor-form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
 }
 
 .gym-editor-input {
-  font-size: 1rem;
-  padding: 12px;
-  border-radius: 8px;
+  font-size: 0.94rem;
+  padding: 5px 6px;
+  border-radius: 6px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text-h);
@@ -71,17 +73,20 @@
 
 .gym-editor-add,
 .gym-editor-action {
-  font-size: 0.95rem;
-  border-radius: 8px;
+  font-size: 0.8rem;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-h);
   cursor: pointer;
-  padding: 10px 12px;
+  padding: 4px 8px;
 }
 
 .gym-editor-add {
   grid-column: 1 / -1;
+  margin-top: 4px;
+  font-size: 0.95rem;
+  padding: 10px 12px;
 }
 
 .gym-editor-location-button {
@@ -174,7 +179,6 @@
 }
 
 @media (max-width: 520px) {
-  .gym-editor-form,
   .gym-editor-edit-grid {
     grid-template-columns: 1fr;
   }

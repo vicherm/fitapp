@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.62
+Version: 3.66
 Last Updated: 2026-09-10
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -23,7 +23,7 @@ The application must be:
 - support deployment from a URL subpath (for example `/fitapp/`) so routes and static assets resolve correctly outside domain root
 - include valid PWA manifest icon references that resolve to files shipped in the production build
 - use the GymLog branded application icon across install surfaces (manifest icons, maskable icons, Apple touch icon, and favicon)
-- use a consistent dark graphite + orange accent visual theme across screens that matches GymLog branding
+- use a consistent dark graphite + orange accent visual theme across screens that matches GymLog branding, including shared compact surfaces, borders, typography, buttons, and inputs
 
 All user data is stored locally on the device.
 
