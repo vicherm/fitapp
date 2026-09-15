@@ -19,6 +19,7 @@ interface Props {
 
 type Field = 'weight' | 'reps'
 const ACTIVE_WORKOUT_DRAFT_KEY = 'gymlog-active-workout-draft-v1'
+const LOG_SET_COOLDOWN_MS = 5000
 
 interface ActiveWorkoutDraft {
   workoutId: number
@@ -74,10 +75,12 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   )
   const [personalRecordGroupKeyBySetId, setPersonalRecordGroupKeyBySetId] = useState<Map<number, string>>(new Map())
   const [notification, setNotification] = useState<string | null>(null)
+  const [isLogCoolingDown, setIsLogCoolingDown] = useState(false)
   const isHydratingDraftRef = useRef(false)
   const skipNextPrefillRef = useRef(false)
   const previousSequenceRef = useRef<WorkoutSet[]>([])
   const previousSequencePositionRef = useRef(0)
+  const logCooldownUntilRef = useRef(0)
 
   useEffect(() => {
     db.gyms.orderBy('name').toArray().then(setGyms)
@@ -356,9 +359,18 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   }
 
   async function logSet() {
+    if (Date.now() < logCooldownUntilRef.current) return
+
     const wNum = parseFloat(weight)
     const rNum = parseInt(reps, 10)
     if (!exercise?.id || !w?.id || isNaN(wNum) || isNaN(rNum)) return
+
+    logCooldownUntilRef.current = Date.now() + LOG_SET_COOLDOWN_MS
+    setIsLogCoolingDown(true)
+    window.setTimeout(() => {
+      logCooldownUntilRef.current = 0
+      setIsLogCoolingDown(false)
+    }, LOG_SET_COOLDOWN_MS)
 
     let activeWorkoutExercise = workoutExercise
     if (!activeWorkoutExercise?.id) {
@@ -486,6 +498,14 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   function handleKeypad(key: string) {
     handleInputKey(key)
+  }
+
+  function adjustReps(amount: number) {
+    setActiveField('reps')
+    setReps((previousReps) => {
+      const value = Number.parseInt(previousReps, 10)
+      return Number.isNaN(value) ? previousReps : String(Math.max(0, value + amount))
+    })
   }
 
   useEffect(() => {
@@ -746,11 +766,19 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           <span className="aw-field-label">reps</span>
           <span className="aw-field-value">{reps || '0'}</span>
         </button>
+        <div className="aw-reps-adjustments">
+          <button className="aw-reps-adjustment-btn" type="button" onClick={() => adjustReps(1)} aria-label="Increase repetitions">
+            +
+          </button>
+          <button className="aw-reps-adjustment-btn" type="button" onClick={() => adjustReps(-1)} aria-label="Decrease repetitions">
+            -
+          </button>
+        </div>
 
         <button
           className="aw-log-btn"
           onClick={logSet}
-          disabled={!exercise || !w}
+          disabled={!exercise || !w || isLogCoolingDown}
         >
           LOG
         </button>

@@ -228,7 +228,7 @@
 
 .aw-inputs {
   display: grid;
-  grid-template-columns: 1fr 1fr minmax(78px, auto);
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 0.8fr) 54px minmax(92px, auto);
   gap: 8px;
 }
 
@@ -264,12 +264,39 @@
   line-height: 1.05;
 }
 
+.aw-reps-adjustments {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  min-height: 78px;
+}
+
+.aw-reps-adjustment-btn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-h);
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.aw-reps-adjustment-btn:hover,
+.aw-reps-adjustment-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
 .aw-log-btn {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   padding: 0 10px;
-  min-height: 62px;
+  min-height: 70px;
   border-radius: 10px;
   background: var(--accent);
   color: #fff;
@@ -331,13 +358,17 @@
 
 @media (max-width: 520px) {
   .aw-inputs {
-    grid-template-columns: 1fr 1fr minmax(70px, auto);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 0.8fr) 48px minmax(82px, auto);
   }
 
   .aw-log-btn {
-    min-height: 56px;
-    font-size: 0.85rem;
+    min-height: 64px;
+    font-size: 0.95rem;
     letter-spacing: 0.04em;
+  }
+
+  .aw-reps-adjustments {
+    min-height: 70px;
   }
 
   .aw-history {

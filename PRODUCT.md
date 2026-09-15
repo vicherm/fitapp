@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.69
-Last Updated: 2026-09-11
+Version: 3.71
+Last Updated: 2026-09-15
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -255,6 +255,8 @@ Numeric input field for the number of repetitions.
 
 When the field is selected, its value is cleared so the user can enter a fresh value quickly.
 
+Increment and decrement controls beside the field adjust an entered repetition count by one; decrementing cannot produce a negative count.
+
 ---
 
 ### Previous-Set Prefill
@@ -289,6 +291,8 @@ If there is no previous workout containing the exercise, weight and repetitions 
 ### Log Button
 
 Stores the entered set.
+
+After a set is logged, the LOG action is disabled for five seconds to prevent accidental duplicate entries. Hardware `Enter` input is also ignored during this interval.
 
 After logging
 
