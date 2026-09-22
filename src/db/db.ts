@@ -73,7 +73,7 @@ db.on('populate', async () => {
   await db.settings.add({ gymDetectionRadius: 200, theme: 'dark' })
 })
 
-async function removeEmptyWorkoutExercises(workoutId?: number): Promise<void> {
+async function removeEmptyWorkoutExercises(workoutId?: number, preservedWorkoutId?: number): Promise<void> {
   const workoutExercises = workoutId === undefined
     ? await db.workoutExercises.toArray()
     : await db.workoutExercises.where('workoutId').equals(workoutId).toArray()
@@ -96,7 +96,10 @@ async function removeEmptyWorkoutExercises(workoutId?: number): Promise<void> {
 
   const workoutIdsWithExercises = new Set((await db.workoutExercises.toArray()).map((entry) => entry.workoutId))
   const emptyWorkoutIds = (await db.workouts.toArray())
-    .filter((workout) => !workoutIdsWithExercises.has(workout.id!))
+    .filter((workout) => (
+      !workoutIdsWithExercises.has(workout.id!)
+      && workout.id !== preservedWorkoutId
+    ))
     .map((workout) => workout.id!)
   await db.workouts.bulkDelete(emptyWorkoutIds)
 }

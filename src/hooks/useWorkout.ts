@@ -23,9 +23,16 @@ export default function useWorkout(): WorkoutState {
 
   useEffect(() => {
     async function loadWorkout() {
-      await removeEmptyWorkoutExercises()
-
       const now = new Date()
+      const openWorkoutsBeforeCleanup = await db.workouts
+        .filter((candidate) => !candidate.endTime)
+        .toArray()
+      const currentWorkoutId = openWorkoutsBeforeCleanup
+        .filter((candidate) => isSameLocalDay(candidate.startTime, now))
+        .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())[0]?.id
+
+      await removeEmptyWorkoutExercises(undefined, currentWorkoutId)
+
       const openWorkouts = await db.workouts
         .filter((candidate) => !candidate.endTime)
         .toArray()
