@@ -6,8 +6,7 @@ import './GymEditor.css'
 interface GymFormState {
   name: string
   abbreviation: string
-  latitude: string
-  longitude: string
+  coordinates: string
 }
 
 type ParsedCoordinatesResult =
@@ -17,24 +16,43 @@ type ParsedCoordinatesResult =
 const EMPTY_FORM: GymFormState = {
   name: '',
   abbreviation: '',
-  latitude: '',
-  longitude: '',
+  coordinates: '',
 }
 
 function normalizeText(value: string): string {
   return value.trim().toLowerCase()
 }
 
-function formatCoordinate(value: number): string {
-  return value.toFixed(6)
+function formatCoordinatePart(value: number, positiveHemisphere: string, negativeHemisphere: string, degreeWidth: number): string {
+  const hemisphere = value >= 0 ? positiveHemisphere : negativeHemisphere
+  const absoluteValue = Math.abs(value)
+  let degrees = Math.floor(absoluteValue)
+  let minutes = (absoluteValue - degrees) * 60
+
+  if (minutes >= 59.9995) {
+    degrees += 1
+    minutes = 0
+  }
+
+  return `${hemisphere} ${String(degrees).padStart(degreeWidth, '0')}° ${minutes.toFixed(3).padStart(6, '0')}`
 }
 
-function parseCoordinates(latitude: string, longitude: string): ParsedCoordinatesResult {
-  const lat = Number.parseFloat(latitude)
-  const lon = Number.parseFloat(longitude)
+function formatCoordinates(latitude: number, longitude: number): string {
+  return `${formatCoordinatePart(latitude, 'N', 'S', 2)} ${formatCoordinatePart(longitude, 'E', 'W', 3)}`
+}
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    return { error: 'Latitude and longitude must be valid numbers' }
+function parseCoordinates(coordinates: string): ParsedCoordinatesResult {
+  const match = coordinates.trim().match(/^([NS])\s*(\d{1,2})°\s*(\d+(?:\.\d+)?)\s+([EW])\s*(\d{1,3})°\s*(\d+(?:\.\d+)?)$/i)
+  if (!match) {
+    return { error: 'Use coordinates like N 50° 20.935 E 014° 49.149' }
+  }
+
+  const [, latitudeHemisphere, latitudeDegrees, latitudeMinutes, longitudeHemisphere, longitudeDegrees, longitudeMinutes] = match
+  const lat = Number.parseInt(latitudeDegrees, 10) + Number.parseFloat(latitudeMinutes) / 60
+  const lon = Number.parseInt(longitudeDegrees, 10) + Number.parseFloat(longitudeMinutes) / 60
+
+  if (Number.parseFloat(latitudeMinutes) >= 60 || Number.parseFloat(longitudeMinutes) >= 60) {
+    return { error: 'Coordinate minutes must be less than 60' }
   }
 
   if (lat < -90 || lat > 90) {
@@ -45,7 +63,10 @@ function parseCoordinates(latitude: string, longitude: string): ParsedCoordinate
     return { error: 'Longitude must be between -180 and 180' }
   }
 
-  return { latitude: lat, longitude: lon }
+  return {
+    latitude: latitudeHemisphere.toUpperCase() === 'S' ? -lat : lat,
+    longitude: longitudeHemisphere.toUpperCase() === 'W' ? -lon : lon,
+  }
 }
 
 interface Props {
@@ -81,8 +102,9 @@ export default function GymEditor({ gymId }: Props) {
       (position) => {
         setForm((previous) => ({
           ...previous,
-          latitude: overwrite || !previous.latitude ? formatCoordinate(position.coords.latitude) : previous.latitude,
-          longitude: overwrite || !previous.longitude ? formatCoordinate(position.coords.longitude) : previous.longitude,
+          coordinates: overwrite || !previous.coordinates
+            ? formatCoordinates(position.coords.latitude, position.coords.longitude)
+            : previous.coordinates,
         }))
         setLocationMessage('Coordinates filled from device location.')
       },
@@ -97,8 +119,7 @@ export default function GymEditor({ gymId }: Props) {
     return (
       form.name.trim().length > 0 &&
       form.abbreviation.trim().length > 0 &&
-      form.latitude.trim().length > 0 &&
-      form.longitude.trim().length > 0
+      form.coordinates.trim().length > 0
     )
   }, [form])
 
@@ -122,8 +143,7 @@ export default function GymEditor({ gymId }: Props) {
     setForm({
       name: gym.name,
       abbreviation: gym.abbreviation,
-      latitude: formatCoordinate(gym.latitude),
-      longitude: formatCoordinate(gym.longitude),
+      coordinates: formatCoordinates(gym.latitude, gym.longitude),
     })
     setIsLoading(false)
   }
@@ -166,7 +186,7 @@ export default function GymEditor({ gymId }: Props) {
       return
     }
 
-    const parsed = parseCoordinates(form.latitude.trim(), form.longitude.trim())
+    const parsed = parseCoordinates(form.coordinates)
     if ('error' in parsed) {
       setError(parsed.error)
       return
@@ -239,18 +259,9 @@ export default function GymEditor({ gymId }: Props) {
           <input
             className="gym-editor-input"
             type="text"
-            inputMode="decimal"
-            placeholder="Latitude"
-            value={form.latitude}
-            onChange={(e) => setForm((prev) => ({ ...prev, latitude: e.target.value }))}
-          />
-          <input
-            className="gym-editor-input"
-            type="text"
-            inputMode="decimal"
-            placeholder="Longitude"
-            value={form.longitude}
-            onChange={(e) => setForm((prev) => ({ ...prev, longitude: e.target.value }))}
+            placeholder="N 50° 20.935 E 014° 49.149"
+            value={form.coordinates}
+            onChange={(e) => setForm((prev) => ({ ...prev, coordinates: e.target.value }))}
           />
           {gymId !== undefined && (
             <button

@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.71
-Last Updated: 2026-09-15
+Version: 3.75
+Last Updated: 2026-09-22
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -187,11 +187,13 @@ Each gym stores:
 
 - Name
 - Abbreviation (case-preserving; lowercase letters are allowed)
-- GPS coordinates (latitude, longitude)
+- GPS coordinates stored as latitude and longitude
 
-When creating a gym, GymLog requests the device position and prefills the GPS coordinate fields when location is available.
-The user can edit or enter the coordinates manually if location access is unavailable.
-When editing a gym, the user can request the device's current position to replace both stored GPS coordinates.
+Gym Editor presents GPS coordinates in one field using degrees and decimal minutes with hemisphere indicators, for example `N 50° 20.935 E 014° 49.149`.
+
+When creating a gym, GymLog requests the device position and prefills this coordinate field when location is available.
+The user can edit or enter coordinates manually if location access is unavailable. Coordinate minutes must be less than 60, latitude must be between 0 and 90 degrees, and longitude must be between 0 and 180 degrees.
+When editing a gym, the user can request the device's current position to replace the stored coordinates.
 
 Old imported workouts that have no gym assignment show the gym as 'Unknown' with abbreviation shown `UNKN`.
 
@@ -392,9 +394,9 @@ Top section:
 - exercise name is used as the page title
 - exercise name is editable inline
 - exercise name editing displays and preserves the entered upper/lower case letters
-- body part group is shown and editable inline
-- Machine is shown as an inline checkbox with a Yes/No value
-- exercise note is shown and editable inline
+- body part group is shown under the `BODY PARTS` label and is editable with its label and value on one row
+- Machine is shown as an inline checkbox with a Yes/No value on the same row as its label
+- exercise note is shown and editable inline; when empty, only the `NOTE` label is shown
 
 The screen lists all sets for that exercise, including the current workout, grouped by workout.
 
@@ -416,6 +418,7 @@ Set editing:
 - the set time and personal-record star are hidden while editing
 - Done and Delete actions are available directly in the row
 - Correct exercise beside Done and Delete opens Exercise Selection; choosing an exercise returns to Exercise Details and reassigns only that set
+- on mobile, the editing inputs occupy the first row and the actions occupy a second row
 - when the target exercise already has sets in the same workout, the moved set is combined with them in recorded-time order
 
 Workouts are ordered with the most recent on top.

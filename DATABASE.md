@@ -1,114 +1,182 @@
 # GymLog - Database Model
 
-Version: 0.3
-Status: Draft
+Version: 0.4
+Status: Current implementation
+
+This app uses Dexie on top of IndexedDB. The database name is `GymLog`, and the schema is defined in `src/db/db.ts` with TypeScript models in `src/db/types.ts`.
 
 ---
 
 # 1. Settings
 
-Stores application-wide settings.
+Stores application-wide preferences.
 
 Fields
 
-- id
-- gymDetectionRadius
-- theme
+- id?: number
+- gymDetectionRadius: number
+  - Units: metres
+  - Default: 200
+- theme: 'dark'
+
+Notes
+
+- The database seeds a default row on first populate:
+  - `{ gymDetectionRadius: 200, theme: 'dark' }`
+- Dexie store: `settings`
+- Indexes: `++id`
 
 ---
 
 # 2. Body Part Group
 
+Represents a user-defined exercise category.
+
 Fields
 
-- id
-- name
+- id?: number
+- name: string
+
+Notes
+
+- Dexie store: `bodyPartGroups`
+- Indexes: `++id, name`
 
 Example
 
-Back
-
-Biceps
+- Back
+- Biceps
 
 ---
 
 # 3. Exercise
 
+Represents an exercise template that can be reused across workouts.
+
 Fields
 
-- id
-- name
-- bodyPartGroupId
-- notes
+- id?: number
+- name: string
+- bodyPartGroupId: number
+- machine: boolean
+- notes?: string
+
+Notes
+
+- `machine` was added in database version 3 and defaults to `false` for existing rows during upgrade.
+- Dexie store: `exercises`
+- Indexes: `++id, name, bodyPartGroupId`
 
 Example
 
-Name
-
-Deadlift
-
-Body Part Group
-
-Back
+- Name: Deadlift
+- bodyPartGroupId: Back
+- machine: false
+- notes: optional workout notes or technique reminders
 
 ---
 
 # 4. Gym
 
+Represents a training location.
+
 Fields
 
-- id
-- name
-- latitude
-- longitude
+- id?: number
+- name: string
+- abbreviation: string
+- latitude: number
+- longitude: number
+
+Notes
+
+- `abbreviation` was added in database version 2.
+- Existing gyms are upgraded by generating a value from the name when missing.
+- Dexie store: `gyms`
+- Indexes: `++id, name, abbreviation`
 
 Example
 
-Factory Prague
-
-50.087
-
-14.420
+- name: Factory Prague
+- abbreviation: FAC
+- latitude: 50.087
+- longitude: 14.420
 
 ---
 
 # 5. Workout
 
+Represents a single training session.
+
 Fields
 
-- id
-- gymId
-- startTime
-- endTime
+- id?: number
+- gymId?: number
+- startTime: Date
+- endTime?: Date
 
-Derived values
+Notes
 
-- duration
-- totalVolume
-- totalSets
+- `gymId` is optional.
+- `endTime` may be null/undefined until the workout is finished.
+- Dexie store: `workouts`
+- Indexes: `++id, gymId, startTime`
+
+Derived values are not stored as DB fields; they are computed in application logic when needed.
 
 ---
 
 # 6. Workout Exercise
 
-Represents one exercise performed during one workout.
+Represents one exercise performed within a workout, including the order in which it was added.
 
 Fields
 
-- id
-- workoutId
-- exerciseId
-- order
+- id?: number
+- workoutId: number
+- exerciseId: number
+- order: number
+
+Notes
+
+- Dexie store: `workoutExercises`
+- Indexes: `++id, workoutId, exerciseId, order`
+- There is cleanup logic to delete empty workout exercises that have no sets, and delete the parent workout if it ends up empty.
 
 ---
 
 # 7. Workout Set
 
+Represents a single set within a workout exercise.
+
 Fields
 
-- id
-- workoutExerciseId
-- setNumber
-- weight
-- reps
-- timestamp
+- id?: number
+- workoutExerciseId: number
+- setNumber: number
+- weight: number
+- reps: number
+- timestamp: Date
+
+Notes
+
+- Dexie store: `workoutSets`
+- Indexes: `++id, workoutExerciseId, timestamp`
+
+---
+
+# 8. Database versioning and upgrades
+
+The schema has evolved across Dexie versions.
+
+- Version 1
+  - Initial schema.
+  - `settings`, `bodyPartGroups`, `exercises`, `gyms`, `workouts`, `workoutExercises`, `workoutSets`
+- Version 2
+  - Added `gyms.abbreviation`
+  - Backfills an abbreviation from the gym name when missing.
+- Version 3
+  - Added `exercises.machine`
+  - Backfills `machine` as `false` for old records.
+
+The implementation also includes a cleanup hook, `removeEmptyWorkoutExercises`, which removes orphaned workout exercises and empty workouts after data maintenance.

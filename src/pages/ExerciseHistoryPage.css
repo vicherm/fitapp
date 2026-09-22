@@ -96,6 +96,24 @@
   border-color: var(--accent);
 }
 
+.eh-inline-meta-row,
+.eh-machine-row {
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+}
+
+.eh-inline-meta-row .eh-meta-value,
+.eh-inline-meta-row .eh-meta-select,
+.eh-machine-row .eh-meta-value {
+  justify-self: end;
+  text-align: right;
+}
+
+.eh-inline-meta-row .eh-meta-select {
+  width: min(100%, 18rem);
+}
+
 .eh-meta-label {
   font-size: 0.66rem;
   text-transform: uppercase;
@@ -323,8 +341,11 @@
   }
 
   .eh-row.is-editing {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'values delete';
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'values'
+      'actions';
+    row-gap: 8px;
   }
 
   .eh-value-edit {
@@ -339,10 +360,9 @@
     grid-area: time;
   }
 
-  .eh-actions,
-  .eh-done,
-  .eh-delete {
-    grid-area: delete;
+  .eh-actions {
+    grid-area: actions;
     align-self: center;
+    justify-content: flex-start;
   }
 }

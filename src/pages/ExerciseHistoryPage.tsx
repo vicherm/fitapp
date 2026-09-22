@@ -382,10 +382,10 @@ export default function ExerciseHistoryPage() {
 
       <section className="eh-meta" aria-label="Exercise details">
         <div
-          className={`eh-meta-row ${editingMetaField === 'bodyPartGroupId' ? 'is-editing' : ''}`}
+          className={`eh-meta-row eh-inline-meta-row ${editingMetaField === 'bodyPartGroupId' ? 'is-editing' : ''}`}
           onClick={() => editingMetaField !== 'bodyPartGroupId' && setEditingMetaField('bodyPartGroupId')}
         >
-          <span className="eh-meta-label">Body Part Group</span>
+          <span className="eh-meta-label">Body Parts</span>
           {editingMetaField === 'bodyPartGroupId' ? (
             <select
               className="eh-meta-select"
@@ -422,9 +422,9 @@ export default function ExerciseHistoryPage() {
               autoFocus
               aria-label="Exercise note"
             />
-          ) : (
-            <span className="eh-meta-value">{exercise?.notes?.trim() ? exercise.notes : 'No note'}</span>
-          )}
+          ) : exercise?.notes?.trim() ? (
+            <span className="eh-meta-value">{exercise.notes}</span>
+          ) : null}
         </div>
 
         <label className="eh-meta-row eh-machine-row">
