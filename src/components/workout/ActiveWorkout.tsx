@@ -365,6 +365,20 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     const rNum = parseInt(reps, 10)
     if (!exercise?.id || !w?.id || isNaN(wNum) || isNaN(rNum)) return
 
+    const personalRecordGroupKey = getPersonalRecordGroupKey(w.gymId, exercise.machine === true)
+    const currentMaximumWeight = personalRecordsByGym.get(personalRecordGroupKey)?.maximumWeight?.weight
+    const warningReasons = [
+      currentMaximumWeight !== undefined && wNum > currentMaximumWeight * 1.5
+        ? `Weight is more than 50% above the current PR of ${currentMaximumWeight} kg.`
+        : null,
+      rNum > 15 ? 'Repetitions are higher than 15.' : null,
+    ].filter((reason): reason is string => reason !== null)
+
+    if (
+      warningReasons.length > 0
+      && !window.confirm(`Log ${wNum} kg × ${rNum}?\n\n${warningReasons.join('\n')}`)
+    ) return
+
     logCooldownUntilRef.current = Date.now() + LOG_SET_COOLDOWN_MS
     setIsLogCoolingDown(true)
     window.setTimeout(() => {

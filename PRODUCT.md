@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.76
+Version: 3.77
 Last Updated: 2026-09-22
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -240,6 +240,8 @@ The user can change the current exercise by tapping its name.
 After selecting an exercise, the selection is immediately transferred back to Active Workout and becomes the current exercise.
 
 Selecting the first exercise after starting a workout preserves the active workout and its selected gym.
+
+Before logging a set, GymLog asks for confirmation when the entered weight is more than 50% above the exercise's current Maximum Weight PR for the applicable gym grouping, or when the entered repetition count is higher than 15. If both conditions apply, they are shown in one confirmation. Cancelling does not log the set.
 
 Workout exercises with no logged sets are removed from local storage and are excluded from backup data. A workout with no remaining workout exercises is also removed from local storage and excluded from backup data.
 
