@@ -11,6 +11,7 @@
     "convert:heavyset": "node scripts/heavyset-csv-to-gymlog-json.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.1",
     "dexie": "^4.4.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

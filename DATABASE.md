@@ -1,9 +1,13 @@
 # GymLog - Database Model
 
-Version: 0.4
+Version: 0.5
 Status: Current implementation
 
 This app uses Dexie on top of IndexedDB. The database name is `GymLog`, and the schema is defined in `src/db/db.ts` with TypeScript models in `src/db/types.ts`.
+
+## Supabase migration foundation
+
+The target PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. It preserves numeric identifiers for data migration, adds authenticated ownership to every table, enforces same-user relationships with composite foreign keys, and enables Row Level Security. The application continues to use Dexie until its data-access layer is migrated.
 
 ---
 

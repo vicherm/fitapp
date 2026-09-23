@@ -1,7 +1,9 @@
 # GymLog - Architecture
 
-Version: 0.2
+Version: 0.3
 Status: Draft
+
+Supabase migration status: the remote schema and browser client foundation are defined, but application data access still uses Dexie until the repository migration is complete.
 
 ---
 
@@ -12,6 +14,8 @@ GymLog is an offline-first Progressive Web App.
 The application stores user data locally on the device and does not require a backend server.
 
 Cloud synchronization may be added in the future.
+
+The planned target architecture uses Supabase Auth and PostgreSQL as the sole application data store. IndexedDB and Dexie will be removed after all data-access paths and existing data are migrated.
 
 ---
 

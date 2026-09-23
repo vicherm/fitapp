@@ -1,5 +1,16 @@
 # React + TypeScript + Vite
 
+## Supabase Setup
+
+Copy `.env.example` to `.env.local` and provide the Vite environment values:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+Apply `supabase/migrations/202609230001_initial_schema.sql` through the Supabase SQL Editor. The migration creates the GymLog tables, constraints, signup settings trigger, authenticated grants, and Row Level Security policies. The current application still reads and writes Dexie until the later data-access migration is complete.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

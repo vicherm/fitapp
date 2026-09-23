@@ -1,6 +1,6 @@
 # GymLog - Technology Stack
 
-Version: 0.2
+Version: 0.3
 Status: Draft
 
 ---
@@ -19,6 +19,11 @@ Database
 
 - IndexedDB
 - Dexie.js
+- Supabase PostgreSQL (migration target; schema foundation added)
+
+Authentication
+
+- Supabase Auth (migration target)
 
 Charts
 
