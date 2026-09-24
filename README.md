@@ -29,6 +29,32 @@ http://127.0.0.1:5173/fitapp/
 
 The URL must match the browser address exactly; `localhost` and `127.0.0.1` are different origins. Set the Site URL to the deployed GymLog URL, or to one of the local URLs while testing. In Supabase Authentication -> Providers -> Google, switch Google to Enabled and save the Google OAuth client ID and secret. After the permitted Google account has signed in successfully once, new-user registration can be disabled in Supabase to prevent creation of additional Auth users.
 
+## One-time JSON import
+
+The existing Dexie backup can be imported into Supabase after the permitted Google user exists. This command is a Node-only migration and requires the Supabase **service-role** key. Never put that key in a `VITE_*` variable, commit it, or use it in browser code.
+
+In PowerShell, set the secret for the current terminal session and run the importer:
+
+```powershell
+$env:SUPABASE_SERVICE_ROLE_KEY = '<service-role-key-from-supabase>'
+$env:SUPABASE_USER_EMAIL = 'miroslav.vicher@gmail.com'
+npm run import:supabase
+```
+
+The default input is `test_data/gymlog-backup.json`. To use another backup:
+
+```powershell
+npm run import:supabase -- --backup path/to/gymlog-backup.json
+```
+
+The importer converts the old camelCase fields to the Supabase snake_case schema, adds the authenticated owner, remaps numeric IDs and foreign keys, supplies defaults for fields missing in older backups, verifies destination counts, and refuses to overwrite existing non-settings data. Inserts are batched for Windows command-line limits. If an interrupted import left partial data, use the explicit reset option only when those rows are disposable:
+
+```powershell
+npm run import:supabase -- --reset
+```
+
+The reset removes this user's workout data, exercises, gyms, and body-part groups before importing again; it keeps settings. Do not run it after a successful import unless the destination data is intentionally being replaced.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:
