@@ -88,6 +88,23 @@
   outline: none;
 }
 
+.ws-strava-preview {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.ws-strava-preview:hover,
+.ws-strava-preview:focus-visible {
+  border-color: var(--accent);
+  color: var(--text-h);
+  outline: none;
+}
+
 .ws-strava-upload:disabled {
   cursor: wait;
   opacity: 0.6;

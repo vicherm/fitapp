@@ -131,7 +131,7 @@ serve(async (request) => {
   try {
     if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405)
     const user = await requireOwner(request)
-    const input = await request.json() as { workoutId?: number }
+    const input = await request.json() as { workoutId?: number; preview?: boolean }
     const workoutId = Number(input.workoutId)
     if (!Number.isInteger(workoutId) || workoutId <= 0) return json({ error: 'A valid workoutId is required.' }, 400)
 
@@ -150,6 +150,8 @@ serve(async (request) => {
     const exercises = (workoutExercises ?? []) as WorkoutExercise[]
     const payload = buildStrengthTrainingJson(workout.start_time, exercises)
     if (payload.sets.length === 0) return json({ error: 'Workout has no logged sets.' }, 400)
+
+    if (input.preview === true) return json({ preview: true, workoutId, payload })
 
     let connection = await getConnection(user.id)
     if (!connection) return json({ error: 'Strava is not connected.' }, 404)

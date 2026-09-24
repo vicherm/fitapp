@@ -35,6 +35,8 @@ When an unfinished workout is closed on a later day, GymLog best-effort uploads 
 
 Workout Summary also provides an Upload to Strava action for manually triggering the same upload. The action reports uploading, success, already-uploaded, and failure states.
 
+Workout Summary provides a Download JSON action for inspecting the exact Strava strength-training payload without uploading it.
+
 ---
 
 # 2. Goals
