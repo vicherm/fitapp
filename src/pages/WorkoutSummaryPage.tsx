@@ -176,7 +176,11 @@ export default function WorkoutSummaryPage() {
     setStravaUploadMessage('Uploading to Strava...')
     try {
       const result = await uploadWorkoutToStrava(workoutId)
-      setStravaUploadMessage(result.alreadyUploaded ? 'Already uploaded to Strava.' : 'Uploaded to Strava.')
+      setStravaUploadMessage(result.alreadyUploaded
+        ? result.stravaUrl ? `Already uploaded: ${result.stravaUrl}` : 'Already uploaded to Strava.'
+        : result.stravaUrl
+          ? `Uploaded to Strava: ${result.stravaUrl}`
+          : 'Uploaded to Strava.')
     } catch (error) {
       setStravaUploadMessage(error instanceof Error ? error.message : 'Strava upload failed.')
     } finally {

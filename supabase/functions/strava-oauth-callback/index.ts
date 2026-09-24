@@ -27,9 +27,9 @@ const hmac = async (payload: string) => {
 const verifyOAuthState = async (value: string) => {
   const [payload, signature] = value.split('.')
   if (!payload || !signature || signature !== await hmac(payload)) throw new Error('Invalid OAuth state.')
-  const parsed = JSON.parse(new TextDecoder().decode(decodeBase64Url(payload))) as { sub?: string; exp?: number }
+  const parsed = JSON.parse(new TextDecoder().decode(decodeBase64Url(payload))) as { sub?: string; exp?: number; returnTo?: string }
   if (!parsed.sub || !parsed.exp || parsed.exp < Math.floor(Date.now() / 1000)) throw new Error('Expired OAuth state.')
-  return { sub: parsed.sub, exp: parsed.exp }
+  return { sub: parsed.sub, exp: parsed.exp, returnTo: parsed.returnTo }
 }
 const requireOwnerById = async (userId: string) => {
   const { data, error } = await supabaseAdmin().auth.admin.getUserById(userId)
@@ -44,8 +44,8 @@ const exchangeAuthorizationCode = async (code: string) => {
 }
 const frontendRedirect = () => env('STRAVA_FRONTEND_REDIRECT_URI')
 
-function resultRedirect(status: string, detail?: string): Response {
-  const url = new URL(frontendRedirect())
+function resultRedirect(status: string, detail?: string, returnTo?: string): Response {
+  const url = new URL(returnTo || frontendRedirect())
   url.searchParams.set('strava', status)
   if (detail) url.searchParams.set('message', detail)
   return redirect(url.toString())
@@ -86,7 +86,7 @@ serve(async (request) => {
       expires_at: new Date(expiresAt * 1000).toISOString(),
     }, { onConflict: 'user_id' })
     if (error) throw error
-    return resultRedirect('connected')
+    return resultRedirect('connected', undefined, stateData.returnTo)
   } catch (error) {
     return resultRedirect('error', error instanceof Error ? error.message : 'Strava OAuth failed.')
   }

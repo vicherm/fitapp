@@ -85,6 +85,8 @@ async function uploadAndPoll(payload: Record<string, unknown>, accessToken: stri
   form.append('file', file, `${externalId}.json`)
   form.append('data_type', 'json')
   form.append('sport_type', 'WeightTraining')
+  form.append('activity_type', 'WeightTraining')
+  form.append('trainer', '1')
   form.append('name', `GymLog Workout ${String(payload.start_time).slice(0, 10)}`)
   form.append('external_id', externalId)
 
@@ -98,7 +100,7 @@ async function uploadAndPoll(payload: Record<string, unknown>, accessToken: stri
   if (!upload.id && !upload.id_str) throw new Error('Strava did not return an upload ID.')
 
   const uploadId = upload.id_str ?? String(upload.id)
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
     const statusResponse = await fetch(`https://www.strava.com/api/v3/uploads/${uploadId}`, { headers: { Authorization: `Bearer ${accessToken}` } })
     const status = await statusResponse.json() as { activity_id?: number; error?: string; status?: string }
     if (!statusResponse.ok || status.error) throw new Error(`Strava upload processing failed: ${JSON.stringify(status)}`)
@@ -121,7 +123,12 @@ serve(async (request) => {
     if (input.preview !== true) {
       const { data: existingLink, error: linkError } = await db.from('workout_strava_links').select('strava_activity_id').eq('user_id', user.id).eq('workout_id', workoutId).maybeSingle()
       if (linkError) throw linkError
-      if (existingLink) return json({ uploaded: false, stravaActivityId: existingLink.strava_activity_id, alreadyUploaded: true })
+      if (existingLink) return json({
+        uploaded: false,
+        stravaActivityId: existingLink.strava_activity_id,
+        stravaUrl: `https://www.strava.com/activities/${existingLink.strava_activity_id}`,
+        alreadyUploaded: true,
+      })
     }
 
     const [{ data: workout, error: workoutError }, { data: workoutExercises, error: exercisesError }] = await Promise.all([
@@ -144,7 +151,7 @@ serve(async (request) => {
     const stravaActivityId = await uploadAndPoll(payload, connection.access_token, `gymlog-workout-${workoutId}`)
     const { error: saveError } = await db.from('workout_strava_links').insert({ user_id: user.id, workout_id: workoutId, strava_activity_id: stravaActivityId })
     if (saveError) throw saveError
-    return json({ uploaded: true, stravaActivityId })
+    return json({ uploaded: true, stravaActivityId, stravaUrl: `https://www.strava.com/activities/${stravaActivityId}` })
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Unable to upload workout to Strava.' }, 400)
   }

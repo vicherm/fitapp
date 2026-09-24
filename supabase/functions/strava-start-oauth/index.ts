@@ -26,8 +26,8 @@ const hmac = async (payload: string) => {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env('STRAVA_STATE_SECRET')), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   return base64Url(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload))))
 }
-const createOAuthState = async (userId: string) => {
-  const payload = base64Url(new TextEncoder().encode(JSON.stringify({ sub: userId, exp: Math.floor(Date.now() / 1000) + 600, nonce: crypto.randomUUID() })))
+const createOAuthState = async (userId: string, returnTo?: string) => {
+  const payload = base64Url(new TextEncoder().encode(JSON.stringify({ sub: userId, returnTo, exp: Math.floor(Date.now() / 1000) + 600, nonce: crypto.randomUUID() })))
   return `${payload}.${await hmac(payload)}`
 }
 const requireOwner = async (request: Request) => {
@@ -38,14 +38,22 @@ const requireOwner = async (request: Request) => {
   if (error || !data.user || data.user.email?.toLowerCase() !== allowedEmail || data.user.app_metadata?.provider !== 'google') throw new Error('Strava access is restricted to the GymLog owner.')
   return data.user
 }
+const safeReturnTo = (returnTo?: string) => {
+  if (!returnTo) return undefined
+  const requested = new URL(returnTo)
+  const configured = new URL(env('STRAVA_FRONTEND_REDIRECT_URI'))
+  if (requested.origin !== configured.origin) throw new Error('Invalid OAuth return URL.')
+  return requested.toString()
+}
 
 serve(async (request) => {
   if (isOptions(request)) return json(null)
   try {
     if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405)
     const user = await requireOwner(request)
+    const input = await request.json().catch(() => ({})) as { returnTo?: string }
     const redirectUri = env('STRAVA_REDIRECT_URI')
-    const state = await createOAuthState(user.id)
+    const state = await createOAuthState(user.id, safeReturnTo(input.returnTo))
     const params = new URLSearchParams({
       client_id: env('STRAVA_CLIENT_ID'),
       response_type: 'code',
