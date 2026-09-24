@@ -13,6 +13,8 @@ The Supabase TypeScript contract is in `src/lib/database.types.ts` and is wired 
 
 The one-time JSON migration is implemented in `scripts/import-supabase-json.mjs`. It uses the Supabase service-role key only in Node, resolves the allowed Auth user by email, refuses to overwrite existing non-settings rows, remaps old numeric IDs, and imports records in dependency order.
 
+Strava integration tables are defined in `supabase/migrations/202609240003_strava_tables.sql`. `strava_connections` is server-only and stores OAuth tokens for Edge Functions; `strava_activities` is readable by the owner and uses `(user_id, strava_activity_id)` for idempotent imports.
+
 ---
 
 # 1. Settings

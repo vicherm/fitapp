@@ -255,6 +255,93 @@ export type Database = {
           },
         ]
       }
+      strava_connections: {
+        Row: {
+          id: number
+          user_id: string
+          strava_athlete_id: number
+          strava_athlete_name: string | null
+          scope: string
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          user_id?: string
+          strava_athlete_id: number
+          strava_athlete_name?: string | null
+          scope: string
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          strava_athlete_id?: number
+          strava_athlete_name?: string | null
+          scope?: string
+          access_token?: string
+          refresh_token?: string
+          expires_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      strava_activities: {
+        Row: {
+          id: number
+          user_id: string
+          strava_activity_id: number
+          name: string
+          sport_type: string | null
+          start_date: string
+          elapsed_time_seconds: number | null
+          moving_time_seconds: number | null
+          distance_meters: number | null
+          elevation_gain_meters: number | null
+          raw_payload: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          user_id?: string
+          strava_activity_id: number
+          name: string
+          sport_type?: string | null
+          start_date: string
+          elapsed_time_seconds?: number | null
+          moving_time_seconds?: number | null
+          distance_meters?: number | null
+          elevation_gain_meters?: number | null
+          raw_payload?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          strava_activity_id?: number
+          name?: string
+          sport_type?: string | null
+          start_date?: string
+          elapsed_time_seconds?: number | null
+          moving_time_seconds?: number | null
+          distance_meters?: number | null
+          elevation_gain_meters?: number | null
+          raw_payload?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

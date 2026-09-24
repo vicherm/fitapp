@@ -29,6 +29,19 @@ http://127.0.0.1:5173/fitapp/
 
 The URL must match the browser address exactly; `localhost` and `127.0.0.1` are different origins. Set the Site URL to the deployed GymLog URL, or to one of the local URLs while testing. In Supabase Authentication -> Providers -> Google, switch Google to Enabled and save the Google OAuth client ID and secret. After the permitted Google account has signed in successfully once, new-user registration can be disabled in Supabase to prevent creation of additional Auth users.
 
+## Strava Edge Function secrets
+
+Strava secrets belong in Supabase Edge Function secrets, not in `.env.local` or any `VITE_*` variable. The expected names are documented in `supabase/functions/.env.example`. After installing and logging into the Supabase CLI, set them from the current PowerShell session:
+
+```powershell
+$env:STRAVA_CLIENT_ID = '<strava-client-id>'
+$env:STRAVA_CLIENT_SECRET = '<strava-client-secret>'
+$env:STRAVA_REDIRECT_URI = 'https://dhxckgfuapniettrohvo.supabase.co/functions/v1/strava-oauth-callback'
+.\scripts\set-supabase-strava-secrets.ps1
+```
+
+The helper uses a temporary file and deletes it after `supabase secrets set` completes. It does not add the values to the repository or expose them to the browser. Configure the same callback URL in the Strava API application settings.
+
 ## One-time JSON import
 
 Historical GymLog JSON backups can be imported into Supabase after the permitted Google user exists. This command is a Node-only migration and requires the Supabase **service-role** key. Never put that key in a `VITE_*` variable, commit it, or use it in browser code.
@@ -59,8 +72,6 @@ This template provides a minimal setup to get React working in Vite with HMR and
 
 Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
 ## React Compiler
 
@@ -100,4 +111,4 @@ Options:
 
 Exercise naming convention support:
 
-- Prefixes like `LEG`, `BIC`, `CHE`, `BAC`, `TRI` are mapped to body part groups (e.g. `LEG` -> `Legs`, `BIC` -> `Biceps`)
+- Prefixes like `LEG`, `BIC`, `CHE`, `BAC`, `TRI` are mapped to body part groups.
