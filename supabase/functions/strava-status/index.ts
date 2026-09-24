@@ -1,0 +1,47 @@
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.1'
+
+const allowedEmail = 'miroslav.vicher@gmail.com'
+const env = (name: string) => {
+  const value = Deno.env.get(name)
+  if (!value) throw new Error(`Missing Edge Function secret: ${name}`)
+  return value
+}
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Content-Type': 'application/json' } })
+const isOptions = (request: Request) => request.method === 'OPTIONS'
+const admin = () => createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { autoRefreshToken: false, persistSession: false } })
+const requireOwner = async (request: Request) => {
+  const header = request.headers.get('Authorization')
+  if (!header?.startsWith('Bearer ')) throw new Error('Missing authorization token.')
+  const client = createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), { global: { headers: { Authorization: header } } })
+  const { data, error } = await client.auth.getUser()
+  if (error || !data.user || data.user.email?.toLowerCase() !== allowedEmail || data.user.app_metadata?.provider !== 'google') throw new Error('Strava access is restricted to the GymLog owner.')
+  return data.user
+}
+const getConnection = async (userId: string) => {
+  const { data, error } = await admin().from('strava_connections').select('*').eq('user_id', userId).maybeSingle()
+  if (error) throw error
+  return data as { strava_athlete_id: number; strava_athlete_name: string | null; scope: string; expires_at: string; updated_at: string } | null
+}
+
+serve(async (request) => {
+  if (isOptions(request)) return json(null)
+  try {
+    const user = await requireOwner(request)
+    const connection = await getConnection(user.id)
+    return json({
+      connected: Boolean(connection),
+      connection: connection
+        ? {
+            athleteId: connection.strava_athlete_id,
+            athleteName: connection.strava_athlete_name,
+            scope: connection.scope,
+            expiresAt: connection.expires_at,
+            updatedAt: connection.updated_at,
+          }
+        : null,
+    })
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : 'Unable to read Strava status.' }, 400)
+  }
+})

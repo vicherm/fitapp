@@ -1,9 +1,12 @@
 $ErrorActionPreference = 'Stop'
+$projectRef = 'dhxckgfuapniettrohvo'
 
 $required = @(
   'STRAVA_CLIENT_ID',
   'STRAVA_CLIENT_SECRET',
-  'STRAVA_REDIRECT_URI'
+  'STRAVA_REDIRECT_URI',
+  'STRAVA_STATE_SECRET',
+  'STRAVA_FRONTEND_REDIRECT_URI'
 )
 
 foreach ($name in $required) {
@@ -18,14 +21,12 @@ try {
     "STRAVA_CLIENT_ID=$env:STRAVA_CLIENT_ID"
     "STRAVA_CLIENT_SECRET=$env:STRAVA_CLIENT_SECRET"
     "STRAVA_REDIRECT_URI=$env:STRAVA_REDIRECT_URI"
+    "STRAVA_STATE_SECRET=$env:STRAVA_STATE_SECRET"
+    "STRAVA_FRONTEND_REDIRECT_URI=$env:STRAVA_FRONTEND_REDIRECT_URI"
   ) | Set-Content -LiteralPath $temporaryEnvFile -Encoding utf8
 
-  npx supabase secrets set --env-file $temporaryEnvFile
+  npx supabase secrets set --project-ref $projectRef --env-file $temporaryEnvFile
 }
 finally {
   Remove-Item -LiteralPath $temporaryEnvFile -Force -ErrorAction SilentlyContinue
 }
-npx supabase secrets set `
-  "STRAVA_CLIENT_ID=$env:STRAVA_CLIENT_ID" `
-  "STRAVA_CLIENT_SECRET=$env:STRAVA_CLIENT_SECRET" `
-  "STRAVA_REDIRECT_URI=$env:STRAVA_REDIRECT_URI"

@@ -1,0 +1,14 @@
+[functions.strava-start-oauth]
+verify_jwt = false
+
+[functions.strava-oauth-callback]
+verify_jwt = false
+
+[functions.strava-status]
+verify_jwt = false
+
+[functions.strava-disconnect]
+verify_jwt = false
+
+[functions.strava-sync]
+verify_jwt = false

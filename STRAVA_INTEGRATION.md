@@ -1,6 +1,6 @@
 # GymLog Strava Integration Brief
 
-Status: Schema foundation added; OAuth and sync implementation pending
+Status: Edge Functions implemented; deployment and frontend controls pending
 Last Updated: 2026-09-24
 
 ## Current Implementation
@@ -47,7 +47,7 @@ The existing Supabase tables are:
 - `workout_exercises`
 - `workout_sets`
 
-Workout data is strength-training data: exercises, sets, weight, repetitions, timestamps, workout dates, and gym information. Strava tables are defined in `supabase/migrations/202609240003_strava_tables.sql`; OAuth functions, token exchange, activity sync, streams, uploads, and synchronization state are still pending.
+Workout data is strength-training data: exercises, sets, weight, repetitions, timestamps, workout dates, and gym information. Strava tables are defined in `supabase/migrations/202609240003_strava_tables.sql`; the five initial OAuth/status/disconnect/sync Edge Functions are now implemented under `supabase/functions/`.
 
 ## Recommended Strava Architecture
 
@@ -247,6 +247,28 @@ Never place `STRAVA_CLIENT_SECRET`, Supabase service-role keys, or Strava refres
 9. Add tests for OAuth state, token refresh, revoked access, pagination, rate limits, and repeated sync.
 10. Update `src/lib/database.types.ts` from the deployed schema.
 11. Update `PRODUCT.md`, `DATABASE.md`, and `ARCHITECTURE.md` when the feature is user-visible.
+
+## Implemented Edge Functions
+
+- `strava-start-oauth`: validates the Supabase owner session and returns a signed-state Strava authorization URL.
+- `strava-oauth-callback`: validates state, exchanges the authorization code, and stores tokens server-side.
+- `strava-status`: returns connection metadata without tokens.
+- `strava-disconnect`: revokes the Strava token when possible and removes the local connection.
+- `strava-sync`: refreshes expired tokens, fetches paginated activities, and upserts them idempotently.
+
+Required Edge Function secrets are listed in `supabase/functions/.env.example`. Set `STRAVA_FRONTEND_REDIRECT_URI` to the deployed `/fitapp/settings?strava=callback` URL before deployment; the example uses localhost.
+
+Deploy with the Supabase CLI after linking this project:
+
+```powershell
+supabase functions deploy strava-start-oauth
+supabase functions deploy strava-oauth-callback
+supabase functions deploy strava-status
+supabase functions deploy strava-disconnect
+supabase functions deploy strava-sync
+```
+
+`supabase/config.toml` disables gateway JWT verification for all five functions. The four browser-facing functions still enforce the Google owner session in their own code; the OAuth callback validates its signed state and resolves the owner through the Supabase Admin API. All five functions are self-contained for dashboard single-file deployment.
 
 ## Existing Verification Commands
 
