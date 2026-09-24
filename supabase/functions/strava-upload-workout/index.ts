@@ -14,7 +14,7 @@ const admin = () => createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE
 
 type Connection = { user_id: string; access_token: string; refresh_token: string; expires_at: string }
 type WorkoutSet = { weight: number; reps: number; performed_at: string; set_number: number }
-type WorkoutExercise = { exercise_order: number; exercises: { name?: string } | null; workout_sets: WorkoutSet[] | null }
+type WorkoutExercise = { exercise_order: number; exercises: { name?: string; strava_exercise_type?: string | null } | null; workout_sets: WorkoutSet[] | null }
 
 type StravaSet = {
   exercise_type: string
@@ -53,32 +53,14 @@ async function refreshToken(connection: Connection) {
   return data as Connection
 }
 
-function normalizeExerciseName(name: string): string {
-  return name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '')
-}
-
-function exerciseType(name: string): string {
-  const normalized = normalizeExerciseName(name)
-  const aliases: Record<string, string> = {
-    BENCH_PRESS: 'BARBELL_BENCH_PRESS',
-    SQUAT: 'SQUAT_GENERIC',
-    DEADLIFT: 'DEADLIFT_GENERIC',
-    GOODMORNING: 'GOOD_MORNING',
-    GOOD_MORNING: 'GOOD_MORNING',
-    BICEP_CURL: 'BARBELL_BICEPS_CURL',
-    EZ_BAR_CURL: 'EZ_BAR_PREACHER_CURL',
-    CHEST_PRESS: 'CHEST_PRESS',
-  }
-  return aliases[normalized] ?? (normalized || 'TOTAL_BODY_GENERIC')
-}
-
 function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise[]) {
   const sets: StravaSet[] = exercises
+    .filter((exercise) => Boolean(exercise.exercises?.strava_exercise_type?.trim()))
     .sort((left, right) => left.exercise_order - right.exercise_order)
     .flatMap((exercise) => (exercise.workout_sets ?? [])
       .sort((left, right) => left.set_number - right.set_number)
       .map((set) => ({
-        exercise_type: exerciseType(exercise.exercises?.name ?? 'Total Body'),
+        exercise_type: exercise.exercises!.strava_exercise_type!.trim(),
         repetitions: set.reps,
         weight: set.weight,
         start_time: new Date(set.performed_at).toISOString(),
@@ -136,13 +118,15 @@ serve(async (request) => {
     if (!Number.isInteger(workoutId) || workoutId <= 0) return json({ error: 'A valid workoutId is required.' }, 400)
 
     const db = admin()
-    const { data: existingLink, error: linkError } = await db.from('workout_strava_links').select('strava_activity_id').eq('user_id', user.id).eq('workout_id', workoutId).maybeSingle()
-    if (linkError) throw linkError
-    if (existingLink) return json({ uploaded: false, stravaActivityId: existingLink.strava_activity_id, alreadyUploaded: true })
+    if (input.preview !== true) {
+      const { data: existingLink, error: linkError } = await db.from('workout_strava_links').select('strava_activity_id').eq('user_id', user.id).eq('workout_id', workoutId).maybeSingle()
+      if (linkError) throw linkError
+      if (existingLink) return json({ uploaded: false, stravaActivityId: existingLink.strava_activity_id, alreadyUploaded: true })
+    }
 
     const [{ data: workout, error: workoutError }, { data: workoutExercises, error: exercisesError }] = await Promise.all([
       db.from('workouts').select('id,start_time').eq('id', workoutId).eq('user_id', user.id).single(),
-      db.from('workout_exercises').select('exercise_order,exercises(name),workout_sets(weight,reps,performed_at,set_number)').eq('workout_id', workoutId).eq('user_id', user.id).order('exercise_order'),
+      db.from('workout_exercises').select('exercise_order,exercises(name,strava_exercise_type),workout_sets(weight,reps,performed_at,set_number)').eq('workout_id', workoutId).eq('user_id', user.id).order('exercise_order'),
     ])
     if (workoutError) throw workoutError
     if (exercisesError) throw exercisesError

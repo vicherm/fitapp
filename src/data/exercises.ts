@@ -22,6 +22,7 @@ export async function createExercise(input: Omit<Exercise, 'id'>): Promise<Exerc
       body_part_group_id: input.bodyPartGroupId,
       machine: input.machine,
       notes: input.notes ?? null,
+      strava_exercise_type: input.stravaExerciseType ?? null,
     })
     .select('*')
     .single()
@@ -35,6 +36,7 @@ export async function updateExercise(id: number, input: Partial<Omit<Exercise, '
     ...(input.bodyPartGroupId === undefined ? {} : { body_part_group_id: input.bodyPartGroupId }),
     ...(input.machine === undefined ? {} : { machine: input.machine }),
     ...(input.notes === undefined ? {} : { notes: input.notes ?? null }),
+    ...(input.stravaExerciseType === undefined ? {} : { strava_exercise_type: input.stravaExerciseType ?? null }),
   }
   const { data, error } = await supabase.from('exercises').update(payload).eq('id', id).select('*').single()
   if (error) throw error

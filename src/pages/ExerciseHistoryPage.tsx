@@ -28,7 +28,7 @@ interface WorkoutGroup {
 }
 
 type SetDraftMap = Record<number, { weight: string; reps: string }>
-type MetaField = 'name' | 'bodyPartGroupId' | 'notes' | null
+type MetaField = 'name' | 'bodyPartGroupId' | 'notes' | 'stravaExerciseType' | null
 interface SetCorrection {
   sourceExerciseId: number
   workoutId: number
@@ -93,6 +93,7 @@ export default function ExerciseHistoryPage() {
   const [editingMetaField, setEditingMetaField] = useState<MetaField>(null)
   const [exerciseNameDraft, setExerciseNameDraft] = useState('')
   const [exerciseNotesDraft, setExerciseNotesDraft] = useState('')
+  const [stravaExerciseTypeDraft, setStravaExerciseTypeDraft] = useState('')
 
   const loadHistory = useCallback(async () => {
     if (!Number.isFinite(exerciseId) || exerciseId <= 0) {
@@ -104,6 +105,7 @@ export default function ExerciseHistoryPage() {
     setExercise(ex ?? null)
     setExerciseNameDraft(ex?.name ?? '')
     setExerciseNotesDraft(ex?.notes ?? '')
+    setStravaExerciseTypeDraft(ex?.stravaExerciseType ?? '')
 
     const groups = await listBodyPartGroups()
     setBodyPartGroups(groups)
@@ -248,6 +250,16 @@ export default function ExerciseHistoryPage() {
 
     await updateExercise(exercise.id, { notes: value })
     setExercise((prev) => (prev ? { ...prev, notes: value } : prev))
+  }
+
+  async function handleStravaExerciseTypeChange(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value
+    setStravaExerciseTypeDraft(value)
+    if (!exercise?.id) return
+
+    const stravaExerciseType = value.trim() || undefined
+    await updateExercise(exercise.id, { stravaExerciseType })
+    setExercise((prev) => (prev ? { ...prev, stravaExerciseType } : prev))
   }
 
   async function handleWeightChange(setId: number, event: ChangeEvent<HTMLInputElement>) {
@@ -419,6 +431,26 @@ export default function ExerciseHistoryPage() {
             />
           ) : exercise?.notes?.trim() ? (
             <span className="eh-meta-value">{exercise.notes}</span>
+          ) : null}
+        </div>
+
+        <div
+          className={`eh-meta-row eh-inline-meta-row eh-strava-meta-row ${editingMetaField === 'stravaExerciseType' ? 'is-editing' : ''}`}
+          onClick={() => editingMetaField !== 'stravaExerciseType' && setEditingMetaField('stravaExerciseType')}
+        >
+          <span className="eh-meta-label">Strava</span>
+          {editingMetaField === 'stravaExerciseType' ? (
+            <input
+              className="eh-meta-input"
+              value={stravaExerciseTypeDraft}
+              onChange={(event) => void handleStravaExerciseTypeChange(event)}
+              onBlur={() => setEditingMetaField(null)}
+              autoFocus
+              aria-label="Strava exercise type"
+              placeholder="e.g. BARBELL_BENCH_PRESS"
+            />
+          ) : exercise?.stravaExerciseType?.trim() ? (
+            <span className="eh-meta-value">{exercise.stravaExerciseType}</span>
           ) : null}
         </div>
 

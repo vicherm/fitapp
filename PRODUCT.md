@@ -37,6 +37,10 @@ Workout Summary also provides an Upload to Strava action for manually triggering
 
 Workout Summary provides a Download JSON action for inspecting the exact Strava strength-training payload without uploading it.
 
+If a workout exercise has no Strava Exercise Type, Workout Summary warns that the exercise will be skipped during Strava upload and directs the user to configure the mapping in Exercise Details.
+
+Exercise Editor allows an optional Strava Exercise Type value, such as `BARBELL_BENCH_PRESS`. Only exercises with this mapping are included in Strava uploads; exercises without a mapping are skipped.
+
 ---
 
 # 2. Goals

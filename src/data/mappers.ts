@@ -30,6 +30,7 @@ export function mapExercise(row: Tables['exercises']['Row']): Exercise {
     bodyPartGroupId: row.body_part_group_id,
     machine: row.machine,
     notes: row.notes ?? undefined,
+    stravaExerciseType: row.strava_exercise_type ?? undefined,
   }
 }
 

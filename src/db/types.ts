@@ -15,6 +15,7 @@ export interface Exercise {
   bodyPartGroupId: number
   machine: boolean
   notes?: string
+  stravaExerciseType?: string
 }
 
 export interface Gym {

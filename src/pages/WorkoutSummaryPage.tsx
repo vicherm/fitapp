@@ -19,6 +19,7 @@ import './WorkoutSummaryPage.css'
 interface SummaryExercise {
   bodyPartName: string
   exerciseName: string
+  stravaExerciseType?: string
   sets: WorkoutSet[]
   markedSetIds: Set<number>
 }
@@ -98,6 +99,7 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
       return {
         bodyPartName: exercise ? groupById.get(exercise.bodyPartGroupId)?.name ?? 'Unassigned' : 'Unknown',
         exerciseName: exercise?.name ?? 'Unknown exercise',
+        stravaExerciseType: exercise?.stravaExerciseType,
         sets,
         markedSetIds: recordsByGym.get(currentGroupKey)?.markedSetIds ?? new Set(),
       }
@@ -188,7 +190,14 @@ export default function WorkoutSummaryPage() {
     setStravaUploadMessage('Preparing JSON...')
     try {
       await downloadWorkoutStravaJson(workoutId)
-      setStravaUploadMessage('Downloaded Strava JSON preview.')
+      const missingTypes = summary.exercises
+        .filter((exercise) => exercise.sets.length > 0 && !exercise.stravaExerciseType?.trim())
+        .map((exercise) => exercise.exerciseName)
+      setStravaUploadMessage(
+        missingTypes.length > 0
+          ? `Downloaded JSON. Skipped: ${missingTypes.join(', ')}.`
+          : 'Downloaded Strava JSON preview.',
+      )
     } catch (error) {
       setStravaUploadMessage(error instanceof Error ? error.message : 'Could not create Strava JSON preview.')
     } finally {
@@ -215,6 +224,9 @@ export default function WorkoutSummaryPage() {
 
   const { workout } = summary
   const exercisesWithSets = summary.exercises.filter((exercise) => exercise.sets.length > 0)
+  const exercisesMissingStravaType = exercisesWithSets
+    .filter((exercise) => !exercise.stravaExerciseType?.trim())
+    .map((exercise) => exercise.exerciseName)
   const lastSetTime = exercisesWithSets
     .flatMap((exercise) => exercise.sets)
     .reduce<Date | undefined>(
@@ -297,6 +309,12 @@ export default function WorkoutSummaryPage() {
           {stravaUploadMessage && <span className="ws-strava-message" role="status">{stravaUploadMessage}</span>}
         </div>
       </section>
+
+      {exercisesMissingStravaType.length > 0 && (
+        <p className="ws-strava-warning" role="alert">
+          Strava upload will skip: {exercisesMissingStravaType.join(', ')}. Set a Strava Exercise Type in Exercise Details.
+        </p>
+      )}
 
       <section className="ws-exercises" aria-label="Exercises">
         {exercisesWithSets.length === 0 ? (

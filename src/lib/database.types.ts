@@ -95,6 +95,7 @@ export type Database = {
           name: string
           machine: boolean
           notes: string | null
+          strava_exercise_type: string | null
           created_at: string
           updated_at: string
         }
@@ -105,6 +106,7 @@ export type Database = {
           name: string
           machine?: boolean
           notes?: string | null
+          strava_exercise_type?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -115,6 +117,7 @@ export type Database = {
           name?: string
           machine?: boolean
           notes?: string | null
+          strava_exercise_type?: string | null
           created_at?: string
           updated_at?: string
         }

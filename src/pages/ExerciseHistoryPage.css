@@ -114,6 +114,11 @@
   width: min(100%, 18rem);
 }
 
+.eh-strava-meta-row .eh-meta-value,
+.eh-strava-meta-row .eh-meta-input {
+  font-size: 0.78rem;
+}
+
 .eh-meta-label {
   font-size: 0.66rem;
   text-transform: uppercase;

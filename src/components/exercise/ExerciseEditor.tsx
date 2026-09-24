@@ -17,6 +17,7 @@ export default function ExerciseEditor({ exerciseId }: Props) {
   const [bodyPartGroupId, setBodyPartGroupId] = useState<number | ''>('')
   const [machine, setMachine] = useState(false)
   const [notes, setNotes] = useState('')
+  const [stravaExerciseType, setStravaExerciseType] = useState('')
   const [groups, setGroups] = useState<BodyPartGroup[]>([])
   const [error, setError] = useState('')
 
@@ -29,6 +30,7 @@ export default function ExerciseEditor({ exerciseId }: Props) {
           setBodyPartGroupId(ex.bodyPartGroupId)
           setMachine(ex.machine === true)
           setNotes(ex.notes ?? '')
+          setStravaExerciseType(ex.stravaExerciseType ?? '')
         }
       })
     }
@@ -46,9 +48,9 @@ export default function ExerciseEditor({ exerciseId }: Props) {
     }
 
     if (isNew) {
-      await createExercise({ name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
+      await createExercise({ name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined, stravaExerciseType: stravaExerciseType.trim() || undefined })
     } else {
-      await updateExercise(exerciseId!, { name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
+      await updateExercise(exerciseId!, { name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined, stravaExerciseType: stravaExerciseType.trim() || undefined })
     }
     navigate(-1)
   }
@@ -90,6 +92,17 @@ export default function ExerciseEditor({ exerciseId }: Props) {
             onChange={(e) => setMachine(e.target.checked)}
           />
           Machine
+        </label>
+
+        <label className="ee-label">
+          Strava Exercise Type
+          <input
+            className="ee-input"
+            type="text"
+            value={stravaExerciseType}
+            onChange={(e) => setStravaExerciseType(e.target.value)}
+            placeholder="e.g. BARBELL_BENCH_PRESS"
+          />
         </label>
 
         <label className="ee-label">
