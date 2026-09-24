@@ -73,7 +73,7 @@ Recommended functions:
 - `strava-oauth-callback`: exchanges the authorization code and stores the token securely
 - `strava-status`: returns connection state and basic athlete information, never raw tokens
 - `strava-disconnect`: revokes/deletes the stored connection
-- `strava-upload-workout`: refreshes the token if necessary and uploads a completed GymLog workout
+- `strava-upload-workout`: refreshes the token if necessary and uploads a completed GymLog workout as a JSON strength-training activity
 - optional `strava-webhook`: receives Strava activity events
 
 For a static Vite PWA, the OAuth callback should be an Edge Function URL. After the callback completes, redirect back to the frontend route under `/fitapp/`.
@@ -158,7 +158,7 @@ Use this only if a GymLog strength workout should be explicitly linked to a Stra
 Strava activities are usually endurance/cardio activities, while GymLog records detailed strength sets. Decide which behavior is wanted before coding:
 
 1. **Upload GymLog workouts**
-   - Generate a TCX WeightTraining activity from GymLog sets.
+   - Generate one JSON WeightTraining activity containing individual GymLog set objects.
    - Upload it when an unfinished workout is closed on a later day.
    - Keep a link so the same workout is not uploaded twice.
 
@@ -251,7 +251,7 @@ Never place `STRAVA_CLIENT_SECRET`, Supabase service-role keys, or Strava refres
 - `strava-oauth-callback`: validates state, exchanges the authorization code, and stores tokens server-side.
 - `strava-status`: returns connection metadata without tokens.
 - `strava-disconnect`: revokes the Strava token when possible and removes the local connection.
-- `strava-upload-workout`: refreshes expired tokens, generates a TCX WeightTraining activity, and uploads it idempotently.
+- `strava-upload-workout`: refreshes expired tokens, generates a JSON WeightTraining activity with individual set objects, polls processing, and records it idempotently.
 
 Required Edge Function secrets are listed in `supabase/functions/.env.example`. Set `STRAVA_FRONTEND_REDIRECT_URI` to the deployed `/fitapp/settings?strava=callback` URL before deployment; the example uses localhost.
 

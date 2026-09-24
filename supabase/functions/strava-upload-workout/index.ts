@@ -12,6 +12,17 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const isOptions = (request: Request) => request.method === 'OPTIONS'
 const admin = () => createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { autoRefreshToken: false, persistSession: false } })
 
+type Connection = { user_id: string; access_token: string; refresh_token: string; expires_at: string }
+type WorkoutSet = { weight: number; reps: number; performed_at: string; set_number: number }
+type WorkoutExercise = { exercise_order: number; exercises: { name?: string } | null; workout_sets: WorkoutSet[] | null }
+
+type StravaSet = {
+  exercise_type: string
+  repetitions?: number
+  weight?: number
+  start_time?: string
+}
+
 async function requireOwner(request: Request) {
   const authorization = request.headers.get('Authorization')
   if (!authorization?.startsWith('Bearer ')) throw new Error('Missing authorization token.')
@@ -26,10 +37,10 @@ async function requireOwner(request: Request) {
 async function getConnection(userId: string) {
   const { data, error } = await admin().from('strava_connections').select('*').eq('user_id', userId).maybeSingle()
   if (error) throw error
-  return data as { user_id: string; access_token: string; refresh_token: string; expires_at: string } | null
+  return data as Connection | null
 }
 
-async function refreshToken(connection: { user_id: string; refresh_token: string }) {
+async function refreshToken(connection: Connection) {
   const response = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -39,22 +50,80 @@ async function refreshToken(connection: { user_id: string; refresh_token: string
   if (!response.ok) throw new Error(`Strava token refresh failed: ${JSON.stringify(body)}`)
   const { data, error } = await admin().from('strava_connections').update({ access_token: body.access_token, refresh_token: body.refresh_token ?? connection.refresh_token, expires_at: new Date(Number(body.expires_at) * 1000).toISOString() }).eq('user_id', connection.user_id).select('*').single()
   if (error) throw error
-  return data as { access_token: string; refresh_token: string; expires_at: string; user_id: string }
+  return data as Connection
 }
 
-function xml(value: unknown): string {
-  return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;')
+function normalizeExerciseName(name: string): string {
+  return name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '')
 }
 
-function buildTcx(workout: { start_time: string }, exercises: Array<{ name: string; sets: Array<{ weight: number; reps: number; performed_at: string }> }>): string {
-  const laps = exercises.flatMap((exercise) => {
-    const firstSet = exercise.sets[0]
-    const lastSet = exercise.sets[exercise.sets.length - 1]
-    const duration = Math.max(1, (new Date(lastSet.performed_at).getTime() - new Date(firstSet.performed_at).getTime()) / 1000)
-    const description = exercise.sets.map((set) => `${set.weight} kg x ${set.reps}`).join(', ')
-    return `<Lap StartTime="${xml(firstSet.performed_at)}"><TotalTimeSeconds>${duration}</TotalTimeSeconds><DistanceMeters>0</DistanceMeters><Notes>${xml(`${exercise.name}: ${description}`)}</Notes></Lap>`
-  }).join('')
-  return `<?xml version="1.0" encoding="UTF-8"?><TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"><Activities><Activity Sport="WeightTraining"><Id>${xml(workout.start_time)}</Id>${laps}</Activity></Activities></TrainingCenterDatabase>`
+function exerciseType(name: string): string {
+  const normalized = normalizeExerciseName(name)
+  const aliases: Record<string, string> = {
+    BENCH_PRESS: 'BARBELL_BENCH_PRESS',
+    SQUAT: 'SQUAT_GENERIC',
+    DEADLIFT: 'DEADLIFT_GENERIC',
+    GOODMORNING: 'GOOD_MORNING',
+    GOOD_MORNING: 'GOOD_MORNING',
+    BICEP_CURL: 'BARBELL_BICEPS_CURL',
+    EZ_BAR_CURL: 'EZ_BAR_PREACHER_CURL',
+    CHEST_PRESS: 'CHEST_PRESS',
+  }
+  return aliases[normalized] ?? (normalized || 'TOTAL_BODY_GENERIC')
+}
+
+function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise[]) {
+  const sets: StravaSet[] = exercises
+    .sort((left, right) => left.exercise_order - right.exercise_order)
+    .flatMap((exercise) => (exercise.workout_sets ?? [])
+      .sort((left, right) => left.set_number - right.set_number)
+      .map((set) => ({
+        exercise_type: exerciseType(exercise.exercises?.name ?? 'Total Body'),
+        repetitions: set.reps,
+        weight: set.weight,
+        start_time: new Date(set.performed_at).toISOString(),
+      })))
+
+  const start = new Date(startTime).getTime()
+  const lastSetTime = sets.length > 0 ? new Date(sets[sets.length - 1].start_time!).getTime() : start
+  return {
+    version: '1.0',
+    start_time: new Date(start).toISOString(),
+    utc_offset: 0,
+    elapsed_time: Math.max(1, Math.floor((lastSetTime - start) / 1000)),
+    active_time: Math.max(1, Math.floor((lastSetTime - start) / 1000)),
+    creator: { name: 'GymLog' },
+    sets,
+  }
+}
+
+async function uploadAndPoll(payload: Record<string, unknown>, accessToken: string, externalId: string) {
+  const file = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+  const form = new FormData()
+  form.append('file', file, `${externalId}.json`)
+  form.append('data_type', 'json')
+  form.append('sport_type', 'WeightTraining')
+  form.append('name', `GymLog Workout ${String(payload.start_time).slice(0, 10)}`)
+  form.append('external_id', externalId)
+
+  const uploadResponse = await fetch('https://www.strava.com/api/v3/uploads', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: form,
+  })
+  const upload = await uploadResponse.json() as { id?: number; id_str?: string; activity_id?: number; error?: string; status?: string }
+  if (!uploadResponse.ok || upload.error) throw new Error(`Strava upload failed: ${JSON.stringify(upload)}`)
+  if (!upload.id && !upload.id_str) throw new Error('Strava did not return an upload ID.')
+
+  const uploadId = upload.id_str ?? String(upload.id)
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const statusResponse = await fetch(`https://www.strava.com/api/v3/uploads/${uploadId}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+    const status = await statusResponse.json() as { activity_id?: number; error?: string; status?: string }
+    if (!statusResponse.ok || status.error) throw new Error(`Strava upload processing failed: ${JSON.stringify(status)}`)
+    if (status.activity_id) return status.activity_id
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  throw new Error('Strava upload is still processing; retry status later.')
 }
 
 serve(async (request) => {
@@ -73,34 +142,20 @@ serve(async (request) => {
 
     const [{ data: workout, error: workoutError }, { data: workoutExercises, error: exercisesError }] = await Promise.all([
       db.from('workouts').select('id,start_time').eq('id', workoutId).eq('user_id', user.id).single(),
-      db.from('workout_exercises').select('id,exercise_id,exercise_order,exercises(name),workout_sets(weight,reps,performed_at,set_number)').eq('workout_id', workoutId).eq('user_id', user.id).order('exercise_order'),
+      db.from('workout_exercises').select('exercise_order,exercises(name),workout_sets(weight,reps,performed_at,set_number)').eq('workout_id', workoutId).eq('user_id', user.id).order('exercise_order'),
     ])
     if (workoutError) throw workoutError
     if (exercisesError) throw exercisesError
 
-    const exercises = (workoutExercises ?? []).map((entry) => ({
-      name: (entry.exercises as { name?: string } | null)?.name ?? 'Exercise',
-      sets: [...((entry.workout_sets as Array<{ weight: number; reps: number; performed_at: string; set_number: number }> | null) ?? [])].sort((a, b) => a.set_number - b.set_number),
-    })).filter((entry) => entry.sets.length > 0)
-    if (exercises.length === 0) return json({ error: 'Workout has no logged sets.' }, 400)
+    const exercises = (workoutExercises ?? []) as WorkoutExercise[]
+    const payload = buildStrengthTrainingJson(workout.start_time, exercises)
+    if (payload.sets.length === 0) return json({ error: 'Workout has no logged sets.' }, 400)
 
     let connection = await getConnection(user.id)
     if (!connection) return json({ error: 'Strava is not connected.' }, 404)
     if (new Date(connection.expires_at).getTime() <= Date.now() + 60_000) connection = await refreshToken(connection)
 
-    const file = new Blob([buildTcx(workout, exercises)], { type: 'application/xml' })
-    const form = new FormData()
-    form.append('file', file, `gymlog-workout-${workoutId}.tcx`)
-    form.append('data_type', 'tcx')
-    form.append('sport_type', 'WeightTraining')
-    form.append('name', `GymLog Workout ${new Date(workout.start_time).toISOString().slice(0, 10)}`)
-    form.append('description', exercises.map((exercise) => `${exercise.name}: ${exercise.sets.map((set) => `${set.weight} kg x ${set.reps}`).join(', ')}`).join('\n'))
-    const uploadResponse = await fetch('https://www.strava.com/api/v3/uploads', { method: 'POST', headers: { Authorization: `Bearer ${connection.access_token}` }, body: form })
-    const uploadBody = await uploadResponse.json()
-    if (!uploadResponse.ok) throw new Error(`Strava upload failed: ${JSON.stringify(uploadBody)}`)
-
-    const stravaActivityId = Number(uploadBody.activity_id ?? uploadBody.id)
-    if (!Number.isFinite(stravaActivityId)) throw new Error('Strava did not return an activity ID.')
+    const stravaActivityId = await uploadAndPoll(payload, connection.access_token, `gymlog-workout-${workoutId}`)
     const { error: saveError } = await db.from('workout_strava_links').insert({ user_id: user.id, workout_id: workoutId, strava_activity_id: stravaActivityId })
     if (saveError) throw saveError
     return json({ uploaded: true, stravaActivityId })

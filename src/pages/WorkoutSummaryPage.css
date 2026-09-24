@@ -62,10 +62,42 @@
 
 .ws-meta {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto minmax(0, auto);
   gap: 12px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
+}
+
+.ws-strava-action {
+  align-items: flex-end;
+}
+
+.ws-strava-upload {
+  padding: 6px 8px;
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.ws-strava-upload:hover,
+.ws-strava-upload:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.ws-strava-upload:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.ws-strava-message {
+  max-width: 12rem;
+  color: var(--text);
+  font-size: 0.68rem;
+  text-align: right;
 }
 
 .ws-meta div {

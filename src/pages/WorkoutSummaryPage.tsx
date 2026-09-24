@@ -4,6 +4,7 @@ import type { BodyPartGroup, Exercise, Gym, Workout, WorkoutSet } from '../db/ty
 import { listBodyPartGroups } from '../data/bodyPartGroups'
 import { listExercises } from '../data/exercises'
 import { getGym, listGyms } from '../data/gyms'
+import { uploadWorkoutToStrava } from '../data/strava'
 import {
   listWorkoutExercises,
   listWorkoutSets,
@@ -137,6 +138,8 @@ export default function WorkoutSummaryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingGym, setIsSavingGym] = useState(false)
   const [isEditingGym, setIsEditingGym] = useState(false)
+  const [isUploadingToStrava, setIsUploadingToStrava] = useState(false)
+  const [stravaUploadMessage, setStravaUploadMessage] = useState('')
 
   useEffect(() => {
     if (!Number.isInteger(workoutId) || workoutId <= 0) {
@@ -162,6 +165,21 @@ export default function WorkoutSummaryPage() {
     setSummary(nextSummary)
     setIsEditingGym(false)
     setIsSavingGym(false)
+  }
+
+  async function handleStravaUpload() {
+    if (!summary || !workoutId || isUploadingToStrava) return
+
+    setIsUploadingToStrava(true)
+    setStravaUploadMessage('Uploading to Strava...')
+    try {
+      const result = await uploadWorkoutToStrava(workoutId)
+      setStravaUploadMessage(result.alreadyUploaded ? 'Already uploaded to Strava.' : 'Uploaded to Strava.')
+    } catch (error) {
+      setStravaUploadMessage(error instanceof Error ? error.message : 'Strava upload failed.')
+    } finally {
+      setIsUploadingToStrava(false)
+    }
   }
 
   if (isLoading) return <div className="ws-loading">Loading...</div>
@@ -244,6 +262,17 @@ export default function WorkoutSummaryPage() {
         <div>
           <span>Duration</span>
           <strong>{formatDuration(workout.startTime, lastSetTime ?? workout.endTime)}</strong>
+        </div>
+        <div className="ws-strava-action">
+          <button
+            type="button"
+            className="ws-strava-upload"
+            onClick={() => void handleStravaUpload()}
+            disabled={isUploadingToStrava || exercisesWithSets.length === 0}
+          >
+            {isUploadingToStrava ? 'Uploading...' : 'Upload to Strava'}
+          </button>
+          {stravaUploadMessage && <span className="ws-strava-message" role="status">{stravaUploadMessage}</span>}
         </div>
       </section>
 
