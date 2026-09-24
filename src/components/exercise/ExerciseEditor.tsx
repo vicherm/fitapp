@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../../db/db'
 import type { BodyPartGroup } from '../../db/types'
+import { listBodyPartGroups } from '../../data/bodyPartGroups'
+import { createExercise, deleteExercise, getExercise, updateExercise } from '../../data/exercises'
 import './ExerciseEditor.css'
 
 interface Props {
@@ -20,9 +21,9 @@ export default function ExerciseEditor({ exerciseId }: Props) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    db.bodyPartGroups.orderBy('name').toArray().then(setGroups)
+    listBodyPartGroups().then(setGroups)
     if (!isNew) {
-      db.exercises.get(exerciseId!).then((ex) => {
+      getExercise(exerciseId!).then((ex) => {
         if (ex) {
           setName(ex.name)
           setBodyPartGroupId(ex.bodyPartGroupId)
@@ -45,16 +46,16 @@ export default function ExerciseEditor({ exerciseId }: Props) {
     }
 
     if (isNew) {
-      await db.exercises.add({ name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
+      await createExercise({ name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
     } else {
-      await db.exercises.update(exerciseId!, { name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
+      await updateExercise(exerciseId!, { name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined })
     }
     navigate(-1)
   }
 
   async function remove() {
     if (!exerciseId) return
-    await db.exercises.delete(exerciseId)
+    await deleteExercise(exerciseId)
     navigate(-1)
   }
 

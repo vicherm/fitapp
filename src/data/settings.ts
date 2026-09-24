@@ -22,3 +22,9 @@ export async function updateSettings(settings: Pick<Settings, 'gymDetectionRadiu
   if (error) throw error
   return mapSettings(data)
 }
+
+export async function listSettings(): Promise<Settings[]> {
+  const { data, error } = await supabase.from('settings').select('*').order('id')
+  if (error) throw error
+  return data.map(mapSettings)
+}

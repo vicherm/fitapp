@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { db } from '../../db/db'
 import type { Exercise, Gym, WorkoutExercise, WorkoutSet } from '../../db/types'
+import { getSettings } from '../../data/settings'
+import { getExercise } from '../../data/exercises'
+import { getGym, listGyms } from '../../data/gyms'
+import {
+  createWorkoutExercise,
+  createWorkoutSet,
+  getWorkoutExercise,
+  listWorkoutExercises,
+  listWorkoutSets,
+  listWorkouts,
+  updateWorkout,
+} from '../../data/workouts'
 import type { WorkoutState } from '../../hooks/useWorkout'
 import NumericKeypad from '../ui/NumericKeypad'
 import {
@@ -83,7 +94,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const logCooldownUntilRef = useRef(0)
 
   useEffect(() => {
-    db.gyms.orderBy('name').toArray().then(setGyms)
+    listGyms().then(setGyms)
   }, [])
 
   useEffect(() => {
@@ -92,8 +103,8 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     let isActive = true
 
     async function prefillGym(previousGymId?: number) {
-      const settings = await db.settings.toArray()
-      const radius = settings[0]?.gymDetectionRadius ?? 200
+      const settings = await getSettings()
+      const radius = settings?.gymDetectionRadius ?? 200
 
       const applyPreviousGym = () => {
         if (isActive) setSelectedGymId(previousGymId ?? '')
@@ -126,11 +137,10 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       )
     }
 
-    db.workouts
-      .orderBy('startTime')
-      .reverse()
-      .filter((workout) => typeof workout.gymId === 'number')
-      .first()
+    listWorkouts()
+      .then((workouts) => workouts
+        .filter((workout) => typeof workout.gymId === 'number')
+        .sort((left, right) => right.startTime.getTime() - left.startTime.getTime())[0])
       .then((previousWorkout) => prefillGym(previousWorkout?.gymId))
 
     return () => {
@@ -149,7 +159,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       return
     }
 
-    db.gyms.get(w.gymId).then((gym) => {
+    getGym(w.gymId).then((gym) => {
       setSelectedGymAbbreviation(gym?.abbreviation || 'UNKN')
     })
   }, [w?.id, w?.gymId])
@@ -188,8 +198,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       setActiveField(draft.activeField === 'reps' ? 'reps' : 'weight')
 
       if (typeof draft.exerciseId === 'number') {
-        db.exercises
-          .get(draft.exerciseId)
+        getExercise(draft.exerciseId)
           .then(async (savedExercise) => {
             if (savedExercise) {
               await handleSelectExercise(savedExercise)
@@ -235,14 +244,11 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     }
 
     async function loadHistory() {
-      const weList = await db.workoutExercises
-        .where('exerciseId')
-        .equals(exercise!.id!)
-        .toArray()
+      const weList = (await listWorkoutExercises()).filter((entry) => entry.exerciseId === exercise!.id!)
 
       const weIds = weList.map((we) => we.id!)
-      const allSets = await db.workoutSets.where('workoutExerciseId').anyOf(weIds).toArray()
-      const allWorkouts = await db.workouts.where('id').anyOf(weList.map((entry) => entry.workoutId)).toArray()
+      const allSets = await listWorkoutSets(weIds)
+      const allWorkouts = (await listWorkouts()).filter((workout) => weList.some((entry) => entry.workoutId === workout.id))
       const workoutById = new Map(allWorkouts.map((workout) => [workout.id!, workout]))
       const gymIdByWorkoutExerciseId = new Map(
         weList.map((entry) => [entry.id!, workoutById.get(entry.workoutId)?.gymId]),
@@ -277,7 +283,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
       const priorWorkouts =
         priorWorkoutIds.length > 0
-          ? await db.workouts.where('id').anyOf(priorWorkoutIds).toArray()
+          ? (await listWorkouts()).filter((workout) => priorWorkoutIds.includes(workout.id!))
           : []
       const priorWorkoutById = new Map(priorWorkouts.map((workout) => [workout.id!, workout]))
 
@@ -350,11 +356,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       return
     }
 
-    const workoutExercise = await db.workoutExercises
-      .where('workoutId')
-      .equals(w.id)
-      .and((r) => r.exerciseId === ex.id!)
-      .first()
+    const workoutExercise = await getWorkoutExercise(w.id, ex.id!)
     setWorkoutExercise(workoutExercise ?? null)
   }
 
@@ -388,55 +390,41 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
     let activeWorkoutExercise = workoutExercise
     if (!activeWorkoutExercise?.id) {
-      const existingWorkoutExercise = await db.workoutExercises
-        .where('workoutId')
-        .equals(w.id)
-        .and((entry) => entry.exerciseId === exercise.id)
-        .first()
+      const existingWorkoutExercise = await getWorkoutExercise(w.id, exercise.id)
       if (existingWorkoutExercise) {
         activeWorkoutExercise = existingWorkoutExercise
       } else {
-        const order = await db.workoutExercises.where('workoutId').equals(w.id).count()
-        const workoutExerciseId = await db.workoutExercises.add({
+        const order = (await listWorkoutExercises([w.id])).length
+        activeWorkoutExercise = await createWorkoutExercise({
           workoutId: w.id,
           exerciseId: exercise.id,
           order,
         })
-        activeWorkoutExercise = await db.workoutExercises.get(workoutExerciseId) ?? null
       }
       setWorkoutExercise(activeWorkoutExercise ?? null)
     }
     if (!activeWorkoutExercise?.id) return
 
     const loggedAt = new Date()
-    const workoutExercises = await db.workoutExercises.where('workoutId').equals(w.id).toArray()
+    const workoutExercises = await listWorkoutExercises([w.id])
     const workoutExerciseIds = workoutExercises.map((entry) => entry.id!)
     const hasLoggedSet = workoutExerciseIds.length > 0
-      && await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).count() > 0
+      && (await listWorkoutSets(workoutExerciseIds)).length > 0
     const setNumber = currentSets.length + 1
-    const id = await db.workoutSets.add({
+    const saved = await createWorkoutSet({
       workoutExerciseId: activeWorkoutExercise.id,
       setNumber,
       weight: wNum,
       reps: rNum,
       timestamp: loggedAt,
     })
-    if (!hasLoggedSet) {
-      await db.workouts.update(w.id, { startTime: loggedAt })
-    }
-    const saved = await db.workoutSets.get(id)
+    if (!hasLoggedSet) await updateWorkout(w.id, { startTime: loggedAt })
     if (saved) {
       setCurrentSets((prev) => [...prev, saved])
 
-      const exerciseWorkoutExercises = await db.workoutExercises
-        .where('exerciseId')
-        .equals(exercise!.id!)
-        .toArray()
-      const exerciseSets = await db.workoutSets
-        .where('workoutExerciseId')
-        .anyOf(exerciseWorkoutExercises.map((entry) => entry.id!))
-        .toArray()
-      const exerciseWorkouts = await db.workouts.where('id').anyOf(exerciseWorkoutExercises.map((entry) => entry.workoutId)).toArray()
+      const exerciseWorkoutExercises = (await listWorkoutExercises()).filter((entry) => entry.exerciseId === exercise!.id!)
+      const exerciseSets = await listWorkoutSets(exerciseWorkoutExercises.map((entry) => entry.id!))
+      const exerciseWorkouts = (await listWorkouts()).filter((workout) => exerciseWorkoutExercises.some((entry) => entry.workoutId === workout.id))
       const workoutById = new Map(exerciseWorkouts.map((workout) => [workout.id!, workout]))
       const gymIdByWorkoutExerciseId = new Map(
         exerciseWorkoutExercises.map((entry) => [entry.id!, workoutById.get(entry.workoutId)?.gymId]),

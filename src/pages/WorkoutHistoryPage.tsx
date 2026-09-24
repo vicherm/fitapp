@@ -1,6 +1,8 @@
 import { type MouseEvent, type PointerEvent, type TouchEvent, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { db } from '../db/db'
+import { listExercises } from '../data/exercises'
+import { listGyms } from '../data/gyms'
+import { listWorkoutExercises, listWorkouts } from '../data/workouts'
 import type { Workout } from '../db/types'
 import './WorkoutHistoryPage.css'
 
@@ -63,7 +65,7 @@ export default function WorkoutHistoryPage() {
 
   useEffect(() => {
     async function loadWorkoutDates() {
-      const allWorkouts = await db.workouts.orderBy('startTime').toArray()
+      const allWorkouts = await listWorkouts()
       setWorkoutDates(allWorkouts.map((workout) => workout.startTime))
     }
 
@@ -77,7 +79,7 @@ export default function WorkoutHistoryPage() {
       const listEnd = selectedDate
         ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1)
         : nextMonthStart
-      const matchingWorkouts = (await db.workouts.toArray())
+      const matchingWorkouts = (await listWorkouts())
         .filter((workout) => workout.startTime < listEnd)
         .sort((left, right) => right.startTime.getTime() - left.startTime.getTime())
       const count = matchingWorkouts.length
@@ -86,15 +88,17 @@ export default function WorkoutHistoryPage() {
         (page + 1) * WORKOUTS_PER_PAGE,
       )
       const workoutIds = pageWorkouts.flatMap((workout) => (workout.id ? [workout.id] : []))
-      const workoutExercises = workoutIds.length > 0
-        ? await db.workoutExercises.where('workoutId').anyOf(workoutIds).toArray()
-        : []
+      const workoutExercises = workoutIds.length > 0 ? await listWorkoutExercises(workoutIds) : []
       const exerciseIds = Array.from(new Set(workoutExercises.map((workoutExercise) => workoutExercise.exerciseId)))
-      const exercises = exerciseIds.length > 0 ? await db.exercises.where('id').anyOf(exerciseIds).toArray() : []
+      const exercises = exerciseIds.length > 0
+        ? (await listExercises()).filter((exercise) => exercise.id && exerciseIds.includes(exercise.id))
+        : []
       const gymIds = Array.from(
         new Set(pageWorkouts.flatMap((workout) => (workout.gymId ? [workout.gymId] : []))),
       )
-      const gyms = gymIds.length > 0 ? await db.gyms.where('id').anyOf(gymIds).toArray() : []
+      const gyms = gymIds.length > 0
+        ? (await listGyms()).filter((gym) => gym.id && gymIds.includes(gym.id))
+        : []
       const exerciseNameById = new Map(exercises.map((exercise) => [exercise.id!, exercise.name]))
       const gymAbbreviationById = new Map(gyms.map((gym) => [gym.id!, gym.abbreviation]))
       const exercisesByWorkoutId = new Map<number, typeof workoutExercises>()

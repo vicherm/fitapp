@@ -1,9 +1,9 @@
 # GymLog - Architecture
 
-Version: 0.3
+Version: 0.4
 Status: Draft
 
-Supabase migration status: Google authentication and the remote schema foundation are defined, but application data access still uses Dexie until the repository migration is complete.
+Supabase migration status: Google authentication and PostgreSQL are the runtime data platform.
 
 ---
 
@@ -11,11 +11,7 @@ Supabase migration status: Google authentication and the remote schema foundatio
 
 GymLog is an offline-first Progressive Web App.
 
-The application stores user data locally on the device and does not require a backend server.
-
-Cloud synchronization may be added in the future.
-
-The planned target architecture uses Supabase Auth and PostgreSQL as the sole application data store. IndexedDB and Dexie will be removed after all data-access paths and existing data are migrated.
+The application uses Supabase Auth and PostgreSQL as its source of truth. Network access is required for normal data operations.
 
 ---
 
@@ -28,7 +24,7 @@ The primary workflow is local and device-based:
 - start workout
 - read GPS location
 - detect gym
-- log sets locally
+- log sets to Supabase
 - export data when needed
 
 ---
@@ -45,6 +41,6 @@ If no gym is detected, the user selects an existing gym or creates a new one fro
 
 # 4. Data Storage
 
-All data is stored locally.
+All application data is stored in Supabase PostgreSQL and protected by authenticated Row Level Security.
 
-The app should work without network access for normal logging and history viewing.
+JSON export remains available as a user-controlled backup and restore format.

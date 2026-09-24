@@ -1,7 +1,18 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { db } from '../db/db'
 import type { BodyPartGroup, Exercise, Workout, WorkoutSet } from '../db/types'
+import { listBodyPartGroups } from '../data/bodyPartGroups'
+import { getExercise, updateExercise } from '../data/exercises'
+import { listGyms } from '../data/gyms'
+import {
+  createWorkoutExercise,
+  deleteWorkoutExercise,
+  deleteWorkoutSet,
+  listWorkoutExercises,
+  listWorkoutSets,
+  listWorkouts,
+  updateWorkoutSet,
+} from '../data/workouts'
 import {
   calculatePersonalRecords,
   calculatePersonalRecordsByGym,
@@ -89,12 +100,12 @@ export default function ExerciseHistoryPage() {
       return
     }
 
-    const ex = await db.exercises.get(exerciseId)
+    const ex = await getExercise(exerciseId)
     setExercise(ex ?? null)
     setExerciseNameDraft(ex?.name ?? '')
     setExerciseNotesDraft(ex?.notes ?? '')
 
-    const groups = await db.bodyPartGroups.orderBy('name').toArray()
+    const groups = await listBodyPartGroups()
     setBodyPartGroups(groups)
 
     if (!ex) {
@@ -104,7 +115,7 @@ export default function ExerciseHistoryPage() {
       return
     }
 
-    const workoutExercises = await db.workoutExercises.where('exerciseId').equals(exerciseId).toArray()
+    const workoutExercises = (await listWorkoutExercises()).filter((entry) => entry.exerciseId === exerciseId)
 
     if (workoutExercises.length === 0) {
       setGroups([])
@@ -116,15 +127,15 @@ export default function ExerciseHistoryPage() {
     }
 
     const workoutExerciseIds = workoutExercises.map((we) => we.id!)
-    const allSets = await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).toArray()
+    const allSets = await listWorkoutSets(workoutExerciseIds)
 
     const workoutIds = Array.from(new Set(workoutExercises.map((we) => we.workoutId)))
-    const workouts = await db.workouts.where('id').anyOf(workoutIds).toArray()
+    const workouts = (await listWorkouts()).filter((workout) => workoutIds.includes(workout.id!))
     const workoutById = new Map(workouts.map((workout) => [workout.id!, workout]))
     const gymIds = Array.from(
       new Set(workouts.map((workout) => workout.gymId).filter((gymId): gymId is number => Boolean(gymId))),
     )
-    const gyms = gymIds.length > 0 ? await db.gyms.where('id').anyOf(gymIds).toArray() : []
+    const gyms = gymIds.length > 0 ? (await listGyms()).filter((gym) => gymIds.includes(gym.id!)) : []
     const gymById = new Map(gyms.map((gym) => [gym.id!, gym.abbreviation]))
     const gymIdByWorkoutExerciseId = new Map(
       workoutExercises.map((workoutExercise) => [workoutExercise.id!, workoutById.get(workoutExercise.workoutId)?.gymId]),
@@ -198,12 +209,9 @@ export default function ExerciseHistoryPage() {
 
   async function refreshPersonalRecords() {
     if (!exercise?.id) return
-    const workoutExercises = await db.workoutExercises.where('exerciseId').equals(exercise.id).toArray()
-    const sets = await db.workoutSets
-      .where('workoutExerciseId')
-      .anyOf(workoutExercises.map((entry) => entry.id!))
-      .toArray()
-    const workouts = await db.workouts.where('id').anyOf(workoutExercises.map((entry) => entry.workoutId)).toArray()
+    const workoutExercises = (await listWorkoutExercises()).filter((entry) => entry.exerciseId === exercise.id)
+    const sets = await listWorkoutSets(workoutExercises.map((entry) => entry.id!))
+    const workouts = (await listWorkouts()).filter((workout) => workoutExercises.some((entry) => entry.workoutId === workout.id))
     const gymIdByWorkoutExerciseId = new Map(
       workoutExercises.map((entry) => [entry.id!, workouts.find((workout) => workout.id === entry.workoutId)?.gymId]),
     )
@@ -221,7 +229,7 @@ export default function ExerciseHistoryPage() {
     const trimmed = value.trim()
     if (!exercise?.id || trimmed.length === 0) return
 
-    await db.exercises.update(exercise.id, { name: trimmed })
+    await updateExercise(exercise.id, { name: trimmed })
     setExercise((prev) => (prev ? { ...prev, name: trimmed } : prev))
   }
 
@@ -229,7 +237,7 @@ export default function ExerciseHistoryPage() {
     const nextGroupId = Number(event.target.value)
     if (!exercise?.id || !Number.isFinite(nextGroupId) || nextGroupId <= 0) return
 
-    await db.exercises.update(exercise.id, { bodyPartGroupId: nextGroupId })
+    await updateExercise(exercise.id, { bodyPartGroupId: nextGroupId })
     setExercise((prev) => (prev ? { ...prev, bodyPartGroupId: nextGroupId } : prev))
   }
 
@@ -238,7 +246,7 @@ export default function ExerciseHistoryPage() {
     setExerciseNotesDraft(value)
     if (!exercise?.id) return
 
-    await db.exercises.update(exercise.id, { notes: value })
+    await updateExercise(exercise.id, { notes: value })
     setExercise((prev) => (prev ? { ...prev, notes: value } : prev))
   }
 
@@ -251,7 +259,7 @@ export default function ExerciseHistoryPage() {
 
     const parsed = parseWeightInput(value)
     if (parsed === null) return
-    await db.workoutSets.update(setId, { weight: parsed })
+    await updateWorkoutSet(setId, { weight: parsed })
     updateSetState(setId, { weight: parsed })
     await refreshPersonalRecords()
   }
@@ -265,22 +273,22 @@ export default function ExerciseHistoryPage() {
 
     const parsed = parseRepsInput(value)
     if (parsed === null) return
-    await db.workoutSets.update(setId, { reps: parsed })
+    await updateWorkoutSet(setId, { reps: parsed })
     updateSetState(setId, { reps: parsed })
     await refreshPersonalRecords()
   }
 
   async function handleDeleteSet(set: WorkoutSet) {
     if (!set.id) return
-    await db.workoutSets.delete(set.id)
+    await deleteWorkoutSet(set.id)
     setEditingSetId(null)
 
-    const remaining = await db.workoutSets.where('workoutExerciseId').equals(set.workoutExerciseId).sortBy('setNumber')
+    const remaining = (await listWorkoutSets([set.workoutExerciseId])).sort((left, right) => left.setNumber - right.setNumber)
     const resequenced = remaining.map((entry, index) => ({
       ...entry,
       setNumber: index + 1,
     }))
-    await db.workoutSets.bulkPut(resequenced)
+    await Promise.all(resequenced.map((entry) => updateWorkoutSet(entry.id!, { setNumber: entry.setNumber })))
 
     await loadHistory()
   }
@@ -290,47 +298,34 @@ export default function ExerciseHistoryPage() {
       return
     }
 
-    await db.transaction('rw', db.workoutExercises, db.workoutSets, async () => {
-      const set = await db.workoutSets.get(setId)
-      if (!set) return
-      const workoutExercises = await db.workoutExercises
-        .where('workoutId')
-        .equals(workoutId)
-        .toArray()
-      const sourceWorkoutExercise = workoutExercises.find((workoutExercise) => workoutExercise.id === set.workoutExerciseId)
-      if (!sourceWorkoutExercise) return
+    const set = (await listWorkoutSets()).find((entry) => entry.id === setId)
+    if (!set) return
+    const workoutExercises = await listWorkoutExercises([workoutId])
+    const sourceWorkoutExercise = workoutExercises.find((workoutExercise) => workoutExercise.id === set.workoutExerciseId)
+    if (!sourceWorkoutExercise) return
 
-      let targetWorkoutExercise = workoutExercises.find((workoutExercise) => workoutExercise.exerciseId === exerciseId)
-      if (!targetWorkoutExercise) {
-        const order = Math.max(-1, ...workoutExercises.map((workoutExercise) => workoutExercise.order)) + 1
-        const targetWorkoutExerciseId = await db.workoutExercises.add({
-          workoutId,
-          exerciseId,
-          order,
-        })
-        targetWorkoutExercise = await db.workoutExercises.get(targetWorkoutExerciseId)
-      }
-      if (!targetWorkoutExercise) return
+    let targetWorkoutExercise = workoutExercises.find((workoutExercise) => workoutExercise.exerciseId === exerciseId)
+    if (!targetWorkoutExercise) {
+      const order = Math.max(-1, ...workoutExercises.map((workoutExercise) => workoutExercise.order)) + 1
+      targetWorkoutExercise = await createWorkoutExercise({ workoutId, exerciseId, order })
+    }
+    if (!targetWorkoutExercise) return
 
-      await db.workoutSets.update(set.id!, { workoutExerciseId: targetWorkoutExercise.id! })
+    await updateWorkoutSet(set.id!, { workoutExerciseId: targetWorkoutExercise.id! })
 
-      const targetSets = await db.workoutSets.where('workoutExerciseId').equals(targetWorkoutExercise.id!).toArray()
-      await db.workoutSets.bulkPut(targetSets
-        .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
-        .map((set, index) => ({
-          ...set,
-          setNumber: index + 1,
-        })))
+    const targetSets = await listWorkoutSets([targetWorkoutExercise.id!])
+    await Promise.all(targetSets
+      .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
+      .map((targetSet, index) => updateWorkoutSet(targetSet.id!, { setNumber: index + 1 })))
 
-      const remainingSourceSets = await db.workoutSets.where('workoutExerciseId').equals(sourceWorkoutExercise.id!).toArray()
-      if (remainingSourceSets.length === 0) {
-        await db.workoutExercises.delete(sourceWorkoutExercise.id!)
-        return
-      }
-      await db.workoutSets.bulkPut(remainingSourceSets
-        .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
-        .map((sourceSet, index) => ({ ...sourceSet, setNumber: index + 1 })))
-    })
+    const remainingSourceSets = await listWorkoutSets([sourceWorkoutExercise.id!])
+    if (remainingSourceSets.length === 0) {
+      await deleteWorkoutExercise(sourceWorkoutExercise.id!)
+      return
+    }
+    await Promise.all(remainingSourceSets
+      .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
+      .map((sourceSet, index) => updateWorkoutSet(sourceSet.id!, { setNumber: index + 1 })))
 
     await loadHistory()
   }
@@ -436,7 +431,7 @@ export default function ExerciseHistoryPage() {
               onChange={(event) => {
                 if (!exercise?.id) return
                 const machine = event.target.checked
-                void db.exercises.update(exercise.id, { machine })
+                void updateExercise(exercise.id, { machine })
                 setExercise((previous) => (previous ? { ...previous, machine } : previous))
               }}
             />

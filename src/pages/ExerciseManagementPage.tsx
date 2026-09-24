@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../db/db'
 import type { BodyPartGroup, Exercise } from '../db/types'
+import { listBodyPartGroups } from '../data/bodyPartGroups'
+import { listExercises } from '../data/exercises'
 import './ExerciseManagementPage.css'
 
 interface ExerciseGroup {
@@ -18,8 +19,8 @@ export default function ExerciseManagementPage() {
 
   useEffect(() => {
     void Promise.all([
-      db.exercises.orderBy('name').toArray(),
-      db.bodyPartGroups.orderBy('name').toArray(),
+      listExercises(),
+      listBodyPartGroups(),
     ]).then(([nextExercises, nextBodyPartGroups]) => {
       setExercises(nextExercises)
       setBodyPartGroups(nextBodyPartGroups)

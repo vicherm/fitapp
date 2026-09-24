@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../../db/db'
 import type { BodyPartGroup, Exercise } from '../../db/types'
+import { listBodyPartGroups } from '../../data/bodyPartGroups'
+import { getExercise, listExercises } from '../../data/exercises'
+import { listWorkoutExercises, listWorkouts } from '../../data/workouts'
 import './ExerciseSelector.css'
 
 interface ExerciseGroup {
@@ -30,7 +32,7 @@ async function computeHotPicks(workoutId?: number, currentExerciseId?: number): 
 
   // Most recently added exercises within the current workout (for supersets).
   if (workoutId) {
-    const workoutExercises = await db.workoutExercises.where('workoutId').equals(workoutId).sortBy('order')
+    const workoutExercises = (await listWorkoutExercises([workoutId])).sort((left, right) => left.order - right.order)
     const recentIds: number[] = []
     for (let i = workoutExercises.length - 1; i >= 0 && recentIds.length < HOT_PICK_RECENT_COUNT; i--) {
       const exerciseId = workoutExercises[i].exerciseId
@@ -38,7 +40,7 @@ async function computeHotPicks(workoutId?: number, currentExerciseId?: number): 
       recentIds.push(exerciseId)
     }
     for (const id of recentIds) {
-      const ex = await db.exercises.get(id)
+      const ex = await getExercise(id)
       if (ex) {
         picks.push(ex)
         usedIds.add(id)
@@ -50,15 +52,12 @@ async function computeHotPicks(workoutId?: number, currentExerciseId?: number): 
   if (currentExerciseId) {
     const since = new Date()
     since.setMonth(since.getMonth() - FOLLOWUP_LOOKBACK_MONTHS)
-    const recentWorkouts = await db.workouts.where('startTime').aboveOrEqual(since).toArray()
+    const recentWorkouts = (await listWorkouts()).filter((workout) => workout.startTime >= since)
 
     const followCounts = new Map<number, number>()
     for (const recentWorkout of recentWorkouts) {
       if (!recentWorkout.id) continue
-      const sequence = await db.workoutExercises
-        .where('workoutId')
-        .equals(recentWorkout.id)
-        .sortBy('order')
+      const sequence = (await listWorkoutExercises([recentWorkout.id!])).sort((left, right) => left.order - right.order)
       for (let i = 0; i < sequence.length - 1; i++) {
         if (sequence[i].exerciseId !== currentExerciseId) continue
         const nextId = sequence[i + 1].exerciseId
@@ -74,7 +73,7 @@ async function computeHotPicks(workoutId?: number, currentExerciseId?: number): 
       .map(([id]) => id)
 
     for (const id of followIds) {
-      const ex = await db.exercises.get(id)
+      const ex = await getExercise(id)
       if (ex) {
         picks.push(ex)
         usedIds.add(id)
@@ -95,8 +94,8 @@ export default function ExerciseSelector({ workoutId, currentExerciseId, correct
 
   useEffect(() => {
     void Promise.all([
-      db.exercises.orderBy('name').toArray(),
-      db.bodyPartGroups.orderBy('name').toArray(),
+      listExercises(),
+      listBodyPartGroups(),
     ]).then(([nextExercises, nextBodyPartGroups]) => {
       setExercises(nextExercises)
       setBodyPartGroups(nextBodyPartGroups)

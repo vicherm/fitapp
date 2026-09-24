@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../../db/db'
 import type { Gym } from '../../db/types'
+import { deleteGym as removeGym, listGyms } from '../../data/gyms'
 import './GymList.css'
 
 export default function GymList() {
@@ -13,13 +13,13 @@ export default function GymList() {
   }, [])
 
   async function loadGyms() {
-    const allGyms = await db.gyms.orderBy('name').toArray()
+    const allGyms = await listGyms()
     setGyms(allGyms)
   }
 
-  async function deleteGym(gymId?: number) {
+  async function handleDeleteGym(gymId?: number) {
     if (!gymId) return
-    await db.gyms.delete(gymId)
+    await removeGym(gymId)
     await loadGyms()
   }
 
@@ -46,7 +46,7 @@ export default function GymList() {
             </button>
             <button
               className="gym-list-delete"
-              onClick={() => void deleteGym(gym.id)}
+              onClick={() => void handleDeleteGym(gym.id)}
               aria-label={`Delete ${gym.name}`}
             >
               <span aria-hidden="true">🗑</span>

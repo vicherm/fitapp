@@ -1,13 +1,13 @@
 # GymLog - Database Model
 
-Version: 0.5
+Version: 0.7
 Status: Current implementation
 
-This app uses Dexie on top of IndexedDB. The database name is `GymLog`, and the schema is defined in `src/db/db.ts` with TypeScript models in `src/db/types.ts`.
+This app uses Supabase PostgreSQL with Supabase Auth and Row Level Security. Domain models remain in `src/db/types.ts`, while typed database access is defined in `src/lib/database.types.ts` and `src/data/`.
 
-## Supabase migration foundation
+## Supabase schema
 
-The target PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. It preserves numeric identifiers for data migration, adds authenticated ownership to every table, enforces same-user relationships with composite foreign keys, and enables Row Level Security. `supabase/migrations/202609230002_restrict_to_google_user.sql` restricts every policy to the configured Google identity. The application continues to use Dexie until its data-access layer is migrated.
+The PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. It preserves numeric identifiers for data migration, adds authenticated ownership to every table, enforces same-user relationships with composite foreign keys, and enables Row Level Security. `supabase/migrations/202609230002_restrict_to_google_user.sql` restricts every policy to the configured Google identity. All application screens use the Supabase data-access layer.
 
 The Supabase TypeScript contract is in `src/lib/database.types.ts` and is wired into the shared Supabase client. Regenerate it with the Supabase CLI after schema changes using `supabase gen types typescript --project-id dhxckgfuapniettrohvo --schema public` with an authenticated Supabase access token.
 
@@ -31,7 +31,7 @@ Notes
 
 - The database seeds a default row on first populate:
   - `{ gymDetectionRadius: 200, theme: 'dark' }`
-- Dexie store: `settings`
+- Supabase table: `settings`
 - Indexes: `++id`
 
 ---
@@ -47,7 +47,7 @@ Fields
 
 Notes
 
-- Dexie store: `bodyPartGroups`
+- Supabase table: `body_part_groups`
 - Indexes: `++id, name`
 
 Example
@@ -72,7 +72,7 @@ Fields
 Notes
 
 - `machine` was added in database version 3 and defaults to `false` for existing rows during upgrade.
-- Dexie store: `exercises`
+- Supabase table: `exercises`
 - Indexes: `++id, name, bodyPartGroupId`
 
 Example
@@ -100,7 +100,7 @@ Notes
 
 - `abbreviation` was added in database version 2.
 - Existing gyms are upgraded by generating a value from the name when missing.
-- Dexie store: `gyms`
+- Supabase table: `gyms`
 - Indexes: `++id, name, abbreviation`
 
 Example
@@ -127,7 +127,7 @@ Notes
 
 - `gymId` is optional.
 - `endTime` may be null/undefined until the workout is finished.
-- Dexie store: `workouts`
+- Supabase table: `workouts`
 - Indexes: `++id, gymId, startTime`
 
 Derived values are not stored as DB fields; they are computed in application logic when needed.
@@ -147,7 +147,7 @@ Fields
 
 Notes
 
-- Dexie store: `workoutExercises`
+- Supabase table: `workout_exercises`
 - Indexes: `++id, workoutId, exerciseId, order`
 - There is cleanup logic to delete empty workout exercises that have no sets, and delete the parent workout if it ends up empty.
 
@@ -168,14 +168,14 @@ Fields
 
 Notes
 
-- Dexie store: `workoutSets`
+- Supabase table: `workout_sets`
 - Indexes: `++id, workoutExerciseId, timestamp`
 
 ---
 
 # 8. Database versioning and upgrades
 
-The schema has evolved across Dexie versions.
+The schema has evolved through Supabase migrations.
 
 - Version 1
   - Initial schema.

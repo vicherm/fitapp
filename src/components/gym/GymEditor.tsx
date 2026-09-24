@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../../db/db'
+import { createGym, getGym, listGyms, updateGym } from '../../data/gyms'
 import './GymEditor.css'
 
 interface GymFormState {
@@ -124,7 +124,7 @@ export default function GymEditor({ gymId }: Props) {
   }, [form])
 
   async function loadData() {
-    const allGyms = await db.gyms.orderBy('name').toArray()
+    const allGyms = await listGyms()
     setExistingGyms(allGyms)
 
     if (!gymId) {
@@ -133,7 +133,7 @@ export default function GymEditor({ gymId }: Props) {
       return
     }
 
-    const gym = await db.gyms.get(gymId)
+    const gym = await getGym(gymId)
     if (!gym) {
       setError('Gym not found')
       setIsLoading(false)
@@ -193,7 +193,7 @@ export default function GymEditor({ gymId }: Props) {
     }
 
     if (gymId) {
-      await db.gyms.update(gymId, {
+      await updateGym(gymId, {
         name,
         abbreviation,
         latitude: parsed.latitude,
@@ -210,7 +210,7 @@ export default function GymEditor({ gymId }: Props) {
         return
       }
 
-      await db.gyms.add({
+      await createGym({
         name,
         abbreviation,
         latitude: parsed.latitude,

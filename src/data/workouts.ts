@@ -29,3 +29,83 @@ export async function listWorkoutSets(workoutExerciseIds?: number[]): Promise<Wo
   if (error) throw error
   return data.map(mapWorkoutSet)
 }
+
+export async function createWorkout(input: Pick<Workout, 'gymId' | 'startTime'>): Promise<Workout> {
+  const { data, error } = await supabase
+    .from('workouts')
+    .insert({ gym_id: input.gymId ?? null, start_time: input.startTime.toISOString() })
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapWorkout(data)
+}
+
+export async function updateWorkout(id: number, input: Partial<Pick<Workout, 'gymId' | 'startTime' | 'endTime'>>): Promise<Workout> {
+  const payload = {
+    ...(input.gymId === undefined ? {} : { gym_id: input.gymId ?? null }),
+    ...(input.startTime === undefined ? {} : { start_time: input.startTime.toISOString() }),
+    ...(input.endTime === undefined ? {} : { end_time: input.endTime?.toISOString() ?? null }),
+  }
+  const { data, error } = await supabase.from('workouts').update(payload).eq('id', id).select('*').single()
+  if (error) throw error
+  return mapWorkout(data)
+}
+
+export async function createWorkoutExercise(input: Omit<WorkoutExercise, 'id'>): Promise<WorkoutExercise> {
+  const { data, error } = await supabase
+    .from('workout_exercises')
+    .insert({ workout_id: input.workoutId, exercise_id: input.exerciseId, exercise_order: input.order })
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapWorkoutExercise(data)
+}
+
+export async function getWorkoutExercise(workoutId: number, exerciseId: number): Promise<WorkoutExercise | null> {
+  const { data, error } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .eq('workout_id', workoutId)
+    .eq('exercise_id', exerciseId)
+    .maybeSingle()
+  if (error) throw error
+  return data ? mapWorkoutExercise(data) : null
+}
+
+export async function updateWorkoutSet(id: number, input: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'setNumber' | 'workoutExerciseId'>>): Promise<WorkoutSet> {
+  const payload = {
+    ...(input.weight === undefined ? {} : { weight: input.weight }),
+    ...(input.reps === undefined ? {} : { reps: input.reps }),
+    ...(input.setNumber === undefined ? {} : { set_number: input.setNumber }),
+    ...(input.workoutExerciseId === undefined ? {} : { workout_exercise_id: input.workoutExerciseId }),
+  }
+  const { data, error } = await supabase.from('workout_sets').update(payload).eq('id', id).select('*').single()
+  if (error) throw error
+  return mapWorkoutSet(data)
+}
+
+export async function createWorkoutSet(input: Omit<WorkoutSet, 'id'>): Promise<WorkoutSet> {
+  const { data, error } = await supabase
+    .from('workout_sets')
+    .insert({
+      workout_exercise_id: input.workoutExerciseId,
+      set_number: input.setNumber,
+      weight: input.weight,
+      reps: input.reps,
+      performed_at: input.timestamp.toISOString(),
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapWorkoutSet(data)
+}
+
+export async function deleteWorkoutSet(id: number): Promise<void> {
+  const { error } = await supabase.from('workout_sets').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteWorkoutExercise(id: number): Promise<void> {
+  const { error } = await supabase.from('workout_exercises').delete().eq('id', id)
+  if (error) throw error
+}

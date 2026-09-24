@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../../db/db'
 import type { BodyPartGroup } from '../../db/types'
+import { listExercises } from '../../data/exercises'
+import { createBodyPartGroup, deleteBodyPartGroup, listBodyPartGroups, updateBodyPartGroup } from '../../data/bodyPartGroups'
 import './BodyPartGroupEditor.css'
 
 export default function BodyPartGroupEditor() {
@@ -21,8 +22,8 @@ export default function BodyPartGroupEditor() {
 
   async function loadData() {
     const [loadedGroups, exercises] = await Promise.all([
-      db.bodyPartGroups.orderBy('name').toArray(),
-      db.exercises.toArray(),
+      listBodyPartGroups(),
+      listExercises(),
     ])
 
     const usageCounts = exercises.reduce<Record<number, number>>((acc, ex) => {
@@ -54,7 +55,7 @@ export default function BodyPartGroupEditor() {
       return
     }
 
-    await db.bodyPartGroups.add({ name: trimmed })
+    await createBodyPartGroup(trimmed)
     setNewName('')
     setError('')
     await loadData()
@@ -83,7 +84,7 @@ export default function BodyPartGroupEditor() {
       return
     }
 
-    await db.bodyPartGroups.update(groupId, { name: trimmed })
+    await updateBodyPartGroup(groupId, trimmed)
     cancelEditing()
     setError('')
     await loadData()
@@ -98,7 +99,7 @@ export default function BodyPartGroupEditor() {
       return
     }
 
-    await db.bodyPartGroups.delete(groupId)
+    await deleteBodyPartGroup(groupId)
     setError('')
     await loadData()
   }

@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.78
-Last Updated: 2026-09-23
+Version: 3.79
+Last Updated: 2026-09-24
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -16,7 +16,7 @@ The application replaces HeavySet and is tailored specifically for the owner's t
 
 The application must be:
 
-- offline-first
+- network-connected
 - installable as an iPhone PWA
 - developed entirely on Windows
 - require Google authentication through Supabase
@@ -25,13 +25,11 @@ The application must be:
 - use the GymLog branded application icon across install surfaces (manifest icons, maskable icons, Apple touch icon, and favicon)
 - use a consistent dark graphite + orange accent visual theme across screens that matches GymLog branding, including shared compact surfaces, borders, typography, buttons, and inputs
 
-All user data is stored locally on the device.
-
 Access is restricted to the configured owner's verified Google account. Other Google accounts are signed out and cannot access data under Supabase Row Level Security.
 
 Settings shows the authenticated Google account and provides a Sign Out action.
 
-Application data remains stored locally while the full Supabase data migration is in progress.
+Application data is stored in the authenticated Supabase database. JSON export is available as a user-controlled backup and restore format.
 
 ---
 

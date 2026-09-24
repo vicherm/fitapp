@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { db, removeEmptyWorkoutExercises } from '../db/db'
+import { listWorkoutExercises, listWorkoutSets, createWorkout, listWorkouts, updateWorkout } from '../data/workouts'
 import type { Workout } from '../db/types'
 
 export interface WorkoutState {
@@ -24,18 +24,7 @@ export default function useWorkout(): WorkoutState {
   useEffect(() => {
     async function loadWorkout() {
       const now = new Date()
-      const openWorkoutsBeforeCleanup = await db.workouts
-        .filter((candidate) => !candidate.endTime)
-        .toArray()
-      const currentWorkoutId = openWorkoutsBeforeCleanup
-        .filter((candidate) => isSameLocalDay(candidate.startTime, now))
-        .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())[0]?.id
-
-      await removeEmptyWorkoutExercises(undefined, currentWorkoutId)
-
-      const openWorkouts = await db.workouts
-        .filter((candidate) => !candidate.endTime)
-        .toArray()
+      const openWorkouts = (await listWorkouts()).filter((candidate) => !candidate.endTime)
       const currentDayWorkouts = openWorkouts
         .filter((candidate) => isSameLocalDay(candidate.startTime, now))
         .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
@@ -50,19 +39,14 @@ export default function useWorkout(): WorkoutState {
         openWorkouts
           .filter((candidate) => !isSameLocalDay(candidate.startTime, now))
           .map(async (candidate) => {
-            const workoutExercises = await db.workoutExercises
-              .where('workoutId')
-              .equals(candidate.id!)
-              .toArray()
+            const workoutExercises = await listWorkoutExercises([candidate.id!])
             const workoutExerciseIds = workoutExercises.map((entry) => entry.id!)
-            const sets = workoutExerciseIds.length > 0
-              ? await db.workoutSets.where('workoutExerciseId').anyOf(workoutExerciseIds).toArray()
-              : []
+            const sets = workoutExerciseIds.length > 0 ? await listWorkoutSets(workoutExerciseIds) : []
             const lastSet = sets.reduce<Date | undefined>(
               (latest, set) => (!latest || set.timestamp > latest ? set.timestamp : latest),
               undefined,
             )
-            await db.workouts.update(candidate.id!, { endTime: lastSet ?? candidate.startTime })
+            await updateWorkout(candidate.id!, { endTime: lastSet ?? candidate.startTime })
           }),
       )
     }
@@ -71,15 +55,14 @@ export default function useWorkout(): WorkoutState {
   }, [])
 
   async function startWorkout(gymId: number) {
-    const id = await db.workouts.add({ startTime: new Date(), gymId })
-    setWorkout(await db.workouts.get(id) ?? null)
+    setWorkout(await createWorkout({ startTime: new Date(), gymId }))
   }
 
   async function assignGymToWorkout(workoutId: number, gymId: number) {
-    await db.workouts.update(workoutId, { gymId })
+    const updated = await updateWorkout(workoutId, { gymId })
     setWorkout((current) => {
       if (!current || current.id !== workoutId) return current
-      return { ...current, gymId }
+      return updated
     })
   }
 

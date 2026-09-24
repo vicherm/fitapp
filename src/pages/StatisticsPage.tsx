@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { db } from '../db/db'
 import type { Gym } from '../db/types'
+import { listGyms } from '../data/gyms'
+import { listWorkoutExercises, listWorkoutSets, listWorkouts } from '../data/workouts'
 import './StatisticsPage.css'
 
 interface GymStatistic {
@@ -37,10 +38,10 @@ function formatAverageDuration(minutes: number): string {
 
 async function loadStatistics(): Promise<Statistics> {
   const [workouts, gyms, workoutExercises, workoutSets] = await Promise.all([
-    db.workouts.toArray(),
-    db.gyms.toArray(),
-    db.workoutExercises.toArray(),
-    db.workoutSets.toArray(),
+    listWorkouts(),
+    listGyms(),
+    listWorkoutExercises(),
+    listWorkoutSets(),
   ])
 
   if (workouts.length === 0) {

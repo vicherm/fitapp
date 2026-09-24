@@ -33,3 +33,9 @@ export async function deleteBodyPartGroup(id: number): Promise<void> {
   const { error } = await supabase.from('body_part_groups').delete().eq('id', id)
   if (error) throw error
 }
+
+export async function getBodyPartGroup(id: number): Promise<BodyPartGroup | null> {
+  const { data, error } = await supabase.from('body_part_groups').select('*').eq('id', id).maybeSingle()
+  if (error) throw error
+  return data ? mapBodyPartGroup(data) : null
+}

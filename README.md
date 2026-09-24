@@ -9,7 +9,7 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-Apply `supabase/migrations/202609230001_initial_schema.sql` through the Supabase SQL Editor. The migration creates the GymLog tables, constraints, signup settings trigger, authenticated grants, and Row Level Security policies. The current application still reads and writes Dexie until the later data-access migration is complete.
+Apply `supabase/migrations/202609230001_initial_schema.sql` through the Supabase SQL Editor. The migration creates the GymLog tables, constraints, signup settings trigger, authenticated grants, and Row Level Security policies. The application reads and writes Supabase through `src/data/`.
 
 Apply `supabase/migrations/202609230002_restrict_to_google_user.sql` after the initial schema. In Supabase Authentication, enable Google and configure its OAuth client. The Google authorized redirect URI is:
 
@@ -31,7 +31,7 @@ The URL must match the browser address exactly; `localhost` and `127.0.0.1` are 
 
 ## One-time JSON import
 
-The existing Dexie backup can be imported into Supabase after the permitted Google user exists. This command is a Node-only migration and requires the Supabase **service-role** key. Never put that key in a `VITE_*` variable, commit it, or use it in browser code.
+Historical GymLog JSON backups can be imported into Supabase after the permitted Google user exists. This command is a Node-only migration and requires the Supabase **service-role** key. Never put that key in a `VITE_*` variable, commit it, or use it in browser code.
 
 In PowerShell, set the secret for the current terminal session and run the importer:
 

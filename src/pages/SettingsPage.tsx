@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { db } from '../db/db'
-import type { Settings } from '../db/types'
+import { getSettings, updateSettings } from '../data/settings'
 import { supabase } from '../lib/supabase'
 import './SettingsPage.css'
 
 const DEFAULT_RADIUS = 200
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings | null>(null)
   const [radius, setRadius] = useState(String(DEFAULT_RADIUS))
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -16,9 +14,8 @@ export default function SettingsPage() {
   const [accountError, setAccountError] = useState('')
 
   useEffect(() => {
-    void db.settings.orderBy('id').first().then((savedSettings) => {
+    void getSettings().then((savedSettings) => {
       if (!savedSettings) return
-      setSettings(savedSettings)
       setRadius(String(savedSettings.gymDetectionRadius))
     })
 
@@ -41,14 +38,7 @@ export default function SettingsPage() {
     }
 
     const nextSettings = { gymDetectionRadius: parsedRadius, theme: 'dark' as const }
-    if (settings?.id) {
-      await db.settings.update(settings.id, nextSettings)
-      setSettings({ ...settings, ...nextSettings })
-    } else {
-      const id = await db.settings.add(nextSettings)
-      setSettings({ ...nextSettings, id })
-    }
-
+    await updateSettings(nextSettings)
     setError('')
     setMessage('Settings saved.')
   }

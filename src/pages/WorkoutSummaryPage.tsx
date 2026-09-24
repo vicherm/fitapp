@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { db, removeEmptyWorkoutExercises } from '../db/db'
 import type { BodyPartGroup, Exercise, Gym, Workout, WorkoutSet } from '../db/types'
+import { listBodyPartGroups } from '../data/bodyPartGroups'
+import { listExercises } from '../data/exercises'
+import { getGym, listGyms } from '../data/gyms'
+import {
+  listWorkoutExercises,
+  listWorkoutSets,
+  listWorkouts,
+  getWorkout,
+  updateWorkout,
+} from '../data/workouts'
 import type { HistoryViewState } from './WorkoutHistoryPage'
 import { calculatePersonalRecordsByGym, getPersonalRecordGroupKey } from '../features/personalRecords'
 import './WorkoutSummaryPage.css'
@@ -45,42 +54,35 @@ function formatDuration(startTime: Date, endTime?: Date): string {
 }
 
 async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
-  await removeEmptyWorkoutExercises(workoutId)
-  const workout = await db.workouts.get(workoutId)
+  const workout = await getWorkout(workoutId)
   if (!workout) return null
 
   const [gym, gyms, workoutExercises] = await Promise.all([
-    workout.gymId ? db.gyms.get(workout.gymId) : Promise.resolve(undefined),
-    db.gyms.orderBy('name').toArray(),
-    db.workoutExercises.where('workoutId').equals(workoutId).toArray(),
+    workout.gymId ? getGym(workout.gymId) : Promise.resolve(null),
+    listGyms(),
+    listWorkoutExercises([workoutId]),
   ])
   const orderedWorkoutExercises = workoutExercises.sort((left, right) => left.order - right.order)
   const exerciseIds = orderedWorkoutExercises.map((workoutExercise) => workoutExercise.exerciseId)
-  const exercises = exerciseIds.length > 0 ? await db.exercises.where('id').anyOf(exerciseIds).toArray() : []
+  const exercises = exerciseIds.length > 0
+    ? (await listExercises()).filter((exercise) => exerciseIds.includes(exercise.id!))
+    : []
   const groupIds = Array.from(new Set(exercises.map((exercise) => exercise.bodyPartGroupId)))
-  const groups = groupIds.length > 0 ? await db.bodyPartGroups.where('id').anyOf(groupIds).toArray() : []
+  const groups = groupIds.length > 0
+    ? (await listBodyPartGroups()).filter((group) => groupIds.includes(group.id!))
+    : []
   const exerciseById = new Map<number, Exercise>(exercises.map((exercise) => [exercise.id!, exercise]))
   const groupById = new Map<number, BodyPartGroup>(groups.map((group) => [group.id!, group]))
 
   const summaryExercises = (await Promise.all(
     orderedWorkoutExercises.map(async (workoutExercise) => {
       const exercise = exerciseById.get(workoutExercise.exerciseId)
-      const sets = await db.workoutSets
-        .where('workoutExerciseId')
-        .equals(workoutExercise.id!)
-        .sortBy('setNumber')
-      const allExerciseWorkoutExercises = await db.workoutExercises
-        .where('exerciseId')
-        .equals(workoutExercise.exerciseId)
-        .toArray()
-      const allExerciseSets = await db.workoutSets
-        .where('workoutExerciseId')
-        .anyOf(allExerciseWorkoutExercises.map((entry) => entry.id!))
-        .toArray()
-      const allExerciseWorkouts = await db.workouts
-        .where('id')
-        .anyOf(allExerciseWorkoutExercises.map((entry) => entry.workoutId))
-        .toArray()
+      const sets = (await listWorkoutSets([workoutExercise.id!])).sort((left, right) => left.setNumber - right.setNumber)
+      const allExerciseWorkoutExercises = (await listWorkoutExercises())
+        .filter((entry) => entry.exerciseId === workoutExercise.exerciseId)
+      const allExerciseSets = await listWorkoutSets(allExerciseWorkoutExercises.map((entry) => entry.id!))
+      const allExerciseWorkouts = (await listWorkouts())
+        .filter((entry) => allExerciseWorkoutExercises.some((workoutEntry) => workoutEntry.workoutId === entry.id))
       const workoutById = new Map(allExerciseWorkouts.map((entry) => [entry.id!, entry]))
       const gymIdByWorkoutExerciseId = new Map(
         allExerciseWorkoutExercises.map((entry) => [entry.id!, workoutById.get(entry.workoutId)?.gymId]),
@@ -117,7 +119,7 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
     ? { ...workout, startTime: firstSetTime }
     : workout
   if (correctedWorkout !== workout) {
-    await db.workouts.update(workoutId, { startTime: firstSetTime })
+    await updateWorkout(workoutId, { startTime: firstSetTime })
   }
 
   return { workout: correctedWorkout, gym: gym ?? null, gyms, exercises: summaryExercises }
@@ -155,7 +157,7 @@ export default function WorkoutSummaryPage() {
     if (nextGymId !== undefined && !summary.gyms.some((gym) => gym.id === nextGymId)) return
 
     setIsSavingGym(true)
-    await db.workouts.update(workoutId, { gymId: nextGymId })
+    await updateWorkout(workoutId, { gymId: nextGymId })
     const nextSummary = await loadSummary(workoutId)
     setSummary(nextSummary)
     setIsEditingGym(false)

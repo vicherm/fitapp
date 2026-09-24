@@ -1,7 +1,6 @@
 import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { exportAllDataToJson, importAllDataFromJson } from '../db/backup'
-import { db } from '../db/db'
+import { exportAllDataToJson, importAllDataFromJson, resetAllSupabaseData } from '../db/backup'
 import './HomePage.css'
 import './MorePage.css'
 
@@ -69,27 +68,7 @@ export default function MorePage() {
 
     setIsBusy(true)
     try {
-      await db.transaction(
-        'rw',
-        [
-          db.settings,
-          db.bodyPartGroups,
-          db.exercises,
-          db.gyms,
-          db.workouts,
-          db.workoutExercises,
-          db.workoutSets,
-        ],
-        async () => {
-          await db.workoutSets.clear()
-          await db.workoutExercises.clear()
-          await db.workouts.clear()
-          await db.exercises.clear()
-          await db.bodyPartGroups.clear()
-          await db.gyms.clear()
-          await db.settings.clear()
-        },
-      )
+      await resetAllSupabaseData()
       sessionStorage.removeItem('gymlog-active-workout-draft-v1')
       window.location.reload()
     } catch {
