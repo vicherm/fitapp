@@ -51,7 +51,7 @@ serve(async (request) => {
       response_type: 'code',
       redirect_uri: redirectUri,
       approval_prompt: 'auto',
-      scope: 'read,activity:read',
+      scope: 'read,activity:write',
       state,
     })
     return json({ authorizationUrl: `https://www.strava.com/oauth/authorize?${params}` })

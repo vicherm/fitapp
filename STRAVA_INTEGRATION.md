@@ -73,7 +73,7 @@ Recommended functions:
 - `strava-oauth-callback`: exchanges the authorization code and stores the token securely
 - `strava-status`: returns connection state and basic athlete information, never raw tokens
 - `strava-disconnect`: revokes/deletes the stored connection
-- `strava-sync`: refreshes the token if necessary and imports selected activities
+- `strava-upload-workout`: refreshes the token if necessary and uploads a completed GymLog workout
 - optional `strava-webhook`: receives Strava activity events
 
 For a static Vite PWA, the OAuth callback should be an Edge Function URL. After the callback completes, redirect back to the frontend route under `/fitapp/`.
@@ -91,9 +91,7 @@ The callback URL must point to the deployed Edge Function, not directly to the b
 Request the smallest practical scope:
 
 - `read` for athlete/basic activity reads
-- `activity:read` for activities the athlete has made public
-- `activity:read_all` only when private activities are explicitly required
-- `activity:write` only if GymLog will upload activities to Strava
+- `activity:write` for uploading GymLog workouts to Strava
 
 Do not request write scope for an import-only integration.
 
@@ -159,10 +157,10 @@ Use this only if a GymLog strength workout should be explicitly linked to a Stra
 
 Strava activities are usually endurance/cardio activities, while GymLog records detailed strength sets. Decide which behavior is wanted before coding:
 
-1. **Import activities only**
-   - Store Strava activities separately.
-   - Display them in a Strava view or dashboard.
-   - Do not create GymLog workouts automatically.
+1. **Upload GymLog workouts**
+   - Generate a TCX WeightTraining activity from GymLog sets.
+   - Upload it when an unfinished workout is closed on a later day.
+   - Keep a link so the same workout is not uploaded twice.
 
 2. **Link activities to GymLog workouts**
    - Let the user manually connect a Strava activity to a workout.
@@ -173,9 +171,8 @@ Strava activities are usually endurance/cardio activities, while GymLog records 
    - Does not naturally provide exercise/set/weight/repetition data.
    - Should not silently create strength workouts from incomplete activity data.
 
-4. **Upload GymLog workouts to Strava**
-   - Requires `activity:write` and an activity-file or API upload format.
-   - Needs a clear mapping from strength workouts to Strava activity fields.
+4. **Import Strava activities**
+   - Not part of the current integration direction.
 
 The lowest-risk first release is option 1, followed by optional manual linking.
 
@@ -254,7 +251,7 @@ Never place `STRAVA_CLIENT_SECRET`, Supabase service-role keys, or Strava refres
 - `strava-oauth-callback`: validates state, exchanges the authorization code, and stores tokens server-side.
 - `strava-status`: returns connection metadata without tokens.
 - `strava-disconnect`: revokes the Strava token when possible and removes the local connection.
-- `strava-sync`: refreshes expired tokens, fetches paginated activities, and upserts them idempotently.
+- `strava-upload-workout`: refreshes expired tokens, generates a TCX WeightTraining activity, and uploads it idempotently.
 
 Required Edge Function secrets are listed in `supabase/functions/.env.example`. Set `STRAVA_FRONTEND_REDIRECT_URI` to the deployed `/fitapp/settings?strava=callback` URL before deployment; the example uses localhost.
 
@@ -265,7 +262,7 @@ supabase functions deploy strava-start-oauth
 supabase functions deploy strava-oauth-callback
 supabase functions deploy strava-status
 supabase functions deploy strava-disconnect
-supabase functions deploy strava-sync
+supabase functions deploy strava-upload-workout
 ```
 
 `supabase/config.toml` disables gateway JWT verification for all five functions. The four browser-facing functions still enforce the Google owner session in their own code; the OAuth callback validates its signed state and resolves the owner through the Supabase Admin API. All five functions are self-contained for dashboard single-file deployment.

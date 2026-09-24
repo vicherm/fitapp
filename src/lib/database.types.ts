@@ -342,6 +342,38 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_strava_links: {
+        Row: {
+          id: number
+          user_id: string
+          workout_id: number
+          strava_activity_id: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id?: string
+          workout_id: number
+          strava_activity_id: number
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          workout_id?: number
+          strava_activity_id?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workout_strava_links_workout_id_user_id_fkey'
+            columns: ['workout_id', 'user_id']
+            isOneToOne: false
+            referencedRelation: 'workouts'
+            referencedColumns: ['id', 'user_id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

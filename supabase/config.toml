@@ -10,5 +10,5 @@ verify_jwt = false
 [functions.strava-disconnect]
 verify_jwt = false
 
-[functions.strava-sync]
+[functions.strava-upload-workout]
 verify_jwt = false
