@@ -23,7 +23,7 @@ Database
 
 Authentication
 
-- Supabase Auth (migration target)
+- Supabase Auth with Google OAuth
 
 Charts
 

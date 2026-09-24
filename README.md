@@ -11,6 +11,24 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 
 Apply `supabase/migrations/202609230001_initial_schema.sql` through the Supabase SQL Editor. The migration creates the GymLog tables, constraints, signup settings trigger, authenticated grants, and Row Level Security policies. The current application still reads and writes Dexie until the later data-access migration is complete.
 
+Apply `supabase/migrations/202609230002_restrict_to_google_user.sql` after the initial schema. In Supabase Authentication, enable Google and configure its OAuth client. The Google authorized redirect URI is:
+
+```text
+https://dhxckgfuapniettrohvo.supabase.co/auth/v1/callback
+```
+
+The OAuth setup has two different redirect URL lists:
+
+1. In Google Cloud Console, add only the Supabase callback above as an Authorized redirect URI.
+2. In Supabase Authentication -> URL Configuration, add these exact app URLs as Redirect URLs:
+
+```text
+http://localhost:5173/fitapp/
+http://127.0.0.1:5173/fitapp/
+```
+
+The URL must match the browser address exactly; `localhost` and `127.0.0.1` are different origins. Set the Site URL to the deployed GymLog URL, or to one of the local URLs while testing. In Supabase Authentication -> Providers -> Google, switch Google to Enabled and save the Google OAuth client ID and secret. After the permitted Google account has signed in successfully once, new-user registration can be disabled in Supabase to prevent creation of additional Auth users.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

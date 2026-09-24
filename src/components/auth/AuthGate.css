@@ -1,0 +1,72 @@
+.auth-page,
+.auth-loading {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-loading {
+  color: var(--text);
+}
+
+.auth-panel {
+  width: min(100%, 360px);
+  padding: 28px 0;
+  border-top: 1px solid var(--accent-border);
+  border-bottom: 1px solid var(--border);
+}
+
+.auth-kicker {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.auth-panel h1 {
+  margin-bottom: 28px;
+  font-size: 2.5rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.auth-google-button {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 6px;
+  background: var(--text-h);
+  color: #181a20;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-google-button:hover,
+.auth-google-button:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.auth-google-mark {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #4285f4;
+  font-weight: 800;
+}
+
+.auth-error {
+  margin: 16px 0 0;
+  color: #ffb36a;
+  font-size: 0.86rem;
+}

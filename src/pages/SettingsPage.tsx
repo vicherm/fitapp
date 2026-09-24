@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { db } from '../db/db'
 import type { Settings } from '../db/types'
+import { supabase } from '../lib/supabase'
 import './SettingsPage.css'
 
 const DEFAULT_RADIUS = 200
@@ -11,6 +12,8 @@ export default function SettingsPage() {
   const [radius, setRadius] = useState(String(DEFAULT_RADIUS))
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [accountEmail, setAccountEmail] = useState('')
+  const [accountError, setAccountError] = useState('')
 
   useEffect(() => {
     void db.settings.orderBy('id').first().then((savedSettings) => {
@@ -18,7 +21,16 @@ export default function SettingsPage() {
       setSettings(savedSettings)
       setRadius(String(savedSettings.gymDetectionRadius))
     })
+
+    void supabase.auth.getUser().then(({ data }) => {
+      setAccountEmail(data.user?.email ?? '')
+    })
   }, [])
+
+  async function signOut() {
+    const { error: signOutError } = await supabase.auth.signOut()
+    if (signOutError) setAccountError(signOutError.message)
+  }
 
   async function saveSettings() {
     const parsedRadius = Number(radius)
@@ -71,6 +83,17 @@ export default function SettingsPage() {
         </button>
         {error && <p className="settings-error">{error}</p>}
         {message && <p className="settings-message">{message}</p>}
+      </section>
+
+      <section className="settings-card settings-account" aria-label="Account settings">
+        <div>
+          <h2>Google Account</h2>
+          {accountEmail && <p>{accountEmail}</p>}
+        </div>
+        <button className="settings-sign-out" type="button" onClick={() => void signOut()}>
+          Sign Out
+        </button>
+        {accountError && <p className="settings-error" role="alert">{accountError}</p>}
       </section>
     </main>
   )

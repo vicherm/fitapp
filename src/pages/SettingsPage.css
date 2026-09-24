@@ -98,3 +98,41 @@
 .settings-message {
   color: var(--text);
 }
+
+.settings-account {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-account h2 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-account p {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.settings-sign-out {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.settings-sign-out:hover,
+.settings-sign-out:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.settings-account .settings-error {
+  grid-column: 1 / -1;
+}

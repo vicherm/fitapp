@@ -3,7 +3,7 @@
 Version: 0.3
 Status: Draft
 
-Supabase migration status: the remote schema and browser client foundation are defined, but application data access still uses Dexie until the repository migration is complete.
+Supabase migration status: Google authentication and the remote schema foundation are defined, but application data access still uses Dexie until the repository migration is complete.
 
 ---
 

@@ -7,7 +7,7 @@ This app uses Dexie on top of IndexedDB. The database name is `GymLog`, and the 
 
 ## Supabase migration foundation
 
-The target PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. It preserves numeric identifiers for data migration, adds authenticated ownership to every table, enforces same-user relationships with composite foreign keys, and enables Row Level Security. The application continues to use Dexie until its data-access layer is migrated.
+The target PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. It preserves numeric identifiers for data migration, adds authenticated ownership to every table, enforces same-user relationships with composite foreign keys, and enables Row Level Security. `supabase/migrations/202609230002_restrict_to_google_user.sql` restricts every policy to the configured Google identity. The application continues to use Dexie until its data-access layer is migrated.
 
 ---
 
