@@ -70,6 +70,8 @@ function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise
   const lastSetTime = sets.length > 0 ? new Date(sets[sets.length - 1].start_time!).getTime() : start
   return {
     version: '1.0',
+    sport_type: 'WeightTraining',
+    trainer: true,
     start_time: new Date(start).toISOString(),
     utc_offset: 0,
     elapsed_time: Math.max(1, Math.floor((lastSetTime - start) / 1000)),
