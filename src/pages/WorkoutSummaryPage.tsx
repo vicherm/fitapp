@@ -4,7 +4,7 @@ import type { BodyPartGroup, Exercise, Gym, Workout, WorkoutSet } from '../db/ty
 import { listBodyPartGroups } from '../data/bodyPartGroups'
 import { listExercises } from '../data/exercises'
 import { getGym, listGyms } from '../data/gyms'
-import { downloadWorkoutStravaJson, uploadWorkoutToStrava } from '../data/strava'
+import { uploadWorkoutToStrava } from '../data/strava'
 import {
   listWorkoutExercises,
   listWorkoutSets,
@@ -177,33 +177,10 @@ export default function WorkoutSummaryPage() {
     try {
       const result = await uploadWorkoutToStrava(workoutId)
       setStravaUploadMessage(result.alreadyUploaded
-        ? result.stravaUrl ? `Already uploaded: ${result.stravaUrl}` : 'Already uploaded to Strava.'
-        : result.stravaUrl
-          ? `Uploaded to Strava: ${result.stravaUrl}`
-          : 'Uploaded to Strava.')
+        ? 'Already uploaded to Strava.'
+        : 'Uploaded to Strava.')
     } catch (error) {
       setStravaUploadMessage(error instanceof Error ? error.message : 'Strava upload failed.')
-    } finally {
-      setIsUploadingToStrava(false)
-    }
-  }
-
-  async function handleStravaPreview() {
-    if (!summary || !workoutId || isUploadingToStrava) return
-    setIsUploadingToStrava(true)
-    setStravaUploadMessage('Preparing JSON...')
-    try {
-      await downloadWorkoutStravaJson(workoutId)
-      const missingTypes = summary.exercises
-        .filter((exercise) => exercise.sets.length > 0 && !exercise.stravaExerciseType?.trim())
-        .map((exercise) => exercise.exerciseName)
-      setStravaUploadMessage(
-        missingTypes.length > 0
-          ? `Downloaded JSON. Skipped: ${missingTypes.join(', ')}.`
-          : 'Downloaded Strava JSON preview.',
-      )
-    } catch (error) {
-      setStravaUploadMessage(error instanceof Error ? error.message : 'Could not create Strava JSON preview.')
     } finally {
       setIsUploadingToStrava(false)
     }
@@ -301,14 +278,6 @@ export default function WorkoutSummaryPage() {
             disabled={isUploadingToStrava || exercisesWithSets.length === 0}
           >
             {isUploadingToStrava ? 'Uploading...' : 'Upload to Strava'}
-          </button>
-          <button
-            type="button"
-            className="ws-strava-preview"
-            onClick={() => void handleStravaPreview()}
-            disabled={isUploadingToStrava || exercisesWithSets.length === 0}
-          >
-            Download JSON
           </button>
           {stravaUploadMessage && <span className="ws-strava-message" role="status">{stravaUploadMessage}</span>}
         </div>

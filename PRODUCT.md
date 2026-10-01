@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.82
-Last Updated: 2026-09-30
+Version: 3.84
+Last Updated: 2026-10-01
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -35,9 +35,7 @@ When an unfinished workout is closed on a later day, GymLog best-effort uploads 
 
 Workout Summary also provides an Upload to Strava action for manually triggering the same upload. The action reports uploading, success, already-uploaded, and failure states.
 
-Uploaded Strava activities and the downloadable Strava JSON payload are named with the workout's gym name followed by the workout date. If the workout has no gym, the name uses `GymLog Workout` followed by the workout date.
-
-Workout Summary provides a Download JSON action for inspecting the exact Strava strength-training payload without uploading it.
+Uploaded Strava activities are named with the workout's gym name followed by the workout date. If the workout has no gym, the name uses `GymLog Workout` followed by the workout date.
 
 If a workout exercise has no Strava Exercise Type, Workout Summary warns that the exercise will be skipped during Strava upload and directs the user to configure the mapping in Exercise Details.
 
