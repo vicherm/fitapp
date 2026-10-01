@@ -53,7 +53,7 @@ async function refreshToken(connection: Connection) {
   return data as Connection
 }
 
-function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise[]) {
+function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise[], activityName: string) {
   const sets: StravaSet[] = exercises
     .filter((exercise) => Boolean(exercise.exercises?.strava_exercise_type?.trim()))
     .sort((left, right) => left.exercise_order - right.exercise_order)
@@ -71,6 +71,7 @@ function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise
   return {
     version: '1.0',
     sport_type: 'WeightTraining',
+    name: activityName,
     trainer: true,
     start_time: new Date(start).toISOString(),
     utc_offset: 0,
@@ -81,7 +82,7 @@ function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise
   }
 }
 
-async function uploadAndPoll(payload: Record<string, unknown>, accessToken: string, externalId: string) {
+async function uploadAndPoll(payload: Record<string, unknown>, accessToken: string, externalId: string, activityName: string) {
   const file = new Blob([JSON.stringify(payload)], { type: 'application/json' })
   const form = new FormData()
   form.append('file', file, `${externalId}.json`)
@@ -89,7 +90,7 @@ async function uploadAndPoll(payload: Record<string, unknown>, accessToken: stri
   form.append('sport_type', 'WeightTraining')
   form.append('activity_type', 'WeightTraining')
   form.append('trainer', '1')
-  form.append('name', `GymLog Workout ${String(payload.start_time).slice(0, 10)}`)
+  form.append('name', activityName)
   form.append('external_id', externalId)
 
   const uploadResponse = await fetch('https://www.strava.com/api/v3/uploads', {
@@ -134,14 +135,16 @@ serve(async (request) => {
     }
 
     const [{ data: workout, error: workoutError }, { data: workoutExercises, error: exercisesError }] = await Promise.all([
-      db.from('workouts').select('id,start_time').eq('id', workoutId).eq('user_id', user.id).single(),
+      db.from('workouts').select('id,start_time,gyms(name)').eq('id', workoutId).eq('user_id', user.id).single(),
       db.from('workout_exercises').select('exercise_order,exercises(name,strava_exercise_type),workout_sets(weight,reps,performed_at,set_number)').eq('workout_id', workoutId).eq('user_id', user.id).order('exercise_order'),
     ])
     if (workoutError) throw workoutError
     if (exercisesError) throw exercisesError
 
     const exercises = (workoutExercises ?? []) as WorkoutExercise[]
-    const payload = buildStrengthTrainingJson(workout.start_time, exercises)
+    const gymName = (workout as { gyms?: { name?: string } | null }).gyms?.name?.trim() || 'GymLog Workout'
+    const activityName = `${gymName} ${String(workout.start_time).slice(0, 10)}`
+    const payload = buildStrengthTrainingJson(workout.start_time, exercises, activityName)
     if (payload.sets.length === 0) return json({ error: 'Workout has no logged sets.' }, 400)
 
     if (input.preview === true) return json({ preview: true, workoutId, payload })
@@ -150,7 +153,7 @@ serve(async (request) => {
     if (!connection) return json({ error: 'Strava is not connected.' }, 404)
     if (new Date(connection.expires_at).getTime() <= Date.now() + 60_000) connection = await refreshToken(connection)
 
-    const stravaActivityId = await uploadAndPoll(payload, connection.access_token, `gymlog-workout-${workoutId}`)
+    const stravaActivityId = await uploadAndPoll(payload, connection.access_token, `gymlog-workout-${workoutId}`, activityName)
     const { error: saveError } = await db.from('workout_strava_links').insert({ user_id: user.id, workout_id: workoutId, strava_activity_id: stravaActivityId })
     if (saveError) throw saveError
     return json({ uploaded: true, stravaActivityId, stravaUrl: `https://www.strava.com/activities/${stravaActivityId}` })
