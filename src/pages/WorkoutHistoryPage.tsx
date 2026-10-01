@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { listExercises } from '../data/exercises'
 import { listGyms } from '../data/gyms'
 import { listWorkoutExercises, listWorkouts } from '../data/workouts'
+import { getExerciseDisplayName } from '../lib/exerciseName'
 import type { Workout } from '../db/types'
 import './WorkoutHistoryPage.css'
 
@@ -99,7 +100,7 @@ export default function WorkoutHistoryPage() {
       const gyms = gymIds.length > 0
         ? (await listGyms()).filter((gym) => gym.id && gymIds.includes(gym.id))
         : []
-      const exerciseNameById = new Map(exercises.map((exercise) => [exercise.id!, exercise.name]))
+      const exerciseNameById = new Map(exercises.map((exercise) => [exercise.id!, getExerciseDisplayName(exercise)]))
       const gymAbbreviationById = new Map(gyms.map((gym) => [gym.id!, gym.abbreviation]))
       const exercisesByWorkoutId = new Map<number, typeof workoutExercises>()
 

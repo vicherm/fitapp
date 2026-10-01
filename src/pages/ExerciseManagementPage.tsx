@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { BodyPartGroup, Exercise } from '../db/types'
 import { listBodyPartGroups } from '../data/bodyPartGroups'
 import { listExercises } from '../data/exercises'
+import { getExerciseDisplayName } from '../lib/exerciseName'
 import './ExerciseManagementPage.css'
 
 interface ExerciseGroup {
@@ -106,7 +107,7 @@ export default function ExerciseManagementPage() {
                         className="em-item"
                         onClick={() => navigate(`/exercises/${exercise.id}`)}
                       >
-                        {exercise.name}
+                        {getExerciseDisplayName(exercise)}
                       </button>
                     </li>
                   ))}

@@ -4,6 +4,7 @@ import type { Exercise, Gym, WorkoutExercise, WorkoutSet } from '../../db/types'
 import { getSettings } from '../../data/settings'
 import { getExercise } from '../../data/exercises'
 import { getGym, listGyms } from '../../data/gyms'
+import { getExerciseDisplayName } from '../../lib/exerciseName'
 import {
   createWorkoutExercise,
   createWorkoutSet,
@@ -747,7 +748,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           })
         }
       >
-        {exercise ? exercise.name : 'Select Exercise'}
+        {exercise ? getExerciseDisplayName(exercise) : 'Select Exercise'}
       </button>
 
       {/* Weight / reps row */}

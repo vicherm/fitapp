@@ -4,6 +4,7 @@ import type { BodyPartGroup, Exercise, Workout, WorkoutSet } from '../db/types'
 import { listBodyPartGroups } from '../data/bodyPartGroups'
 import { getExercise, updateExercise } from '../data/exercises'
 import { listGyms } from '../data/gyms'
+import { getExerciseDisplayName } from '../lib/exerciseName'
 import {
   createWorkoutExercise,
   deleteWorkoutExercise,
@@ -381,7 +382,7 @@ export default function ExerciseHistoryPage() {
               className="eh-title eh-clickable"
               onClick={() => setEditingMetaField('name')}
             >
-              {exercise?.name ?? 'Unknown exercise'}
+              {exercise ? getExerciseDisplayName(exercise) : 'Unknown exercise'}
             </h1>
           )}
         </div>

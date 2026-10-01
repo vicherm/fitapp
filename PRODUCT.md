@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.84
+Version: 3.85
 Last Updated: 2026-10-01
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -455,6 +455,8 @@ Fields
 - notes
 
 The exercise editor allows the user to assign an exercise to a body part group.
+
+When a machine exercise is shown in a list or title, its displayed name has ` M` appended (for example, `Lat Pull Down M`). The suffix is not part of the saved or editable exercise name.
 
 The editor also provides quick navigation to body part group management.
 

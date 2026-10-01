@@ -4,6 +4,7 @@ import type { BodyPartGroup, Exercise } from '../../db/types'
 import { listBodyPartGroups } from '../../data/bodyPartGroups'
 import { getExercise, listExercises } from '../../data/exercises'
 import { listWorkoutExercises, listWorkouts } from '../../data/workouts'
+import { getExerciseDisplayName } from '../../lib/exerciseName'
 import './ExerciseSelector.css'
 
 interface ExerciseGroup {
@@ -172,7 +173,7 @@ export default function ExerciseSelector({ workoutId, currentExerciseId, correct
               {hotPicks.map((exercise) => (
                 <li key={exercise.id}>
                   <button className="es-hotpick-item" onClick={() => selectExercise(exercise)}>
-                    {exercise.name}
+                    {getExerciseDisplayName(exercise)}
                   </button>
                 </li>
               ))}
@@ -199,12 +200,12 @@ export default function ExerciseSelector({ workoutId, currentExerciseId, correct
                         className="es-item"
                         onClick={() => selectExercise(exercise)}
                       >
-                        {exercise.name}
+                        {getExerciseDisplayName(exercise)}
                       </button>
                       <button
                         className="es-edit"
                         onClick={() => navigate(`/exercises/${exercise.id}`)}
-                        aria-label={`Edit ${exercise.name}`}
+                        aria-label={`Edit ${getExerciseDisplayName(exercise)}`}
                       >
                         ⋯
                       </button>

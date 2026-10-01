@@ -5,6 +5,7 @@ import { listBodyPartGroups } from '../data/bodyPartGroups'
 import { listExercises } from '../data/exercises'
 import { getGym, listGyms } from '../data/gyms'
 import { uploadWorkoutToStrava } from '../data/strava'
+import { getExerciseDisplayName } from '../lib/exerciseName'
 import {
   listWorkoutExercises,
   listWorkoutSets,
@@ -98,7 +99,7 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
 
       return {
         bodyPartName: exercise ? groupById.get(exercise.bodyPartGroupId)?.name ?? 'Unassigned' : 'Unknown',
-        exerciseName: exercise?.name ?? 'Unknown exercise',
+        exerciseName: exercise ? getExerciseDisplayName(exercise) : 'Unknown exercise',
         stravaExerciseType: exercise?.stravaExerciseType,
         sets,
         markedSetIds: recordsByGym.get(currentGroupKey)?.markedSetIds ?? new Set(),
