@@ -154,10 +154,12 @@ export default function WorkoutHistoryPage() {
     })
   }
 
-  function handleDateClick(day: number) {
+  function handleDateClick(date: Date) {
     setPage(0)
-    setSelectedDate(new Date(displayedMonth.getFullYear(), displayedMonth.getMonth(), day))
-    setListMonth(displayedMonth)
+    setSelectedDate(date)
+    const month = new Date(date.getFullYear(), date.getMonth(), 1)
+    setDisplayedMonth(month)
+    setListMonth(month)
   }
 
   function handleListPointerDown(event: PointerEvent<HTMLElement>) {
@@ -253,14 +255,11 @@ export default function WorkoutHistoryPage() {
 
   const daysInMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 0).getDate()
   const firstWeekday = (new Date(displayedMonth.getFullYear(), displayedMonth.getMonth(), 1).getDay() + 6) % 7
-  const workoutDays = new Set(
-    workoutDates
-      .filter((workoutDate) => (
-        workoutDate.getFullYear() === displayedMonth.getFullYear()
-        && workoutDate.getMonth() === displayedMonth.getMonth()
-      ))
-      .map((workoutDate) => workoutDate.getDate()),
+  const calendarDates = Array.from(
+    { length: Math.ceil((firstWeekday + daysInMonth) / 7) * 7 },
+    (_, index) => new Date(displayedMonth.getFullYear(), displayedMonth.getMonth(), index + 1 - firstWeekday),
   )
+  const workoutDays = new Set(workoutDates.map(formatWorkoutDate))
   return (
     <main className="wh">
       <header className="wh-header">
@@ -282,18 +281,19 @@ export default function WorkoutHistoryPage() {
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => <span key={day}>{day}</span>)}
         </div>
         <div className="wh-calendar-days">
-          {Array.from({ length: firstWeekday }, (_, index) => <span key={`empty-${index}`} />)}
-          {Array.from({ length: daysInMonth }, (_, index) => {
-            const day = index + 1
-            const isSelected = selectedDate?.getDate() === day
+          {calendarDates.map((date) => {
+            const dateKey = formatWorkoutDate(date)
+            const isSelected = selectedDate !== null && formatWorkoutDate(selectedDate) === dateKey
+            const isAdjacentMonth = date.getMonth() !== displayedMonth.getMonth()
             return (
               <button
-                key={day}
-                className={`${workoutDays.has(day) ? 'has-workout' : ''} ${isSelected ? 'is-selected' : ''}`}
-                onClick={() => handleDateClick(day)}
-                aria-label={`Show workouts from ${formatWorkoutDate(new Date(displayedMonth.getFullYear(), displayedMonth.getMonth(), day))}`}
+                key={dateKey}
+                className={`${isAdjacentMonth ? 'is-adjacent-month' : ''} ${workoutDays.has(dateKey) ? 'has-workout' : ''} ${isSelected ? 'is-selected' : ''}`}
+                onClick={() => handleDateClick(date)}
+                aria-label={`Show workouts from ${dateKey}`}
+                aria-pressed={isSelected}
               >
-                {day}
+                {date.getDate()}
               </button>
             )
           })}

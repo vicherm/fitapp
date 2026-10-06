@@ -87,6 +87,10 @@
   cursor: pointer;
 }
 
+.wh-calendar-days .is-adjacent-month {
+  color: var(--text);
+}
+
 .wh-calendar-days .has-workout,
 .wh-calendar-days .is-selected {
   border-radius: 50%;

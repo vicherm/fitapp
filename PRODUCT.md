@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.88
-Last Updated: 2026-10-01
+Version: 3.89
+Last Updated: 2026-10-06
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -152,6 +152,8 @@ The More page provides navigation to:
 The full-width History screen shows a compact, swipeable calendar above a paginated workout list. Days with workouts are highlighted and the calendar remains visible while viewing workout pages. Dragging the calendar right opens earlier months; dragging it left returns toward the current month. Selecting a calendar date resets the list so it begins with workouts logged on that date. The calendar is synchronized with the list’s initial and current page, showing the month of the newest workout on that page. The list is synchronized with the displayed calendar month and resets to that month's first page when the calendar changes; its pagination continues across earlier month boundaries. Workout history is shown three workouts at a time; the list responds to left and right drag gestures, as well as up and down drag gestures, to move between pages. Dragging up moves to older workouts; dragging down moves to newer workouts. Each workout shows its date and gym abbreviation, followed by the exercises logged in recorded order. Clicking anywhere on a workout card opens its Workout Summary page.
 
 For horizontal list swipes, swiping right moves to older workouts and swiping left moves to newer workouts.
+
+The calendar shows complete Monday-to-Sunday weeks, filling the first and last weeks with muted dates from the previous and next months. These dates also show workout highlights and can be selected to open that date's month and update the workout list. Selection identifies the full date, not just the day number.
 
 ## Workout Summary
 
