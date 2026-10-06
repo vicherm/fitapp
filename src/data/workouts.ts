@@ -51,6 +51,11 @@ export async function updateWorkout(id: number, input: Partial<Pick<Workout, 'gy
   return mapWorkout(data)
 }
 
+export async function deleteWorkout(id: number): Promise<void> {
+  const { error } = await supabase.from('workouts').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function createWorkoutExercise(input: Omit<WorkoutExercise, 'id'>): Promise<WorkoutExercise> {
   const { data, error } = await supabase
     .from('workout_exercises')

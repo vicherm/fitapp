@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.85
+Version: 3.88
 Last Updated: 2026-10-01
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -162,6 +162,8 @@ Its header shows the workout date, gym name, start time, and duration from worko
  each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values with each set's local time, on separate rows.
 The Workout Summary displays the gym name as text. Clicking the name reveals a gym dropdown; the selected gym is saved on the workout and applies to all workout exercises when calculating and displaying gym-specific information.
 
+At the end of Workout Summary, Delete Workout requires a five-second delay followed by an explicit confirmation. Confirming permanently deletes that workout and its logged sets from GymLog; an uploaded Strava activity is not deleted. Cancel abandons the deletion.
+
 ## Exercise Management
 Exercises from More opens an Exercise Management screen where the user can:
 
@@ -237,7 +239,7 @@ The input area is compact:
 - LOG action is placed next to the input fields
 - Numeric keypad uses full available width
 
-When navigating away from Active Workout and returning within the same open workout, the in-progress state is restored (selected exercise, active field, and entered weight/reps values), including Home -> Active navigation.
+When navigating away from Active Workout and returning within the same open workout, the in-progress state is restored (selected exercise, active field, weight/reps values, and whether those values are untouched prefills), including Home -> Active navigation.
 
 The screen contains the following elements.
 
@@ -263,7 +265,7 @@ Workout exercises with no logged sets are removed from local storage and are exc
 
 Numeric input field for the current set weight.
 
-When the field is selected, its value is cleared so the user can enter a fresh value quickly.
+The suggested value is shown until editing starts. Selecting the field or entering the first keypad or hardware-keyboard character clears the prefill; new input starts from an empty value.
 
 ---
 
@@ -271,7 +273,7 @@ When the field is selected, its value is cleared so the user can enter a fresh v
 
 Numeric input field for the number of repetitions.
 
-When the field is selected, its value is cleared so the user can enter a fresh value quickly.
+The suggested value is shown until editing starts. Selecting the field or entering the first keypad or hardware-keyboard character clears the prefill; new input starts from an empty value. The increment/decrement controls also start from an empty value when the displayed count is an untouched prefill.
 
 Increment and decrement controls beside the field adjust an entered repetition count by one; decrementing cannot produce a negative count.
 

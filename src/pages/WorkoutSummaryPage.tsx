@@ -11,6 +11,7 @@ import {
   listWorkoutSets,
   listWorkouts,
   getWorkout,
+  deleteWorkout,
   updateWorkout,
 } from '../data/workouts'
 import type { HistoryViewState } from './WorkoutHistoryPage'
@@ -143,6 +144,17 @@ export default function WorkoutSummaryPage() {
   const [isEditingGym, setIsEditingGym] = useState(false)
   const [isUploadingToStrava, setIsUploadingToStrava] = useState(false)
   const [stravaUploadMessage, setStravaUploadMessage] = useState('')
+  const [isDeleteRequested, setIsDeleteRequested] = useState(false)
+  const [deleteCountdown, setDeleteCountdown] = useState(5)
+  const [isDeletingWorkout, setIsDeletingWorkout] = useState(false)
+  const [deleteMessage, setDeleteMessage] = useState('')
+
+  useEffect(() => {
+    if (!isDeleteRequested || deleteCountdown <= 0) return
+
+    const timer = window.setTimeout(() => setDeleteCountdown((current) => current - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [isDeleteRequested, deleteCountdown])
 
   useEffect(() => {
     if (!Number.isInteger(workoutId) || workoutId <= 0) {
@@ -184,6 +196,29 @@ export default function WorkoutSummaryPage() {
       setStravaUploadMessage(error instanceof Error ? error.message : 'Strava upload failed.')
     } finally {
       setIsUploadingToStrava(false)
+    }
+  }
+
+  function requestWorkoutDelete() {
+    setDeleteMessage('')
+    setDeleteCountdown(5)
+    setIsDeleteRequested(true)
+  }
+
+  async function handleWorkoutDelete() {
+    if (!summary || !workoutId || deleteCountdown > 0 || isDeletingWorkout) return
+
+    setIsDeletingWorkout(true)
+    setDeleteMessage('')
+    try {
+      await deleteWorkout(workoutId)
+      if (returnToActiveWorkout) sessionStorage.removeItem('gymlog-active-workout-draft-v1')
+      navigate('/history', { replace: true, state: { historyView } })
+    } catch {
+      setDeleteMessage('Could not delete workout. Please try again.')
+      setIsDeleteRequested(false)
+    } finally {
+      setIsDeletingWorkout(false)
     }
   }
 
@@ -311,6 +346,44 @@ export default function WorkoutSummaryPage() {
             </article>
           ))
         )}
+      </section>
+
+      <section className="ws-delete-section" aria-label="Delete workout">
+        {!isDeleteRequested ? (
+          <button
+            type="button"
+            className="ws-delete-btn"
+            onClick={requestWorkoutDelete}
+            disabled={isDeletingWorkout}
+          >
+            Delete Workout
+          </button>
+        ) : (
+          <div className="ws-delete-confirmation">
+            <p>This permanently deletes this workout and its logged sets. Any uploaded Strava activity will remain on Strava.</p>
+            <button
+              type="button"
+              className="ws-delete-btn"
+              onClick={() => void handleWorkoutDelete()}
+              disabled={deleteCountdown > 0 || isDeletingWorkout}
+            >
+              {isDeletingWorkout
+                ? 'Deleting...'
+                : deleteCountdown > 0
+                  ? `Confirm Delete (${deleteCountdown})`
+                  : 'Confirm Delete'}
+            </button>
+            <button
+              type="button"
+              className="ws-delete-cancel"
+              onClick={() => setIsDeleteRequested(false)}
+              disabled={isDeletingWorkout}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+        {deleteMessage && <p className="ws-delete-message" role="alert">{deleteMessage}</p>}
       </section>
     </main>
   )

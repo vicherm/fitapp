@@ -39,6 +39,7 @@ interface ActiveWorkoutDraft {
   weight: string
   reps: string
   activeField: Field
+  prefilledFields: Field[]
 }
 
 function advancePrefillPosition(sequence: WorkoutSet[], position: number, weight: number): number | null {
@@ -89,6 +90,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [notification, setNotification] = useState<string | null>(null)
   const [isLogCoolingDown, setIsLogCoolingDown] = useState(false)
   const isHydratingDraftRef = useRef(false)
+  const prefilledFieldsRef = useRef<Set<Field>>(new Set())
   const skipNextPrefillRef = useRef(false)
   const previousSequenceRef = useRef<WorkoutSet[]>([])
   const previousSequencePositionRef = useRef(0)
@@ -193,6 +195,11 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
       isHydratingDraftRef.current = true
       skipNextPrefillRef.current = true
+      prefilledFieldsRef.current = new Set(
+        Array.isArray(draft.prefilledFields)
+          ? draft.prefilledFields.filter((field): field is Field => field === 'weight' || field === 'reps')
+          : [],
+      )
 
       setWeight(typeof draft.weight === 'string' ? draft.weight : '')
       setReps(typeof draft.reps === 'string' ? draft.reps : '')
@@ -227,6 +234,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       weight,
       reps,
       activeField,
+      prefilledFields: Array.from(prefilledFieldsRef.current),
     }
     sessionStorage.setItem(ACTIVE_WORKOUT_DRAFT_KEY, JSON.stringify(draft))
   }, [w?.id, exercise?.id, weight, reps, activeField])
@@ -234,6 +242,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   // Load history whenever exercise or workout changes
   useEffect(() => {
     if (!exercise?.id || !w?.id) {
+    prefilledFieldsRef.current.clear()
       setCurrentSets([])
       setPersonalRecordsByGym(new Map([['all', calculatePersonalRecords([])]]))
       setPersonalRecordGroupKeyBySetId(new Map())
@@ -334,13 +343,16 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       } else {
         const suggestedSet = previousSequence[previousSequencePosition]
         if (suggestedSet) {
+          prefilledFieldsRef.current = new Set(['weight', 'reps'])
           setWeight(String(suggestedSet.weight))
           setReps(String(suggestedSet.reps))
         } else if (currentWorkoutSets.length > 0) {
           const lastCurrentSet = currentWorkoutSets[currentWorkoutSets.length - 1]
+          prefilledFieldsRef.current = new Set(['weight', 'reps'])
           setWeight(String(lastCurrentSet.weight))
           setReps(String(lastCurrentSet.reps))
         } else {
+          prefilledFieldsRef.current.clear()
           setWeight('')
           setReps('')
         }
@@ -457,6 +469,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       if (nextPosition === null) {
         previousSequenceRef.current = []
         previousSequencePositionRef.current = 0
+        prefilledFieldsRef.current = new Set(['weight', 'reps'])
         setWeight(String(wNum))
         setReps(String(rNum))
         return
@@ -466,9 +479,11 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       const nextSuggestedSet = sequence[nextPosition]
 
       if (nextSuggestedSet) {
+        prefilledFieldsRef.current = new Set(['weight', 'reps'])
         setWeight(String(nextSuggestedSet.weight))
         setReps(String(nextSuggestedSet.reps))
       } else {
+        prefilledFieldsRef.current = new Set(['weight', 'reps'])
         setWeight(String(wNum))
         setReps(String(rNum))
       }
@@ -490,12 +505,14 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   function handleInputKey(key: string) {
     if (key === '') return
+    const startsFromEmpty = prefilledFieldsRef.current.delete(activeField)
     const setter = activeField === 'weight' ? setWeight : setReps
     setter((prev) => {
-      if (key === '⌫') return prev.slice(0, -1)
-      if (key === '.' && prev.includes('.')) return prev
+      const current = startsFromEmpty ? '' : prev
+      if (key === '⌫') return current.slice(0, -1)
+      if (key === '.' && current.includes('.')) return current
       if (key === '.' && activeField === 'reps') return prev
-      return prev + key
+      return current + key
     })
   }
 
@@ -505,9 +522,13 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   function adjustReps(amount: number) {
     setActiveField('reps')
+    const startsFromEmpty = prefilledFieldsRef.current.delete('reps')
     setReps((previousReps) => {
-      const value = Number.parseInt(previousReps, 10)
-      return Number.isNaN(value) ? previousReps : String(Math.max(0, value + amount))
+      const current = startsFromEmpty ? '' : previousReps
+      const value = Number.parseInt(current, 10)
+      return Number.isNaN(value)
+        ? startsFromEmpty ? String(Math.max(0, amount)) : previousReps
+        : String(Math.max(0, value + amount))
     })
   }
 
@@ -551,6 +572,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   function selectField(field: Field) {
     setActiveField(field)
+    prefilledFieldsRef.current.delete(field)
     if (field === 'weight') {
       setWeight('')
       return
