@@ -82,7 +82,7 @@ function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise
   }
 }
 
-async function uploadAndPoll(payload: Record<string, unknown>, accessToken: string, externalId: string, activityName: string) {
+async function uploadWorkout(payload: Record<string, unknown>, accessToken: string, externalId: string, activityName: string) {
   const file = new Blob([JSON.stringify(payload)], { type: 'application/json' })
   const form = new FormData()
   form.append('file', file, `${externalId}.json`)
@@ -102,7 +102,10 @@ async function uploadAndPoll(payload: Record<string, unknown>, accessToken: stri
   if (!uploadResponse.ok || upload.error) throw new Error(`Strava upload failed: ${JSON.stringify(upload)}`)
   if (!upload.id && !upload.id_str) throw new Error('Strava did not return an upload ID.')
 
-  const uploadId = upload.id_str ?? String(upload.id)
+  return upload.id_str ?? String(upload.id)
+}
+
+async function pollUpload(uploadId: string, accessToken: string) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     const statusResponse = await fetch(`https://www.strava.com/api/v3/uploads/${uploadId}`, { headers: { Authorization: `Bearer ${accessToken}` } })
     const status = await statusResponse.json() as { activity_id?: number; error?: string; status?: string }
@@ -126,7 +129,7 @@ serve(async (request) => {
     if (input.preview !== true) {
       const { data: existingLink, error: linkError } = await db.from('workout_strava_links').select('strava_activity_id').eq('user_id', user.id).eq('workout_id', workoutId).maybeSingle()
       if (linkError) throw linkError
-      if (existingLink) return json({
+      if (existingLink?.strava_activity_id) return json({
         uploaded: false,
         stravaActivityId: existingLink.strava_activity_id,
         stravaUrl: `https://www.strava.com/activities/${existingLink.strava_activity_id}`,
@@ -153,8 +156,33 @@ serve(async (request) => {
     if (!connection) return json({ error: 'Strava is not connected.' }, 404)
     if (new Date(connection.expires_at).getTime() <= Date.now() + 60_000) connection = await refreshToken(connection)
 
-    const stravaActivityId = await uploadAndPoll(payload, connection.access_token, `gymlog-workout-${workoutId}`, activityName)
-    const { error: saveError } = await db.from('workout_strava_links').insert({ user_id: user.id, workout_id: workoutId, strava_activity_id: stravaActivityId })
+    const { data: reservation, error: reservationError } = await db.from('workout_strava_links')
+      .upsert({ user_id: user.id, workout_id: workoutId }, { onConflict: 'workout_id', ignoreDuplicates: true })
+      .select('workout_id')
+    if (reservationError) throw reservationError
+
+    const { data: link, error: linkError } = await db.from('workout_strava_links')
+      .select('strava_activity_id,strava_upload_id').eq('user_id', user.id).eq('workout_id', workoutId).single()
+    if (linkError) throw linkError
+    if (link.strava_activity_id) return json({
+      uploaded: false,
+      stravaActivityId: link.strava_activity_id,
+      stravaUrl: `https://www.strava.com/activities/${link.strava_activity_id}`,
+      alreadyUploaded: true,
+    })
+
+    let uploadId = link.strava_upload_id as string | null
+    if (!uploadId) {
+      if (!reservation?.length) return json({ error: 'This workout upload is already in progress or needs verification. Check Strava before trying again.' }, 409)
+      uploadId = await uploadWorkout(payload, connection.access_token, `gymlog-workout-${workoutId}`, activityName)
+      const { error: uploadIdError } = await db.from('workout_strava_links')
+        .update({ strava_upload_id: uploadId }).eq('user_id', user.id).eq('workout_id', workoutId)
+      if (uploadIdError) throw uploadIdError
+    }
+
+    const stravaActivityId = await pollUpload(uploadId, connection.access_token)
+    const { error: saveError } = await db.from('workout_strava_links')
+      .update({ strava_activity_id: stravaActivityId }).eq('user_id', user.id).eq('workout_id', workoutId)
     if (saveError) throw saveError
     return json({ uploaded: true, stravaActivityId, stravaUrl: `https://www.strava.com/activities/${stravaActivityId}` })
   } catch (error) {

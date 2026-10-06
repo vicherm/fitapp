@@ -350,21 +350,24 @@ export type Database = {
           id: number
           user_id: string
           workout_id: number
-          strava_activity_id: number
+          strava_activity_id: number | null
+          strava_upload_id: string | null
           created_at: string
         }
         Insert: {
           id?: number
           user_id?: string
           workout_id: number
-          strava_activity_id: number
+          strava_activity_id?: number | null
+          strava_upload_id?: string | null
           created_at?: string
         }
         Update: {
           id?: number
           user_id?: string
           workout_id?: number
-          strava_activity_id?: number
+          strava_activity_id?: number | null
+          strava_upload_id?: string | null
           created_at?: string
         }
         Relationships: [

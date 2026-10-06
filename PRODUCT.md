@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.89
+Version: 3.90
 Last Updated: 2026-10-06
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -34,6 +34,8 @@ Application data is stored in the authenticated Supabase database. JSON export i
 When an unfinished workout is closed on a later day, GymLog best-effort uploads it to the connected Strava account as a `WeightTraining` activity. A workout is uploaded at most once; Strava upload failures do not prevent GymLog from closing the workout.
 
 Workout Summary also provides an Upload to Strava action for manually triggering the same upload. The action reports uploading, success, already-uploaded, and failure states.
+
+Concurrent manual and automatic uploads reserve the workout before creating a Strava activity. Retrying a processing upload checks its saved Strava upload ID rather than uploading again. If an upload fails before its upload ID can be saved, further uploads are blocked pending verification of whether Strava received it; GymLog does not risk creating a duplicate.
 
 Uploaded Strava activities are named with the workout's gym name followed by the workout date. If the workout has no gym, the name uses `GymLog Workout` followed by the workout date.
 

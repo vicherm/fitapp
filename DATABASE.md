@@ -1,6 +1,6 @@
 # GymLog - Database Model
 
-Version: 0.7
+Version: 0.8
 Status: Current implementation
 
 This app uses Supabase PostgreSQL with Supabase Auth and Row Level Security. Domain models remain in `src/db/types.ts`, while typed database access is defined in `src/lib/database.types.ts` and `src/data/`.
@@ -16,6 +16,8 @@ The one-time JSON migration is implemented in `scripts/import-supabase-json.mjs`
 Strava integration tables are defined in `supabase/migrations/202609240003_strava_tables.sql`. `strava_connections` is server-only and stores OAuth tokens for Edge Functions; `strava_activities` is readable by the owner and uses `(user_id, strava_activity_id)` for idempotent imports.
 
 Workout upload deduplication is defined in `supabase/migrations/202609240004_workout_strava_links.sql` through the `workout_strava_links` table.
+
+`supabase/migrations/202610060005_strava_upload_reservations.sql` makes `strava_activity_id` nullable and adds `strava_upload_id`. A unique workout link is reserved before creating the remote upload. A saved upload ID allows subsequent requests to resume polling without re-uploading. A reservation without either ID blocks retries until the remote outcome has been verified.
 
 ---
 
