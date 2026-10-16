@@ -522,12 +522,11 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   function adjustReps(amount: number) {
     setActiveField('reps')
-    const startsFromEmpty = prefilledFieldsRef.current.delete('reps')
+    prefilledFieldsRef.current.delete('reps')
     setReps((previousReps) => {
-      const current = startsFromEmpty ? '' : previousReps
-      const value = Number.parseInt(current, 10)
+      const value = Number.parseInt(previousReps || '0', 10)
       return Number.isNaN(value)
-        ? startsFromEmpty ? String(Math.max(0, amount)) : previousReps
+        ? previousReps
         : String(Math.max(0, value + amount))
     })
   }

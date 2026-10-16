@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.90
-Last Updated: 2026-10-06
+Version: 3.91
+Last Updated: 2026-10-16
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -277,9 +277,9 @@ The suggested value is shown until editing starts. Selecting the field or enteri
 
 Numeric input field for the number of repetitions.
 
-The suggested value is shown until editing starts. Selecting the field or entering the first keypad or hardware-keyboard character clears the prefill; new input starts from an empty value. The increment/decrement controls also start from an empty value when the displayed count is an untouched prefill.
+The suggested value is shown until editing starts. Selecting the field or entering the first keypad or hardware-keyboard character clears the prefill; new input starts from an empty value. The increment/decrement controls adjust the displayed count, including an untouched prefill, and mark it as edited.
 
-Increment and decrement controls beside the field adjust an entered repetition count by one; decrementing cannot produce a negative count.
+Increment and decrement controls beside the field adjust the repetition count by one, treating an empty value as zero; decrementing cannot produce a negative count.
 
 ---
 
