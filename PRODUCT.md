@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.91
-Last Updated: 2026-10-16
+Version: 3.92
+Last Updated: 2026-10-21
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -279,6 +279,8 @@ Numeric input field for the number of repetitions.
 
 The suggested value is shown until editing starts. Selecting the field or entering the first keypad or hardware-keyboard character clears the prefill; new input starts from an empty value. The increment/decrement controls adjust the displayed count, including an untouched prefill, and mark it as edited.
 
+Receiving keyboard or browser focus alone does not clear either value; activating a field starts editing.
+
 Increment and decrement controls beside the field adjust the repetition count by one, treating an empty value as zero; decrementing cannot produce a negative count.
 
 ---
@@ -286,6 +288,8 @@ Increment and decrement controls beside the field adjust the repetition count by
 ### Previous-Set Prefill
 
 GymLog predicts the weight and repetitions for the next set using the sets from the most recent previous workout containing the selected exercise.
+
+When weight and repetitions are prefilled, neither field is selected for editing, including after logging a set and when restoring untouched prefills. The user can log or adjust repetitions without first selecting a field. Keypad or hardware numeric entry with neither field selected starts editing weight.
 
 The previous workout is treated as a sequence of sets. GymLog tracks the current position within this sequence and suggests the next set from it.
 

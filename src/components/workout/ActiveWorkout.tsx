@@ -38,7 +38,7 @@ interface ActiveWorkoutDraft {
   exerciseId?: number
   weight: string
   reps: string
-  activeField: Field
+  activeField: Field | null
   prefilledFields: Field[]
 }
 
@@ -75,7 +75,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [workoutExercise, setWorkoutExercise] = useState<WorkoutExercise | null>(null)
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
-  const [activeField, setActiveField] = useState<Field>('weight')
+  const [activeField, setActiveField] = useState<Field | null>('weight')
   const [gyms, setGyms] = useState<Gym[]>([])
   const [selectedGymId, setSelectedGymId] = useState<number | ''>('')
   const [selectedGymAbbreviation, setSelectedGymAbbreviation] = useState('')
@@ -203,7 +203,11 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
       setWeight(typeof draft.weight === 'string' ? draft.weight : '')
       setReps(typeof draft.reps === 'string' ? draft.reps : '')
-      setActiveField(draft.activeField === 'reps' ? 'reps' : 'weight')
+      setActiveField(
+        prefilledFieldsRef.current.size === 2 || draft.activeField === null
+          ? null
+          : draft.activeField === 'reps' ? 'reps' : 'weight',
+      )
 
       if (typeof draft.exerciseId === 'number') {
         getExercise(draft.exerciseId)
@@ -342,6 +346,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         skipNextPrefillRef.current = false
       } else {
         const suggestedSet = previousSequence[previousSequencePosition]
+        setActiveField(suggestedSet || currentWorkoutSets.length > 0 ? null : 'weight')
         if (suggestedSet) {
           prefilledFieldsRef.current = new Set(['weight', 'reps'])
           setWeight(String(suggestedSet.weight))
@@ -433,6 +438,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     })
     if (!hasLoggedSet) await updateWorkout(w.id, { startTime: loggedAt })
     if (saved) {
+      setActiveField(null)
       setCurrentSets((prev) => [...prev, saved])
 
       const exerciseWorkoutExercises = (await listWorkoutExercises()).filter((entry) => entry.exerciseId === exercise!.id!)
@@ -505,13 +511,15 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   function handleInputKey(key: string) {
     if (key === '') return
-    const startsFromEmpty = prefilledFieldsRef.current.delete(activeField)
-    const setter = activeField === 'weight' ? setWeight : setReps
+    const field = activeField ?? 'weight'
+    setActiveField(field)
+    const startsFromEmpty = prefilledFieldsRef.current.delete(field)
+    const setter = field === 'weight' ? setWeight : setReps
     setter((prev) => {
       const current = startsFromEmpty ? '' : prev
       if (key === '⌫') return current.slice(0, -1)
       if (key === '.' && current.includes('.')) return current
-      if (key === '.' && activeField === 'reps') return prev
+      if (key === '.' && field === 'reps') return prev
       return current + key
     })
   }
@@ -547,7 +555,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         return
       }
 
-      if ((event.key === '.' || event.key === ',') && activeField === 'weight') {
+      if ((event.key === '.' || event.key === ',') && activeField !== 'reps') {
         event.preventDefault()
         handleInputKey('.')
         return
@@ -777,7 +785,6 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         <button
           className={`aw-field ${activeField === 'weight' ? 'active' : ''}`}
           onClick={() => selectField('weight')}
-          onFocus={() => selectField('weight')}
         >
           <span className="aw-field-label">kg</span>
           <span className="aw-field-value">{weight || '0'}</span>
@@ -785,7 +792,6 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         <button
           className={`aw-field ${activeField === 'reps' ? 'active' : ''}`}
           onClick={() => selectField('reps')}
-          onFocus={() => selectField('reps')}
         >
           <span className="aw-field-label">reps</span>
           <span className="aw-field-value">{reps || '0'}</span>
@@ -809,7 +815,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
       </div>
 
       {/* Numeric keypad */}
-      <NumericKeypad onKey={handleKeypad} showDecimal={activeField === 'weight'} />
+      <NumericKeypad onKey={handleKeypad} showDecimal={activeField !== 'reps'} />
 
       {/* History */}
       {exercise?.id && (
