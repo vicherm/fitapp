@@ -48,6 +48,7 @@ export function mapWorkout(row: Tables['workouts']['Row']): Workout {
   return {
     id: row.id,
     gymId: row.gym_id ?? undefined,
+    note: row.note ?? undefined,
     startTime: new Date(row.start_time),
     endTime: row.end_time ? new Date(row.end_time) : undefined,
   }

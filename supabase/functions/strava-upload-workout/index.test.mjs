@@ -15,6 +15,7 @@ function createScenario(options = {}) {
   let link = options.link ?? null
   let uploads = 0
   let polls = 0
+  let uploadDescription = null
   let processing = options.processing ?? false
   const db = {
     auth: {
@@ -55,7 +56,7 @@ function createScenario(options = {}) {
               }
             } else data = link ? { ...link } : null
           } else if (table === 'workouts') {
-            data = { id: 1, start_time: '2026-10-06T10:00:00Z', gyms: { name: 'Gym' } }
+            data = { id: 1, start_time: '2026-10-06T10:00:00Z', note: options.note ?? null, gyms: { name: 'Gym' } }
           } else if (table === 'workout_exercises') {
             data = [{
               exercise_order: 0,
@@ -80,6 +81,7 @@ function createScenario(options = {}) {
     fetch: async (url, request) => {
       if (request?.method === 'POST') {
         uploads += 1
+        uploadDescription = request.body instanceof FormData ? request.body.get('description') : null
         await options.onUpload?.()
         return Response.json({ id_str: '123' })
       }
@@ -96,6 +98,7 @@ function createScenario(options = {}) {
     finishProcessing: () => { processing = false },
     get uploads() { return uploads },
     get polls() { return polls },
+    get uploadDescription() { return uploadDescription },
     get link() { return link },
   }
 }
@@ -149,6 +152,12 @@ test('legacy completed links return already-uploaded without contacting Strava',
   assert.equal((await (await scenario.invoke()).json()).alreadyUploaded, true)
   assert.equal(scenario.uploads, 0)
   assert.equal(scenario.polls, 0)
+})
+
+test('workout note is sent as the Strava activity description', async () => {
+  const scenario = createScenario({ note: 'Felt strong today.' })
+  assert.equal((await (await scenario.invoke()).json()).uploaded, true)
+  assert.equal(scenario.uploadDescription, 'Felt strong today.')
 })
 
 test('JSON preview does not reserve or upload the workout', async () => {

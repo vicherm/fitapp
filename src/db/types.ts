@@ -29,6 +29,7 @@ export interface Gym {
 export interface Workout {
   id?: number
   gymId?: number
+  note?: string
   startTime: Date
   endTime?: Date
 }

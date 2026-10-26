@@ -124,6 +124,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   const exerciseMap = new Map(exercises.map((exercise, index) => [exercise.id!, exerciseIds[index]]))
   const workoutIds = await insertRows('workouts', workouts.map((workout) => ({
     gym_id: workout.gymId ? gymMap.get(workout.gymId) ?? null : null,
+    note: workout.note?.trim() || null,
     start_time: workout.startTime,
     end_time: workout.endTime ?? null,
   })))

@@ -186,6 +186,121 @@
   white-space: nowrap;
 }
 
+.ws-note {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ws-note-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ws-note-edit,
+.ws-note-save,
+.ws-note-cancel,
+.ws-note-delete {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.ws-note-edit {
+  padding: 4px 8px;
+}
+
+.ws-note-text,
+.ws-note-message {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.ws-note-text {
+  color: var(--text-h);
+}
+
+.ws-note-label {
+  color: var(--text);
+  font-size: 0.72rem;
+}
+
+.ws-note-input {
+  width: 100%;
+  min-height: 5rem;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.ws-note-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ws-note-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ws-note-save,
+.ws-note-cancel,
+.ws-note-delete {
+  padding: 6px 10px;
+}
+
+.ws-note-save {
+  border-color: var(--accent-border);
+}
+
+.ws-note-delete {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fca5a5;
+}
+
+.ws-note-edit:hover,
+.ws-note-edit:focus-visible,
+.ws-note-save:hover:not(:disabled),
+.ws-note-save:focus-visible:not(:disabled),
+.ws-note-cancel:hover:not(:disabled),
+.ws-note-cancel:focus-visible:not(:disabled),
+.ws-note-delete:hover:not(:disabled),
+.ws-note-delete:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.ws-note-edit:disabled,
+.ws-note-save:disabled,
+.ws-note-cancel:disabled,
+.ws-note-delete:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.ws-note-message {
+  color: #fca5a5;
+}
+
 .ws-exercises {
   display: flex;
   flex-direction: column;

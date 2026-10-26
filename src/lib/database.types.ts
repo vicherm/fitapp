@@ -136,6 +136,7 @@ export type Database = {
           id: number
           user_id: string
           gym_id: number | null
+          note: string | null
           start_time: string
           end_time: string | null
           created_at: string
@@ -145,6 +146,7 @@ export type Database = {
           id?: number
           user_id?: string
           gym_id?: number | null
+          note?: string | null
           start_time: string
           end_time?: string | null
           created_at?: string
@@ -154,6 +156,7 @@ export type Database = {
           id?: number
           user_id?: string
           gym_id?: number | null
+          note?: string | null
           start_time?: string
           end_time?: string | null
           created_at?: string

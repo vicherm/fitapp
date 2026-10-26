@@ -142,6 +142,10 @@ export default function WorkoutSummaryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingGym, setIsSavingGym] = useState(false)
   const [isEditingGym, setIsEditingGym] = useState(false)
+  const [isEditingNote, setIsEditingNote] = useState(false)
+  const [noteDraft, setNoteDraft] = useState('')
+  const [isSavingNote, setIsSavingNote] = useState(false)
+  const [noteMessage, setNoteMessage] = useState('')
   const [isUploadingToStrava, setIsUploadingToStrava] = useState(false)
   const [stravaUploadMessage, setStravaUploadMessage] = useState('')
   const [isDeleteRequested, setIsDeleteRequested] = useState(false)
@@ -180,6 +184,46 @@ export default function WorkoutSummaryPage() {
     setSummary(nextSummary)
     setIsEditingGym(false)
     setIsSavingGym(false)
+  }
+
+  function startNoteEdit() {
+    if (!summary) return
+    setNoteDraft(summary.workout.note ?? '')
+    setNoteMessage('')
+    setIsEditingNote(true)
+  }
+
+  async function handleNoteSave() {
+    if (!summary || !workoutId || isSavingNote) return
+
+    setIsSavingNote(true)
+    setNoteMessage('')
+    try {
+      const workout = await updateWorkout(workoutId, { note: noteDraft })
+      setSummary((current) => current ? { ...current, workout } : current)
+      setIsEditingNote(false)
+    } catch {
+      setNoteMessage('Could not save note. Please try again.')
+    } finally {
+      setIsSavingNote(false)
+    }
+  }
+
+  async function handleNoteDelete() {
+    if (!summary || !workoutId || !summary.workout.note || isSavingNote) return
+
+    setIsSavingNote(true)
+    setNoteMessage('')
+    try {
+      const workout = await updateWorkout(workoutId, { note: '' })
+      setSummary((current) => current ? { ...current, workout } : current)
+      setNoteDraft('')
+      setIsEditingNote(false)
+    } catch {
+      setNoteMessage('Could not delete note. Please try again.')
+    } finally {
+      setIsSavingNote(false)
+    }
   }
 
   async function handleStravaUpload() {
@@ -317,6 +361,46 @@ export default function WorkoutSummaryPage() {
           </button>
           {stravaUploadMessage && <span className="ws-strava-message" role="status">{stravaUploadMessage}</span>}
         </div>
+      </section>
+
+      <section className="ws-note" aria-label="Workout note">
+        <div className="ws-note-heading">
+          <span>Note</span>
+          {!isEditingNote && (
+            <button type="button" className="ws-note-edit" onClick={startNoteEdit}>
+              {workout.note ? 'Edit' : 'Add note'}
+            </button>
+          )}
+        </div>
+        {isEditingNote ? (
+          <>
+            <label className="ws-note-label" htmlFor="ws-note-input">Workout note</label>
+            <textarea
+              id="ws-note-input"
+              className="ws-note-input"
+              value={noteDraft}
+              onChange={(event) => setNoteDraft(event.target.value)}
+              disabled={isSavingNote}
+              autoFocus
+            />
+            <div className="ws-note-actions">
+              <button type="button" className="ws-note-save" onClick={() => void handleNoteSave()} disabled={isSavingNote}>
+                {isSavingNote ? 'Saving...' : 'Save'}
+              </button>
+              <button type="button" className="ws-note-cancel" onClick={() => setIsEditingNote(false)} disabled={isSavingNote}>
+                Cancel
+              </button>
+              {workout.note && (
+                <button type="button" className="ws-note-delete" onClick={() => void handleNoteDelete()} disabled={isSavingNote}>
+                  Delete note
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          workout.note && <p className="ws-note-text">{workout.note}</p>
+        )}
+        {noteMessage && <p className="ws-note-message" role="alert">{noteMessage}</p>}
       </section>
 
       {exercisesMissingStravaType.length > 0 && (

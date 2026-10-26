@@ -82,7 +82,7 @@ function buildStrengthTrainingJson(startTime: string, exercises: WorkoutExercise
   }
 }
 
-async function uploadWorkout(payload: Record<string, unknown>, accessToken: string, externalId: string, activityName: string) {
+async function uploadWorkout(payload: Record<string, unknown>, accessToken: string, externalId: string, activityName: string, description?: string) {
   const file = new Blob([JSON.stringify(payload)], { type: 'application/json' })
   const form = new FormData()
   form.append('file', file, `${externalId}.json`)
@@ -92,6 +92,7 @@ async function uploadWorkout(payload: Record<string, unknown>, accessToken: stri
   form.append('trainer', '1')
   form.append('name', activityName)
   form.append('external_id', externalId)
+  if (description?.trim()) form.append('description', description.trim())
 
   const uploadResponse = await fetch('https://www.strava.com/api/v3/uploads', {
     method: 'POST',
@@ -138,7 +139,7 @@ serve(async (request) => {
     }
 
     const [{ data: workout, error: workoutError }, { data: workoutExercises, error: exercisesError }] = await Promise.all([
-      db.from('workouts').select('id,start_time,gyms(name)').eq('id', workoutId).eq('user_id', user.id).single(),
+      db.from('workouts').select('id,start_time,note,gyms(name)').eq('id', workoutId).eq('user_id', user.id).single(),
       db.from('workout_exercises').select('exercise_order,exercises(name,strava_exercise_type),workout_sets(weight,reps,performed_at,set_number)').eq('workout_id', workoutId).eq('user_id', user.id).order('exercise_order'),
     ])
     if (workoutError) throw workoutError
@@ -174,7 +175,7 @@ serve(async (request) => {
     let uploadId = link.strava_upload_id as string | null
     if (!uploadId) {
       if (!reservation?.length) return json({ error: 'This workout upload is already in progress or needs verification. Check Strava before trying again.' }, 409)
-      uploadId = await uploadWorkout(payload, connection.access_token, `gymlog-workout-${workoutId}`, activityName)
+      uploadId = await uploadWorkout(payload, connection.access_token, `gymlog-workout-${workoutId}`, activityName, workout.note ?? undefined)
       const { error: uploadIdError } = await db.from('workout_strava_links')
         .update({ strava_upload_id: uploadId }).eq('user_id', user.id).eq('workout_id', workoutId)
       if (uploadIdError) throw uploadIdError

@@ -40,9 +40,10 @@ export async function createWorkout(input: Pick<Workout, 'gymId' | 'startTime'>)
   return mapWorkout(data)
 }
 
-export async function updateWorkout(id: number, input: Partial<Pick<Workout, 'gymId' | 'startTime' | 'endTime'>>): Promise<Workout> {
+export async function updateWorkout(id: number, input: Partial<Pick<Workout, 'gymId' | 'note' | 'startTime' | 'endTime'>>): Promise<Workout> {
   const payload = {
     ...(input.gymId === undefined ? {} : { gym_id: input.gymId ?? null }),
+    ...(input.note === undefined ? {} : { note: input.note.trim() || null }),
     ...(input.startTime === undefined ? {} : { start_time: input.startTime.toISOString() }),
     ...(input.endTime === undefined ? {} : { end_time: input.endTime?.toISOString() ?? null }),
   }

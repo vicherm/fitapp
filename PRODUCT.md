@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 3.92
-Last Updated: 2026-10-21
+Version: 3.95
+Last Updated: 2026-10-26
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -37,7 +37,7 @@ Workout Summary also provides an Upload to Strava action for manually triggering
 
 Concurrent manual and automatic uploads reserve the workout before creating a Strava activity. Retrying a processing upload checks its saved Strava upload ID rather than uploading again. If an upload fails before its upload ID can be saved, further uploads are blocked pending verification of whether Strava received it; GymLog does not risk creating a duplicate.
 
-Uploaded Strava activities are named with the workout's gym name followed by the workout date. If the workout has no gym, the name uses `GymLog Workout` followed by the workout date.
+Uploaded Strava activities are named with the workout's gym name followed by the workout date. If the workout has no gym, the name uses `GymLog Workout` followed by the workout date. A workout note is sent as the Strava activity description; changing the note later does not update an activity that was already uploaded.
 
 If a workout exercise has no Strava Exercise Type, Workout Summary warns that the exercise will be skipped during Strava upload and directs the user to configure the mapping in Exercise Details.
 
@@ -164,7 +164,7 @@ restores the same calendar month, selected date, and workout-list position. Acti
 
 Its header shows the workout date, gym name, start time, and duration from workout start to the latest logged set. Below the header, exercises are listed by their earliest logged set, first to last;
  each exercise shows its body part group, exercise name, and logged sets as `kg × reps` values with each set's local time, on separate rows.
-The Workout Summary displays the gym name as text. Clicking the name reveals a gym dropdown; the selected gym is saved on the workout and applies to all workout exercises when calculating and displaying gym-specific information.
+The Workout Summary displays the gym name as text. Clicking the name reveals a gym dropdown; the selected gym is saved on the workout and applies to all workout exercises when calculating and displaying gym-specific information. A saved workout note is displayed only when present; the user can add, edit, or explicitly delete it, and saving a blank note removes it. Workout notes are preserved in JSON backups and restores.
 
 At the end of Workout Summary, Delete Workout requires a five-second delay followed by an explicit confirmation. Confirming permanently deletes that workout and its logged sets from GymLog; an uploaded Strava activity is not deleted. Cancel abandons the deletion.
 
