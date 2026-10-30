@@ -1,6 +1,6 @@
 # GymLog - Technology Stack
 
-Version: 0.4
+Version: 0.5
 Status: Draft
 
 ---
@@ -10,6 +10,7 @@ Frontend
 - React
 - TypeScript
 - Vite
+- React Router
 
 PWA
 
@@ -19,6 +20,10 @@ Database
 
 - Supabase PostgreSQL
 
+Backend
+
+- Supabase Edge Functions (Deno and TypeScript)
+
 Authentication
 
 - Supabase Auth with Google OAuth
@@ -27,10 +32,19 @@ Charts
 
 - Recharts
 
+Integrations
+
+- Strava API (OAuth and workout uploads)
+
 Export
 
 - SheetJS (xlsx)
 
-Maps
+Location
 
 - Browser Geolocation API
+
+Development
+
+- TypeScript compiler
+- Oxlint
