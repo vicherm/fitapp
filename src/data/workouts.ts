@@ -8,6 +8,12 @@ export async function listWorkouts(): Promise<Workout[]> {
   return data.map(mapWorkout)
 }
 
+export async function listOpenWorkouts(): Promise<Workout[]> {
+  const { data, error } = await supabase.from('workouts').select('*').is('end_time', null).order('start_time')
+  if (error) throw error
+  return data.map(mapWorkout)
+}
+
 export async function getWorkout(id: number): Promise<Workout | null> {
   const { data, error } = await supabase.from('workouts').select('*').eq('id', id).maybeSingle()
   if (error) throw error
