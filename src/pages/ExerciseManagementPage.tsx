@@ -15,7 +15,7 @@ export default function ExerciseManagementPage() {
   const navigate = useNavigate()
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
-  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<number>>(new Set())
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(new Set())
   const [query, setQuery] = useState('')
 
   useEffect(() => {
@@ -47,12 +47,12 @@ export default function ExerciseManagementPage() {
     .sort((left, right) => left.name.localeCompare(right.name))
 
   if (unassignedExercises.length > 0) {
-    groupedExercises.push({ bodyPartGroup: { id: 0, name: 'Unassigned' }, exercises: unassignedExercises })
+    groupedExercises.push({ bodyPartGroup: { id: '', name: 'Unassigned' }, exercises: unassignedExercises })
   }
 
   groupedExercises.sort((left, right) => left.bodyPartGroup.name.localeCompare(right.bodyPartGroup.name))
 
-  function toggleGroup(groupId: number) {
+  function toggleGroup(groupId: string) {
     setExpandedGroupIds((previous) => {
       const next = new Set(previous)
       if (next.has(groupId)) next.delete(groupId)

@@ -17,7 +17,7 @@ interface BackupData {
 }
 
 interface BackupPayload {
-  schemaVersion: 1
+  schemaVersion: 2
   exportedAt: string
   data: BackupData
 }
@@ -40,14 +40,14 @@ async function requireUserId(): Promise<string> {
 async function insertRows<T extends keyof import('../lib/database.types').Database['public']['Tables']>(
   table: T,
   rows: Array<import('../lib/database.types').Database['public']['Tables'][T]['Insert']>,
-): Promise<number[]> {
+): Promise<string[]> {
   if (rows.length === 0) return []
   const { data, error } = await supabase
     .from(table as never)
     .insert(rows as never)
     .select('id')
   if (error) throw error
-  return (data as Array<{ id: number }>).map((row) => row.id)
+  return (data as Array<{ id: string }>).map((row) => row.id)
 }
 
 export async function exportAllDataToJson(): Promise<void> {
@@ -62,7 +62,7 @@ export async function exportAllDataToJson(): Promise<void> {
     listWorkoutSets(),
   ])
   const payload: BackupPayload = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     exportedAt: new Date().toISOString(),
     data: {
       settings,
@@ -93,8 +93,8 @@ export async function resetAllSupabaseData(): Promise<void> {
 
 export async function importAllDataFromJson(file: File): Promise<{ records: number }> {
   await requireUserId()
-  const parsed = JSON.parse(await file.text()) as Partial<BackupPayload>
-  if (parsed.schemaVersion !== 1 || !parsed.data || typeof parsed.data !== 'object') {
+  const parsed = JSON.parse(await file.text()) as { schemaVersion?: number; data?: unknown }
+  if ((parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2) || !parsed.data || typeof parsed.data !== 'object') {
     throw new Error('Invalid backup: unsupported file format')
   }
   const data = parsed.data as BackupData
@@ -108,35 +108,49 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
 
   await resetAllSupabaseData()
   if (settings[0]) {
-    const { error } = await supabase.from('settings').insert({ gym_detection_radius: settings[0].gymDetectionRadius, theme: 'dark' })
+    const { error } = await supabase.from('settings').insert({
+      id: crypto.randomUUID(),
+      gym_detection_radius: settings[0].gymDetectionRadius,
+      theme: 'dark',
+    })
     if (error) throw error
   }
-  const bodyPartIds = await insertRows('body_part_groups', bodyPartGroups.map((group) => ({ name: group.name })))
-  const bodyPartMap = new Map(bodyPartGroups.map((group, index) => [group.id!, bodyPartIds[index]]))
-  const gymIds = await insertRows('gyms', gyms.map((gym) => ({ name: gym.name, abbreviation: gym.abbreviation, latitude: gym.latitude, longitude: gym.longitude })))
-  const gymMap = new Map(gyms.map((gym, index) => [gym.id!, gymIds[index]]))
+  const bodyPartIds = await insertRows('body_part_groups', bodyPartGroups.map((group) => ({ id: crypto.randomUUID(), name: group.name })))
+  const bodyPartMap = new Map(bodyPartGroups.map((group, index) => [String(group.id), bodyPartIds[index]]))
+  const gymIds = await insertRows('gyms', gyms.map((gym) => ({
+    id: crypto.randomUUID(),
+    name: gym.name,
+    abbreviation: gym.abbreviation,
+    latitude: gym.latitude,
+    longitude: gym.longitude,
+  })))
+  const gymMap = new Map(gyms.map((gym, index) => [String(gym.id), gymIds[index]]))
   const exerciseIds = await insertRows('exercises', exercises.map((exercise) => ({
+    id: crypto.randomUUID(),
     name: exercise.name,
-    body_part_group_id: bodyPartMap.get(exercise.bodyPartGroupId)!,
+    body_part_group_id: bodyPartMap.get(String(exercise.bodyPartGroupId))!,
     machine: exercise.machine === true,
     notes: exercise.notes ?? null,
   })))
-  const exerciseMap = new Map(exercises.map((exercise, index) => [exercise.id!, exerciseIds[index]]))
+  const exerciseMap = new Map(exercises.map((exercise, index) => [String(exercise.id), exerciseIds[index]]))
   const workoutIds = await insertRows('workouts', workouts.map((workout) => ({
-    gym_id: workout.gymId ? gymMap.get(workout.gymId) ?? null : null,
+    id: crypto.randomUUID(),
+    gym_id: workout.gymId ? gymMap.get(String(workout.gymId)) ?? null : null,
     note: workout.note?.trim() || null,
     start_time: workout.startTime,
     end_time: workout.endTime ?? null,
   })))
-  const workoutMap = new Map(workouts.map((workout, index) => [workout.id!, workoutIds[index]]))
+  const workoutMap = new Map(workouts.map((workout, index) => [String(workout.id), workoutIds[index]]))
   const workoutExerciseIds = await insertRows('workout_exercises', workoutExercises.map((entry) => ({
-    workout_id: workoutMap.get(entry.workoutId)!,
-    exercise_id: exerciseMap.get(entry.exerciseId)!,
+    id: crypto.randomUUID(),
+    workout_id: workoutMap.get(String(entry.workoutId))!,
+    exercise_id: exerciseMap.get(String(entry.exerciseId))!,
     exercise_order: entry.order,
   })))
-  const workoutExerciseMap = new Map(workoutExercises.map((entry, index) => [entry.id!, workoutExerciseIds[index]]))
+  const workoutExerciseMap = new Map(workoutExercises.map((entry, index) => [String(entry.id), workoutExerciseIds[index]]))
   await insertRows('workout_sets', workoutSets.map((set) => ({
-    workout_exercise_id: workoutExerciseMap.get(set.workoutExerciseId)!,
+    id: crypto.randomUUID(),
+    workout_exercise_id: workoutExerciseMap.get(String(set.workoutExerciseId))!,
     set_number: set.setNumber,
     weight: set.weight,
     reps: set.reps,

@@ -1,17 +1,17 @@
 # GymLog - Database Model
 
-Version: 0.8
+Version: 0.9
 Status: Current implementation
 
 This app uses Supabase PostgreSQL with Supabase Auth and Row Level Security. Domain models remain in `src/db/types.ts`, while typed database access is defined in `src/lib/database.types.ts` and `src/data/`.
 
 ## Supabase schema
 
-The PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. It preserves numeric identifiers for data migration, adds authenticated ownership to every table, enforces same-user relationships with composite foreign keys, and enables Row Level Security. `supabase/migrations/202609230002_restrict_to_google_user.sql` restricts every policy to the configured Google identity. All application screens use the Supabase data-access layer.
+The PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. `supabase/migrations/202610310007_client_generated_uuid_ids.sql` migrates application record IDs and their foreign keys to UUIDs while preserving existing relationships. The client generates UUIDs before inserting application records so identifiers are available independently of a server response; database defaults remain for rows created by server-side triggers. Every table has authenticated ownership, same-user relationships are enforced with composite foreign keys, and Row Level Security is enabled. `supabase/migrations/202609230002_restrict_to_google_user.sql` restricts every policy to the configured Google identity. All application screens use the Supabase data-access layer.
 
 The Supabase TypeScript contract is in `src/lib/database.types.ts` and is wired into the shared Supabase client. Regenerate it with the Supabase CLI after schema changes using `supabase gen types typescript --project-id dhxckgfuapniettrohvo --schema public` with an authenticated Supabase access token.
 
-The one-time JSON migration is implemented in `scripts/import-supabase-json.mjs`. It uses the Supabase service-role key only in Node, resolves the allowed Auth user by email, refuses to overwrite existing non-settings rows, remaps old numeric IDs, and imports records in dependency order.
+The one-time JSON migration is implemented in `scripts/import-supabase-json.mjs`. It uses the Supabase service-role key only in Node, resolves the allowed Auth user by email, refuses to overwrite existing non-settings rows, remaps old numeric IDs, and imports records in dependency order. Application backups export schema version 2 with UUID identifiers; the in-app restore continues to accept schema version 1 backups.
 
 Strava integration tables are defined in `supabase/migrations/202609240003_strava_tables.sql`. `strava_connections` is server-only and stores OAuth tokens for Edge Functions; `strava_activities` is readable by the owner and uses `(user_id, strava_activity_id)` for idempotent imports.
 
@@ -27,7 +27,7 @@ Stores application-wide preferences.
 
 Fields
 
-- id?: number
+- id: string (UUID)
 - gymDetectionRadius: number
   - Units: metres
   - Default: 200
@@ -38,7 +38,7 @@ Notes
 - The database seeds a default row on first populate:
   - `{ gymDetectionRadius: 200, theme: 'dark' }`
 - Supabase table: `settings`
-- Indexes: `++id`
+- Indexes: `id`
 
 ---
 
@@ -48,13 +48,13 @@ Represents a user-defined exercise category.
 
 Fields
 
-- id?: number
+- id: string (UUID)
 - name: string
 
 Notes
 
 - Supabase table: `body_part_groups`
-- Indexes: `++id, name`
+- Indexes: `id, name`
 
 Example
 
@@ -69,9 +69,9 @@ Represents an exercise template that can be reused across workouts.
 
 Fields
 
-- id?: number
+- id: string (UUID)
 - name: string
-- bodyPartGroupId: number
+- bodyPartGroupId: string (UUID)
 - machine: boolean
 - notes?: string
 
@@ -79,7 +79,7 @@ Notes
 
 - `machine` was added in database version 3 and defaults to `false` for existing rows during upgrade.
 - Supabase table: `exercises`
-- Indexes: `++id, name, bodyPartGroupId`
+- Indexes: `id, name, bodyPartGroupId`
 
 Example
 
@@ -96,7 +96,7 @@ Represents a training location.
 
 Fields
 
-- id?: number
+- id: string (UUID)
 - name: string
 - abbreviation: string
 - latitude: number
@@ -107,7 +107,7 @@ Notes
 - `abbreviation` was added in database version 2.
 - Existing gyms are upgraded by generating a value from the name when missing.
 - Supabase table: `gyms`
-- Indexes: `++id, name, abbreviation`
+- Indexes: `id, name, abbreviation`
 
 Example
 
@@ -124,8 +124,8 @@ Represents a single training session.
 
 Fields
 
-- id?: number
-- gymId?: number
+- id: string (UUID)
+- gymId?: string (UUID)
 - startTime: Date
 - endTime?: Date
 
@@ -134,7 +134,7 @@ Notes
 - `gymId` is optional.
 - `endTime` may be null/undefined until the workout is finished.
 - Supabase table: `workouts`
-- Indexes: `++id, gymId, startTime`
+- Indexes: `id, gymId, startTime`
 
 Derived values are not stored as DB fields; they are computed in application logic when needed.
 
@@ -146,15 +146,15 @@ Represents one exercise performed within a workout, including the order in which
 
 Fields
 
-- id?: number
-- workoutId: number
-- exerciseId: number
+- id: string (UUID)
+- workoutId: string (UUID)
+- exerciseId: string (UUID)
 - order: number
 
 Notes
 
 - Supabase table: `workout_exercises`
-- Indexes: `++id, workoutId, exerciseId, order`
+- Indexes: `id, workoutId, exerciseId, order`
 - There is cleanup logic to delete empty workout exercises that have no sets, and delete the parent workout if it ends up empty.
 
 ---
@@ -165,8 +165,8 @@ Represents a single set within a workout exercise.
 
 Fields
 
-- id?: number
-- workoutExerciseId: number
+- id: string (UUID)
+- workoutExerciseId: string (UUID)
 - setNumber: number
 - weight: number
 - reps: number
@@ -175,7 +175,7 @@ Fields
 Notes
 
 - Supabase table: `workout_sets`
-- Indexes: `++id, workoutExerciseId, timestamp`
+- Indexes: `id, workoutExerciseId, timestamp`
 
 ---
 
@@ -192,5 +192,8 @@ The schema has evolved through Supabase migrations.
 - Version 3
   - Added `exercises.machine`
   - Backfills `machine` as `false` for old records.
+- Version 4
+  - Migrated application record IDs and foreign keys from numeric values to UUIDs.
+  - New application records receive their UUID from the client before insertion.
 
 The implementation also includes a cleanup hook, `removeEmptyWorkoutExercises`, which removes orphaned workout exercises and empty workouts after data maintenance.

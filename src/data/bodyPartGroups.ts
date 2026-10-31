@@ -11,14 +11,14 @@ export async function listBodyPartGroups(): Promise<BodyPartGroup[]> {
 export async function createBodyPartGroup(name: string): Promise<BodyPartGroup> {
   const { data, error } = await supabase
     .from('body_part_groups')
-    .insert({ name })
+    .insert({ id: crypto.randomUUID(), name })
     .select('*')
     .single()
   if (error) throw error
   return mapBodyPartGroup(data)
 }
 
-export async function updateBodyPartGroup(id: number, name: string): Promise<BodyPartGroup> {
+export async function updateBodyPartGroup(id: string, name: string): Promise<BodyPartGroup> {
   const { data, error } = await supabase
     .from('body_part_groups')
     .update({ name })
@@ -29,12 +29,12 @@ export async function updateBodyPartGroup(id: number, name: string): Promise<Bod
   return mapBodyPartGroup(data)
 }
 
-export async function deleteBodyPartGroup(id: number): Promise<void> {
+export async function deleteBodyPartGroup(id: string): Promise<void> {
   const { error } = await supabase.from('body_part_groups').delete().eq('id', id)
   if (error) throw error
 }
 
-export async function getBodyPartGroup(id: number): Promise<BodyPartGroup | null> {
+export async function getBodyPartGroup(id: string): Promise<BodyPartGroup | null> {
   const { data, error } = await supabase.from('body_part_groups').select('*').eq('id', id).maybeSingle()
   if (error) throw error
   return data ? mapBodyPartGroup(data) : null

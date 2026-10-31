@@ -6,8 +6,8 @@ import { supabase } from '../lib/supabase'
 export interface WorkoutState {
   workout: Workout | null
   isLoading: boolean
-  startWorkout: (gymId: number) => Promise<void>
-  assignGymToWorkout: (workoutId: number, gymId: number) => Promise<void>
+  startWorkout: (gymId: string) => Promise<void>
+  assignGymToWorkout: (workoutId: string, gymId: string) => Promise<void>
 }
 
 function isSameLocalDay(a: Date, b: Date): boolean {
@@ -46,7 +46,7 @@ export default function useWorkout(): WorkoutState {
       const workoutIdByExerciseId = new Map(
         workoutExercises.map((entry) => [entry.id!, entry.workoutId]),
       )
-      const lastSetByWorkoutId = new Map<number, Date>()
+      const lastSetByWorkoutId = new Map<string, Date>()
 
       for (const set of sets) {
         const workoutId = workoutIdByExerciseId.get(set.workoutExerciseId)
@@ -68,11 +68,11 @@ export default function useWorkout(): WorkoutState {
     loadWorkout().finally(() => setIsLoading(false))
   }, [])
 
-  async function startWorkout(gymId: number) {
+  async function startWorkout(gymId: string) {
     setWorkout(await createWorkout({ startTime: new Date(), gymId }))
   }
 
-  async function assignGymToWorkout(workoutId: number, gymId: number) {
+  async function assignGymToWorkout(workoutId: string, gymId: string) {
     const updated = await updateWorkout(workoutId, { gymId })
     setWorkout((current) => {
       if (!current || current.id !== workoutId) return current

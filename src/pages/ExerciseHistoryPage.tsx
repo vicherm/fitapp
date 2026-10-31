@@ -28,13 +28,13 @@ interface WorkoutGroup {
   sets: WorkoutSet[]
 }
 
-type SetDraftMap = Record<number, { weight: string; reps: string }>
+type SetDraftMap = Record<string, { weight: string; reps: string }>
 type MetaField = 'name' | 'bodyPartGroupId' | 'notes' | 'stravaExerciseType' | null
 interface SetCorrection {
-  sourceExerciseId: number
-  workoutId: number
-  setId: number
-  targetExerciseId?: number
+  sourceExerciseId: string
+  workoutId: string
+  setId: string
+  targetExerciseId?: string
 }
 
 function summarizePersonalRecords(records: Map<number, WorkoutSet>): Array<[number, WorkoutSet]> {
@@ -55,7 +55,7 @@ function formatSetTime(input: Date): string {
   return `${hours}:${minutes}`
 }
 
-function resolveGymAbbreviation(gymId: number | undefined, gymById: Map<number, string>): string {
+function resolveGymAbbreviation(gymId: string | undefined, gymById: Map<string, string>): string {
   if (!gymId) return 'UNKN'
   return gymById.get(gymId) ?? 'UNKN'
 }
@@ -79,7 +79,7 @@ export default function ExerciseHistoryPage() {
   const location = useLocation()
   const { id } = useParams<{ id: string }>()
 
-  const exerciseId = useMemo(() => Number(id), [id])
+  const exerciseId = useMemo(() => id ?? '', [id])
   const [isLoading, setIsLoading] = useState(true)
   const [exercise, setExercise] = useState<Exercise | null>(null)
   const [groups, setGroups] = useState<WorkoutGroup[]>([])
@@ -87,9 +87,9 @@ export default function ExerciseHistoryPage() {
   const [personalRecordsByGym, setPersonalRecordsByGym] = useState<Map<string, PersonalRecords>>(
     () => new Map([['all', calculatePersonalRecords([])]]),
   )
-  const [personalRecordGroupKeyBySetId, setPersonalRecordGroupKeyBySetId] = useState<Map<number, string>>(new Map())
+  const [personalRecordGroupKeyBySetId, setPersonalRecordGroupKeyBySetId] = useState<Map<string, string>>(new Map())
   const [personalRecordGymLabels, setPersonalRecordGymLabels] = useState<Map<string, string>>(new Map())
-  const [editingSetId, setEditingSetId] = useState<number | null>(null)
+  const [editingSetId, setEditingSetId] = useState<string | null>(null)
   const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
   const [editingMetaField, setEditingMetaField] = useState<MetaField>(null)
   const [exerciseNameDraft, setExerciseNameDraft] = useState('')
@@ -97,7 +97,7 @@ export default function ExerciseHistoryPage() {
   const [stravaExerciseTypeDraft, setStravaExerciseTypeDraft] = useState('')
 
   const loadHistory = useCallback(async () => {
-    if (!Number.isFinite(exerciseId) || exerciseId <= 0) {
+    if (!exerciseId) {
       setIsLoading(false)
       return
     }
@@ -136,7 +136,7 @@ export default function ExerciseHistoryPage() {
     const workouts = (await listWorkouts()).filter((workout) => workoutIds.includes(workout.id!))
     const workoutById = new Map(workouts.map((workout) => [workout.id!, workout]))
     const gymIds = Array.from(
-      new Set(workouts.map((workout) => workout.gymId).filter((gymId): gymId is number => Boolean(gymId))),
+      new Set(workouts.map((workout) => workout.gymId).filter((gymId): gymId is string => Boolean(gymId))),
     )
     const gyms = gymIds.length > 0 ? (await listGyms()).filter((gym) => gymIds.includes(gym.id!)) : []
     const gymById = new Map(gyms.map((gym) => [gym.id!, gym.abbreviation]))
@@ -161,7 +161,7 @@ export default function ExerciseHistoryPage() {
     )
     const workoutIdByWorkoutExerciseId = new Map(workoutExercises.map((we) => [we.id!, we.workoutId]))
 
-    const setsByWorkoutId = new Map<number, WorkoutSet[]>()
+    const setsByWorkoutId = new Map<string, WorkoutSet[]>()
     for (const set of allSets) {
       const workoutId = workoutIdByWorkoutExerciseId.get(set.workoutExerciseId)
       if (!workoutId) continue
@@ -201,7 +201,7 @@ export default function ExerciseHistoryPage() {
     void loadHistory()
   }, [loadHistory])
 
-  function updateSetState(setId: number, patch: Partial<WorkoutSet>) {
+  function updateSetState(setId: string, patch: Partial<WorkoutSet>) {
     setGroups((prev) =>
       prev.map((group) => ({
         ...group,
@@ -237,8 +237,8 @@ export default function ExerciseHistoryPage() {
   }
 
   async function handleBodyPartGroupChange(event: ChangeEvent<HTMLSelectElement>) {
-    const nextGroupId = Number(event.target.value)
-    if (!exercise?.id || !Number.isFinite(nextGroupId) || nextGroupId <= 0) return
+    const nextGroupId = event.target.value
+    if (!exercise?.id || !nextGroupId) return
 
     await updateExercise(exercise.id, { bodyPartGroupId: nextGroupId })
     setExercise((prev) => (prev ? { ...prev, bodyPartGroupId: nextGroupId } : prev))
@@ -263,7 +263,7 @@ export default function ExerciseHistoryPage() {
     setExercise((prev) => (prev ? { ...prev, stravaExerciseType } : prev))
   }
 
-  async function handleWeightChange(setId: number, event: ChangeEvent<HTMLInputElement>) {
+  async function handleWeightChange(setId: string, event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.value
     setDrafts((prev) => ({
       ...prev,
@@ -277,7 +277,7 @@ export default function ExerciseHistoryPage() {
     await refreshPersonalRecords()
   }
 
-  async function handleRepsChange(setId: number, event: ChangeEvent<HTMLInputElement>) {
+  async function handleRepsChange(setId: string, event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.value
     setDrafts((prev) => ({
       ...prev,
@@ -306,7 +306,7 @@ export default function ExerciseHistoryPage() {
     await loadHistory()
   }
 
-  async function handleCorrectExercise(workoutId: number, setId: number, exerciseId: number) {
+  async function handleCorrectExercise(workoutId: string, setId: string, exerciseId: string) {
     if (!exercise?.id || exerciseId === exercise.id) {
       return
     }

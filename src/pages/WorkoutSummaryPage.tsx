@@ -23,7 +23,7 @@ interface SummaryExercise {
   exerciseName: string
   stravaExerciseType?: string
   sets: WorkoutSet[]
-  markedSetIds: Set<number>
+  markedSetIds: Set<string>
 }
 
 interface WorkoutSummary {
@@ -57,7 +57,7 @@ function formatDuration(startTime: Date, endTime?: Date): string {
   return `${hours}h ${remainingMinutes}m`
 }
 
-async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
+async function loadSummary(workoutId: string): Promise<WorkoutSummary | null> {
   const workout = await getWorkout(workoutId)
   if (!workout) return null
 
@@ -75,8 +75,8 @@ async function loadSummary(workoutId: number): Promise<WorkoutSummary | null> {
   const groups = groupIds.length > 0
     ? (await listBodyPartGroups()).filter((group) => groupIds.includes(group.id!))
     : []
-  const exerciseById = new Map<number, Exercise>(exercises.map((exercise) => [exercise.id!, exercise]))
-  const groupById = new Map<number, BodyPartGroup>(groups.map((group) => [group.id!, group]))
+  const exerciseById = new Map<string, Exercise>(exercises.map((exercise) => [exercise.id, exercise]))
+  const groupById = new Map<string, BodyPartGroup>(groups.map((group) => [group.id, group]))
 
   const summaryExercises = (await Promise.all(
     orderedWorkoutExercises.map(async (workoutExercise) => {
@@ -137,7 +137,7 @@ export default function WorkoutSummaryPage() {
   const historyView = summaryState?.historyView
   const returnToActiveWorkout = summaryState?.returnToActiveWorkout === true
   const { id } = useParams<{ id: string }>()
-  const workoutId = Number(id)
+  const workoutId = id ?? ''
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingGym, setIsSavingGym] = useState(false)
@@ -161,7 +161,7 @@ export default function WorkoutSummaryPage() {
   }, [isDeleteRequested, deleteCountdown])
 
   useEffect(() => {
-    if (!Number.isInteger(workoutId) || workoutId <= 0) {
+    if (!workoutId) {
       setIsLoading(false)
       return
     }
@@ -175,7 +175,7 @@ export default function WorkoutSummaryPage() {
   async function handleGymChange(gymId: string) {
     if (!summary || !workoutId || isSavingGym) return
 
-    const nextGymId = gymId ? Number.parseInt(gymId, 10) : undefined
+    const nextGymId = gymId || undefined
     if (nextGymId !== undefined && !summary.gyms.some((gym) => gym.id === nextGymId)) return
 
     setIsSavingGym(true)

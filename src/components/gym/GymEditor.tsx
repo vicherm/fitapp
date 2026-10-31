@@ -70,12 +70,12 @@ function parseCoordinates(coordinates: string): ParsedCoordinatesResult {
 }
 
 interface Props {
-  gymId?: number
+  gymId?: string
 }
 
 export default function GymEditor({ gymId }: Props) {
   const navigate = useNavigate()
-  const [existingGyms, setExistingGyms] = useState<Array<{ id?: number; name: string; abbreviation: string }>>([])
+  const [existingGyms, setExistingGyms] = useState<Array<{ id: string; name: string; abbreviation: string }>>([])
   const [form, setForm] = useState<GymFormState>(EMPTY_FORM)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -148,14 +148,14 @@ export default function GymEditor({ gymId }: Props) {
     setIsLoading(false)
   }
 
-  function hasDuplicateName(name: string, excludeId?: number) {
+  function hasDuplicateName(name: string, excludeId?: string) {
     const normalized = normalizeText(name)
     return existingGyms.some(
       (gym) => gym.id !== excludeId && normalizeText(gym.name) === normalized,
     )
   }
 
-  function hasDuplicateAbbreviation(abbreviation: string, excludeId?: number) {
+  function hasDuplicateAbbreviation(abbreviation: string, excludeId?: string) {
     const normalized = normalizeText(abbreviation)
     return existingGyms.some(
       (gym) => gym.id !== excludeId && normalizeText(gym.abbreviation) === normalized,

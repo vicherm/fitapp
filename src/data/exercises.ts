@@ -8,7 +8,7 @@ export async function listExercises(): Promise<Exercise[]> {
   return data.map(mapExercise)
 }
 
-export async function getExercise(id: number): Promise<Exercise | null> {
+export async function getExercise(id: string): Promise<Exercise | null> {
   const { data, error } = await supabase.from('exercises').select('*').eq('id', id).maybeSingle()
   if (error) throw error
   return data ? mapExercise(data) : null
@@ -18,6 +18,7 @@ export async function createExercise(input: Omit<Exercise, 'id'>): Promise<Exerc
   const { data, error } = await supabase
     .from('exercises')
     .insert({
+      id: crypto.randomUUID(),
       name: input.name,
       body_part_group_id: input.bodyPartGroupId,
       machine: input.machine,
@@ -30,7 +31,7 @@ export async function createExercise(input: Omit<Exercise, 'id'>): Promise<Exerc
   return mapExercise(data)
 }
 
-export async function updateExercise(id: number, input: Partial<Omit<Exercise, 'id'>>): Promise<Exercise> {
+export async function updateExercise(id: string, input: Partial<Omit<Exercise, 'id'>>): Promise<Exercise> {
   const payload = {
     ...(input.name === undefined ? {} : { name: input.name }),
     ...(input.bodyPartGroupId === undefined ? {} : { body_part_group_id: input.bodyPartGroupId }),
@@ -43,7 +44,7 @@ export async function updateExercise(id: number, input: Partial<Omit<Exercise, '
   return mapExercise(data)
 }
 
-export async function deleteExercise(id: number): Promise<void> {
+export async function deleteExercise(id: string): Promise<void> {
   const { error } = await supabase.from('exercises').delete().eq('id', id)
   if (error) throw error
 }

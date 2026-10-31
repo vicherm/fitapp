@@ -5,7 +5,7 @@ export type Database = {
     Tables: {
       settings: {
         Row: {
-          id: number
+          id: string
           user_id: string
           gym_detection_radius: number
           theme: 'dark'
@@ -13,7 +13,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           user_id?: string
           gym_detection_radius?: number
           theme?: 'dark'
@@ -21,7 +21,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           user_id?: string
           gym_detection_radius?: number
           theme?: 'dark'
@@ -32,21 +32,21 @@ export type Database = {
       }
       body_part_groups: {
         Row: {
-          id: number
+          id: string
           user_id: string
           name: string
           created_at: string
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           user_id?: string
           name: string
           created_at?: string
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           user_id?: string
           name?: string
           created_at?: string
@@ -56,7 +56,7 @@ export type Database = {
       }
       gyms: {
         Row: {
-          id: number
+          id: string
           user_id: string
           name: string
           abbreviation: string
@@ -66,7 +66,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           user_id?: string
           name: string
           abbreviation: string
@@ -76,7 +76,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           user_id?: string
           name?: string
           abbreviation?: string
@@ -89,9 +89,9 @@ export type Database = {
       }
       exercises: {
         Row: {
-          id: number
+          id: string
           user_id: string
-          body_part_group_id: number
+          body_part_group_id: string
           name: string
           machine: boolean
           notes: string | null
@@ -100,9 +100,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           user_id?: string
-          body_part_group_id: number
+          body_part_group_id: string
           name: string
           machine?: boolean
           notes?: string | null
@@ -111,9 +111,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           user_id?: string
-          body_part_group_id?: number
+          body_part_group_id?: string
           name?: string
           machine?: boolean
           notes?: string | null
@@ -133,9 +133,9 @@ export type Database = {
       }
       workouts: {
         Row: {
-          id: number
+          id: string
           user_id: string
-          gym_id: number | null
+          gym_id: string | null
           note: string | null
           start_time: string
           end_time: string | null
@@ -143,9 +143,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           user_id?: string
-          gym_id?: number | null
+          gym_id?: string | null
           note?: string | null
           start_time: string
           end_time?: string | null
@@ -153,9 +153,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           user_id?: string
-          gym_id?: number | null
+          gym_id?: string | null
           note?: string | null
           start_time?: string
           end_time?: string | null
@@ -174,28 +174,28 @@ export type Database = {
       }
       workout_exercises: {
         Row: {
-          id: number
+          id: string
           user_id: string
-          workout_id: number
-          exercise_id: number
+          workout_id: string
+          exercise_id: string
           exercise_order: number
           created_at: string
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           user_id?: string
-          workout_id: number
-          exercise_id: number
+          workout_id: string
+          exercise_id: string
           exercise_order: number
           created_at?: string
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           user_id?: string
-          workout_id?: number
-          exercise_id?: number
+          workout_id?: string
+          exercise_id?: string
           exercise_order?: number
           created_at?: string
           updated_at?: string
@@ -219,9 +219,9 @@ export type Database = {
       }
       workout_sets: {
         Row: {
-          id: number
+          id: string
           user_id: string
-          workout_exercise_id: number
+          workout_exercise_id: string
           set_number: number
           weight: number
           reps: number
@@ -230,9 +230,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           user_id?: string
-          workout_exercise_id: number
+          workout_exercise_id: string
           set_number: number
           weight: number
           reps: number
@@ -241,9 +241,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           user_id?: string
-          workout_exercise_id?: number
+          workout_exercise_id?: string
           set_number?: number
           weight?: number
           reps?: number
@@ -352,7 +352,7 @@ export type Database = {
         Row: {
           id: number
           user_id: string
-          workout_id: number
+          workout_id: string
           strava_activity_id: number | null
           strava_upload_id: string | null
           created_at: string
@@ -360,7 +360,7 @@ export type Database = {
         Insert: {
           id?: number
           user_id?: string
-          workout_id: number
+          workout_id: string
           strava_activity_id?: number | null
           strava_upload_id?: string | null
           created_at?: string
@@ -368,7 +368,7 @@ export type Database = {
         Update: {
           id?: number
           user_id?: string
-          workout_id?: number
+          workout_id?: string
           strava_activity_id?: number | null
           strava_upload_id?: string | null
           created_at?: string

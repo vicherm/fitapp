@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase'
 
-export async function uploadWorkoutToStrava(workoutId: number): Promise<{ uploaded: boolean; alreadyUploaded?: boolean; stravaActivityId?: number; stravaUrl?: string }> {
+export async function uploadWorkoutToStrava(workoutId: string): Promise<{ uploaded: boolean; alreadyUploaded?: boolean; stravaActivityId?: number; stravaUrl?: string }> {
 
   const { data: status, error: statusError } = await supabase.functions.invoke('strava-status', {
     body: {},
@@ -36,7 +36,7 @@ export async function uploadWorkoutToStrava(workoutId: number): Promise<{ upload
   return data as { uploaded: boolean; alreadyUploaded?: boolean; stravaActivityId?: number; stravaUrl?: string }
 }
 
-export async function downloadWorkoutStravaJson(workoutId: number): Promise<void> {
+export async function downloadWorkoutStravaJson(workoutId: string): Promise<void> {
   const { data, error } = await supabase.functions.invoke('strava-upload-workout', {
     body: { workoutId, preview: true },
   })

@@ -53,8 +53,8 @@ async function loadStatistics(): Promise<Statistics> {
     }
   }
 
-  const setsByWorkoutId = new Map<number, Date[]>()
-  const workoutByExerciseId = new Map<number, number>()
+  const setsByWorkoutId = new Map<string, Date[]>()
+  const workoutByExerciseId = new Map<string, string>()
   for (const workoutExercise of workoutExercises) {
     workoutByExerciseId.set(workoutExercise.id!, workoutExercise.workoutId)
   }
@@ -85,7 +85,7 @@ async function loadStatistics(): Promise<Statistics> {
   }
 
   const gymById = new Map(gyms.map((gym) => [gym.id!, gym]))
-  const workoutCountByGymId = new Map<number, number>()
+  const workoutCountByGymId = new Map<string, number>()
   for (const workout of workouts) {
     if (workout.gymId === undefined) continue
     workoutCountByGymId.set(workout.gymId, (workoutCountByGymId.get(workout.gymId) ?? 0) + 1)

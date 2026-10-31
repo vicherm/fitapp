@@ -1,25 +1,25 @@
 export interface Settings {
-  id?: number
+  id: string
   gymDetectionRadius: number // metres
   theme: 'dark'
 }
 
 export interface BodyPartGroup {
-  id?: number
+  id: string
   name: string
 }
 
 export interface Exercise {
-  id?: number
+  id: string
   name: string
-  bodyPartGroupId: number
+  bodyPartGroupId: string
   machine: boolean
   notes?: string
   stravaExerciseType?: string
 }
 
 export interface Gym {
-  id?: number
+  id: string
   name: string
   abbreviation: string
   latitude: number
@@ -27,23 +27,23 @@ export interface Gym {
 }
 
 export interface Workout {
-  id?: number
-  gymId?: number
+  id: string
+  gymId?: string
   note?: string
   startTime: Date
   endTime?: Date
 }
 
 export interface WorkoutExercise {
-  id?: number
-  workoutId: number
-  exerciseId: number
+  id: string
+  workoutId: string
+  exerciseId: string
   order: number
 }
 
 export interface WorkoutSet {
-  id?: number
-  workoutExerciseId: number
+  id: string
+  workoutExerciseId: string
   setNumber: number
   weight: number
   reps: number

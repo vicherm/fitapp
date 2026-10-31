@@ -34,8 +34,8 @@ const ACTIVE_WORKOUT_DRAFT_KEY = 'gymlog-active-workout-draft-v1'
 const LOG_SET_COOLDOWN_MS = 5000
 
 interface ActiveWorkoutDraft {
-  workoutId: number
-  exerciseId?: number
+  workoutId: string
+  exerciseId?: string
   weight: string
   reps: string
   activeField: Field | null
@@ -77,7 +77,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [reps, setReps] = useState('')
   const [activeField, setActiveField] = useState<Field | null>('weight')
   const [gyms, setGyms] = useState<Gym[]>([])
-  const [selectedGymId, setSelectedGymId] = useState<number | ''>('')
+  const [selectedGymId, setSelectedGymId] = useState<string | ''>('')
   const [selectedGymAbbreviation, setSelectedGymAbbreviation] = useState('')
   const [isGymPickerOpen, setIsGymPickerOpen] = useState(false)
   const [currentSets, setCurrentSets] = useState<WorkoutSet[]>([])
@@ -86,7 +86,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const [personalRecordsByGym, setPersonalRecordsByGym] = useState<Map<string, PersonalRecords>>(
     () => new Map([['all', calculatePersonalRecords([])]]),
   )
-  const [personalRecordGroupKeyBySetId, setPersonalRecordGroupKeyBySetId] = useState<Map<number, string>>(new Map())
+  const [personalRecordGroupKeyBySetId, setPersonalRecordGroupKeyBySetId] = useState<Map<string, string>>(new Map())
   const [notification, setNotification] = useState<string | null>(null)
   const [isLogCoolingDown, setIsLogCoolingDown] = useState(false)
   const isHydratingDraftRef = useRef(false)
@@ -105,7 +105,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
     let isActive = true
 
-    async function prefillGym(previousGymId?: number) {
+    async function prefillGym(previousGymId?: string) {
       const settings = await getSettings()
       const radius = settings?.gymDetectionRadius ?? 200
 
@@ -209,7 +209,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           : draft.activeField === 'reps' ? 'reps' : 'weight',
       )
 
-      if (typeof draft.exerciseId === 'number') {
+      if (typeof draft.exerciseId === 'string') {
         getExercise(draft.exerciseId)
           .then(async (savedExercise) => {
             if (savedExercise) {
@@ -290,7 +290,10 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
         new Set(
           weList
             .filter((we) => we.workoutId !== w!.id)
-            .sort((a, b) => b.workoutId - a.workoutId)
+            .sort((left, right) => (
+              (workoutById.get(right.workoutId)?.startTime.getTime() ?? 0)
+              - (workoutById.get(left.workoutId)?.startTime.getTime() ?? 0)
+            ))
             .map((we) => we.workoutId),
         ),
       ).slice(0, 2)
@@ -587,7 +590,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
     setReps('')
   }
 
-  function handleGymChange(gymId: number) {
+  function handleGymChange(gymId: string) {
     if (!w?.id || gymId === w.gymId) {
       setIsGymPickerOpen(false)
       return
@@ -619,7 +622,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
                 className="aw-start-select"
                 value={selectedGymId}
                 onChange={(e) =>
-                  setSelectedGymId(e.target.value ? Number.parseInt(e.target.value, 10) : '')
+                  setSelectedGymId(e.target.value)
                 }
               >
                 <option value="">Choose gym…</option>
@@ -673,7 +676,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
                 className="aw-start-select"
                 value={selectedGymId}
                 onChange={(e) =>
-                  setSelectedGymId(e.target.value ? Number.parseInt(e.target.value, 10) : '')
+                  setSelectedGymId(e.target.value)
                 }
               >
                 <option value="">Choose gym…</option>
@@ -757,7 +760,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           <select
             id="aw-active-gym-select"
             value={w.gymId}
-            onChange={(event) => handleGymChange(Number.parseInt(event.target.value, 10))}
+            onChange={(event) => handleGymChange(event.target.value)}
           >
             {gyms.map((gym) => (
               <option key={gym.id} value={gym.id}>

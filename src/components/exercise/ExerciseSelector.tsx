@@ -13,12 +13,12 @@ interface ExerciseGroup {
 }
 
 interface Props {
-  workoutId?: number
-  currentExerciseId?: number
+  workoutId?: string
+  currentExerciseId?: string
   correction?: {
-    sourceExerciseId: number
-    workoutId: number
-    setId: number
+    sourceExerciseId: string
+    workoutId: string
+    setId: string
   }
 }
 
@@ -26,15 +26,15 @@ const HOT_PICK_RECENT_COUNT = 3
 const HOT_PICK_FOLLOWUP_COUNT = 2
 const FOLLOWUP_LOOKBACK_MONTHS = 6
 
-async function computeHotPicks(workoutId?: number, currentExerciseId?: number): Promise<Exercise[]> {
-  const usedIds = new Set<number>()
+async function computeHotPicks(workoutId?: string, currentExerciseId?: string): Promise<Exercise[]> {
+  const usedIds = new Set<string>()
   if (currentExerciseId) usedIds.add(currentExerciseId)
   const picks: Exercise[] = []
 
   // Most recently added exercises within the current workout (for supersets).
   if (workoutId) {
     const workoutExercises = (await listWorkoutExercises([workoutId])).sort((left, right) => left.order - right.order)
-    const recentIds: number[] = []
+    const recentIds: string[] = []
     for (let i = workoutExercises.length - 1; i >= 0 && recentIds.length < HOT_PICK_RECENT_COUNT; i--) {
       const exerciseId = workoutExercises[i].exerciseId
       if (usedIds.has(exerciseId) || recentIds.includes(exerciseId)) continue
@@ -55,7 +55,7 @@ async function computeHotPicks(workoutId?: number, currentExerciseId?: number): 
     since.setMonth(since.getMonth() - FOLLOWUP_LOOKBACK_MONTHS)
     const recentWorkouts = (await listWorkouts()).filter((workout) => workout.startTime >= since)
 
-    const followCounts = new Map<number, number>()
+    const followCounts = new Map<string, number>()
     for (const recentWorkout of recentWorkouts) {
       if (!recentWorkout.id) continue
       const sequence = (await listWorkoutExercises([recentWorkout.id!])).sort((left, right) => left.order - right.order)
@@ -90,7 +90,7 @@ export default function ExerciseSelector({ workoutId, currentExerciseId, correct
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [bodyPartGroups, setBodyPartGroups] = useState<BodyPartGroup[]>([])
   const [query, setQuery] = useState('')
-  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<number>>(new Set())
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(new Set())
   const [hotPicks, setHotPicks] = useState<Exercise[]>([])
 
   useEffect(() => {
@@ -127,7 +127,7 @@ export default function ExerciseSelector({ workoutId, currentExerciseId, correct
     .filter((group): group is ExerciseGroup => Boolean(group))
     .sort((a, b) => a.bodyPartGroup.name.localeCompare(b.bodyPartGroup.name))
 
-  function toggleGroup(groupId: number) {
+  function toggleGroup(groupId: string) {
     setExpandedGroupIds((prev) => {
       const next = new Set(prev)
       if (next.has(groupId)) next.delete(groupId)

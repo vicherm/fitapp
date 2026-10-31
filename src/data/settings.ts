@@ -17,7 +17,7 @@ export async function updateSettings(settings: Pick<Settings, 'gymDetectionRadiu
 
   const query = current?.id
     ? supabase.from('settings').update(payload).eq('id', current.id).select('*').single()
-    : supabase.from('settings').insert(payload).select('*').single()
+    : supabase.from('settings').insert({ ...payload, id: crypto.randomUUID() }).select('*').single()
   const { data, error } = await query
   if (error) throw error
   return mapSettings(data)

@@ -8,9 +8,9 @@ import './BodyPartGroupEditor.css'
 export default function BodyPartGroupEditor() {
   const navigate = useNavigate()
   const [groups, setGroups] = useState<BodyPartGroup[]>([])
-  const [usage, setUsage] = useState<Record<number, number>>({})
+  const [usage, setUsage] = useState<Record<string, number>>({})
   const [newName, setNewName] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [error, setError] = useState('')
 
@@ -26,7 +26,7 @@ export default function BodyPartGroupEditor() {
       listExercises(),
     ])
 
-    const usageCounts = exercises.reduce<Record<number, number>>((acc, ex) => {
+    const usageCounts = exercises.reduce<Record<string, number>>((acc, ex) => {
       acc[ex.bodyPartGroupId] = (acc[ex.bodyPartGroupId] ?? 0) + 1
       return acc
     }, {})
@@ -39,7 +39,7 @@ export default function BodyPartGroupEditor() {
     return name.trim().toLowerCase()
   }
 
-  function hasDuplicateName(name: string, excludeId?: number) {
+  function hasDuplicateName(name: string, excludeId?: string) {
     const normalized = normalizeName(name)
     return groups.some(
       (group) => group.id !== excludeId && normalizeName(group.name) === normalized,
@@ -62,7 +62,7 @@ export default function BodyPartGroupEditor() {
   }
 
   function startEditing(group: BodyPartGroup) {
-    setEditingId(group.id ?? null)
+    setEditingId(group.id)
     setEditingName(group.name)
     setError('')
   }
@@ -72,7 +72,7 @@ export default function BodyPartGroupEditor() {
     setEditingName('')
   }
 
-  async function saveEdit(groupId: number) {
+  async function saveEdit(groupId: string) {
     const trimmed = editingName.trim()
     if (!trimmed) {
       setError('Name is required')
@@ -145,7 +145,7 @@ export default function BodyPartGroupEditor() {
                       onChange={(e) => setEditingName(e.target.value)}
                       autoFocus
                     />
-                    <button className="bpg-action" onClick={() => groupId && saveEdit(groupId)}>
+                    <button className="bpg-action" onClick={() => void saveEdit(groupId)}>
                       Save
                     </button>
                     <button className="bpg-action bpg-muted" onClick={cancelEditing}>
@@ -156,7 +156,7 @@ export default function BodyPartGroupEditor() {
                   <>
                     <div className="bpg-name-wrap">
                       <span className="bpg-name">{group.name}</span>
-                      <span className="bpg-usage">{usage[groupId ?? -1] ?? 0} exercises</span>
+                      <span className="bpg-usage">{usage[groupId] ?? 0} exercises</span>
                     </div>
                     <button className="bpg-action" onClick={() => startEditing(group)}>
                       Edit

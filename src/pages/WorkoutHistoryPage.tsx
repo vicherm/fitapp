@@ -102,7 +102,7 @@ export default function WorkoutHistoryPage() {
         : []
       const exerciseNameById = new Map(exercises.map((exercise) => [exercise.id!, getExerciseDisplayName(exercise)]))
       const gymAbbreviationById = new Map(gyms.map((gym) => [gym.id!, gym.abbreviation]))
-      const exercisesByWorkoutId = new Map<number, typeof workoutExercises>()
+      const exercisesByWorkoutId = new Map<string, typeof workoutExercises>()
 
       for (const workoutExercise of workoutExercises) {
         const current = exercisesByWorkoutId.get(workoutExercise.workoutId) ?? []
@@ -233,7 +233,7 @@ export default function WorkoutHistoryPage() {
     handleListSwipe(start.x, start.y, touch.clientX, touch.clientY)
   }
 
-  function openWorkoutSummary(workoutId?: number) {
+  function openWorkoutSummary(workoutId?: string) {
     if (!workoutId) return
     navigate(`/history/${workoutId}`, {
       state: {

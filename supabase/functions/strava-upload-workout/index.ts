@@ -122,9 +122,11 @@ serve(async (request) => {
   try {
     if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405)
     const user = await requireOwner(request)
-    const input = await request.json() as { workoutId?: number; preview?: boolean }
-    const workoutId = Number(input.workoutId)
-    if (!Number.isInteger(workoutId) || workoutId <= 0) return json({ error: 'A valid workoutId is required.' }, 400)
+    const input = await request.json() as { workoutId?: string; preview?: boolean }
+    const workoutId = input.workoutId
+    if (!workoutId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workoutId)) {
+      return json({ error: 'A valid workoutId is required.' }, 400)
+    }
 
     const db = admin()
     if (input.preview !== true) {

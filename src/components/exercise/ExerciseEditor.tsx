@@ -6,7 +6,7 @@ import { createExercise, deleteExercise, getExercise, updateExercise } from '../
 import './ExerciseEditor.css'
 
 interface Props {
-  exerciseId?: number
+  exerciseId?: string
 }
 
 export default function ExerciseEditor({ exerciseId }: Props) {
@@ -14,7 +14,7 @@ export default function ExerciseEditor({ exerciseId }: Props) {
   const isNew = exerciseId === undefined
 
   const [name, setName] = useState('')
-  const [bodyPartGroupId, setBodyPartGroupId] = useState<number | ''>('')
+  const [bodyPartGroupId, setBodyPartGroupId] = useState<string | ''>('')
   const [machine, setMachine] = useState(false)
   const [notes, setNotes] = useState('')
   const [stravaExerciseType, setStravaExerciseType] = useState('')
@@ -48,9 +48,9 @@ export default function ExerciseEditor({ exerciseId }: Props) {
     }
 
     if (isNew) {
-      await createExercise({ name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined, stravaExerciseType: stravaExerciseType.trim() || undefined })
+      await createExercise({ name: trimmed, bodyPartGroupId, machine, notes: notes.trim() || undefined, stravaExerciseType: stravaExerciseType.trim() || undefined })
     } else {
-      await updateExercise(exerciseId!, { name: trimmed, bodyPartGroupId: bodyPartGroupId as number, machine, notes: notes.trim() || undefined, stravaExerciseType: stravaExerciseType.trim() || undefined })
+      await updateExercise(exerciseId!, { name: trimmed, bodyPartGroupId, machine, notes: notes.trim() || undefined, stravaExerciseType: stravaExerciseType.trim() || undefined })
     }
     navigate(-1)
   }
@@ -110,7 +110,7 @@ export default function ExerciseEditor({ exerciseId }: Props) {
           <select
             className="ee-input"
             value={bodyPartGroupId}
-            onChange={(e) => setBodyPartGroupId(e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) => setBodyPartGroupId(e.target.value)}
           >
             <option value="">— select —</option>
             {groups.map((g) => (

@@ -17,7 +17,7 @@ export default function GymList() {
     setGyms(allGyms)
   }
 
-  async function handleDeleteGym(gymId?: number) {
+  async function handleDeleteGym(gymId?: string) {
     if (!gymId) return
     await removeGym(gymId)
     await loadGyms()

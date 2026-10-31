@@ -6,20 +6,20 @@ export interface PersonalRecordEvent {
 }
 
 export interface PersonalRecords {
-  events: Map<number, PersonalRecordEvent>
-  markedSetIds: Set<number>
+  events: Map<string, PersonalRecordEvent>
+  markedSetIds: Set<string>
   maximumWeight: WorkoutSet | null
   maximumWeightByRepetitions: Map<number, WorkoutSet>
 }
 
-export function getPersonalRecordGroupKey(gymId: number | undefined, separateByGym: boolean): string {
+export function getPersonalRecordGroupKey(gymId: string | undefined, separateByGym: boolean): string {
   if (!separateByGym) return 'all'
   return gymId === undefined ? 'unknown' : String(gymId)
 }
 
 export function calculatePersonalRecordsByGym(
   sets: WorkoutSet[],
-  gymIdByWorkoutExerciseId: Map<number, number | undefined>,
+  gymIdByWorkoutExerciseId: Map<string, string | undefined>,
   separateByGym: boolean,
 ): Map<string, PersonalRecords> {
   const setsByGroup = new Map<string, WorkoutSet[]>()
@@ -35,8 +35,8 @@ export function calculatePersonalRecordsByGym(
 
 /** Derive PR progression from the complete chronological set history. */
 export function calculatePersonalRecords(sets: WorkoutSet[]): PersonalRecords {
-  const events = new Map<number, PersonalRecordEvent>()
-  const markedSetIds = new Set<number>()
+  const events = new Map<string, PersonalRecordEvent>()
+  const markedSetIds = new Set<string>()
   const byRepetitions = new Map<number, WorkoutSet>()
   let maximumWeight: WorkoutSet | null = null
 

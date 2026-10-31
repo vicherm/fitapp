@@ -14,13 +14,13 @@ export async function listOpenWorkouts(): Promise<Workout[]> {
   return data.map(mapWorkout)
 }
 
-export async function getWorkout(id: number): Promise<Workout | null> {
+export async function getWorkout(id: string): Promise<Workout | null> {
   const { data, error } = await supabase.from('workouts').select('*').eq('id', id).maybeSingle()
   if (error) throw error
   return data ? mapWorkout(data) : null
 }
 
-export async function listWorkoutExercises(workoutIds?: number[]): Promise<WorkoutExercise[]> {
+export async function listWorkoutExercises(workoutIds?: string[]): Promise<WorkoutExercise[]> {
   let query = supabase.from('workout_exercises').select('*')
   if (workoutIds && workoutIds.length > 0) query = query.in('workout_id', workoutIds)
   const { data, error } = await query.order('exercise_order')
@@ -28,7 +28,7 @@ export async function listWorkoutExercises(workoutIds?: number[]): Promise<Worko
   return data.map(mapWorkoutExercise)
 }
 
-export async function listWorkoutSets(workoutExerciseIds?: number[]): Promise<WorkoutSet[]> {
+export async function listWorkoutSets(workoutExerciseIds?: string[]): Promise<WorkoutSet[]> {
   let query = supabase.from('workout_sets').select('*')
   if (workoutExerciseIds && workoutExerciseIds.length > 0) query = query.in('workout_exercise_id', workoutExerciseIds)
   const { data, error } = await query.order('performed_at')
@@ -39,14 +39,14 @@ export async function listWorkoutSets(workoutExerciseIds?: number[]): Promise<Wo
 export async function createWorkout(input: Pick<Workout, 'gymId' | 'startTime'>): Promise<Workout> {
   const { data, error } = await supabase
     .from('workouts')
-    .insert({ gym_id: input.gymId ?? null, start_time: input.startTime.toISOString() })
+    .insert({ id: crypto.randomUUID(), gym_id: input.gymId ?? null, start_time: input.startTime.toISOString() })
     .select('*')
     .single()
   if (error) throw error
   return mapWorkout(data)
 }
 
-export async function updateWorkout(id: number, input: Partial<Pick<Workout, 'gymId' | 'note' | 'startTime' | 'endTime'>>): Promise<Workout> {
+export async function updateWorkout(id: string, input: Partial<Pick<Workout, 'gymId' | 'note' | 'startTime' | 'endTime'>>): Promise<Workout> {
   const payload = {
     ...(input.gymId === undefined ? {} : { gym_id: input.gymId ?? null }),
     ...(input.note === undefined ? {} : { note: input.note.trim() || null }),
@@ -58,7 +58,7 @@ export async function updateWorkout(id: number, input: Partial<Pick<Workout, 'gy
   return mapWorkout(data)
 }
 
-export async function deleteWorkout(id: number): Promise<void> {
+export async function deleteWorkout(id: string): Promise<void> {
   const { error } = await supabase.from('workouts').delete().eq('id', id)
   if (error) throw error
 }
@@ -66,14 +66,14 @@ export async function deleteWorkout(id: number): Promise<void> {
 export async function createWorkoutExercise(input: Omit<WorkoutExercise, 'id'>): Promise<WorkoutExercise> {
   const { data, error } = await supabase
     .from('workout_exercises')
-    .insert({ workout_id: input.workoutId, exercise_id: input.exerciseId, exercise_order: input.order })
+    .insert({ id: crypto.randomUUID(), workout_id: input.workoutId, exercise_id: input.exerciseId, exercise_order: input.order })
     .select('*')
     .single()
   if (error) throw error
   return mapWorkoutExercise(data)
 }
 
-export async function getWorkoutExercise(workoutId: number, exerciseId: number): Promise<WorkoutExercise | null> {
+export async function getWorkoutExercise(workoutId: string, exerciseId: string): Promise<WorkoutExercise | null> {
   const { data, error } = await supabase
     .from('workout_exercises')
     .select('*')
@@ -84,7 +84,7 @@ export async function getWorkoutExercise(workoutId: number, exerciseId: number):
   return data ? mapWorkoutExercise(data) : null
 }
 
-export async function updateWorkoutSet(id: number, input: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'setNumber' | 'workoutExerciseId'>>): Promise<WorkoutSet> {
+export async function updateWorkoutSet(id: string, input: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'setNumber' | 'workoutExerciseId'>>): Promise<WorkoutSet> {
   const payload = {
     ...(input.weight === undefined ? {} : { weight: input.weight }),
     ...(input.reps === undefined ? {} : { reps: input.reps }),
@@ -100,6 +100,7 @@ export async function createWorkoutSet(input: Omit<WorkoutSet, 'id'>): Promise<W
   const { data, error } = await supabase
     .from('workout_sets')
     .insert({
+      id: crypto.randomUUID(),
       workout_exercise_id: input.workoutExerciseId,
       set_number: input.setNumber,
       weight: input.weight,
@@ -112,12 +113,12 @@ export async function createWorkoutSet(input: Omit<WorkoutSet, 'id'>): Promise<W
   return mapWorkoutSet(data)
 }
 
-export async function deleteWorkoutSet(id: number): Promise<void> {
+export async function deleteWorkoutSet(id: string): Promise<void> {
   const { error } = await supabase.from('workout_sets').delete().eq('id', id)
   if (error) throw error
 }
 
-export async function deleteWorkoutExercise(id: number): Promise<void> {
+export async function deleteWorkoutExercise(id: string): Promise<void> {
   const { error } = await supabase.from('workout_exercises').delete().eq('id', id)
   if (error) throw error
 }
