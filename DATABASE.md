@@ -1,17 +1,17 @@
 # GymLog - Database Model
 
-Version: 0.9
+Version: 1.0
 Status: Current implementation
 
 This app uses Supabase PostgreSQL with Supabase Auth and Row Level Security. Domain models remain in `src/db/types.ts`, while typed database access is defined in `src/lib/database.types.ts` and `src/data/`.
 
 ## Supabase schema
 
-The PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. `supabase/migrations/202610310007_client_generated_uuid_ids.sql` migrates application record IDs and their foreign keys to UUIDs while preserving existing relationships. The client generates UUIDs before inserting application records so identifiers are available independently of a server response; database defaults remain for rows created by server-side triggers. Every table has authenticated ownership, same-user relationships are enforced with composite foreign keys, and Row Level Security is enabled. `supabase/migrations/202609230002_restrict_to_google_user.sql` restricts every policy to the configured Google identity. All application screens use the Supabase data-access layer.
+The PostgreSQL schema is defined in `supabase/migrations/202609230001_initial_schema.sql`. `supabase/migrations/202610310007_client_generated_uuid_ids.sql` migrates application record IDs and their foreign keys to UUIDs while preserving existing relationships. `supabase/migrations/202610310008_add_is_deleted.sql` adds tombstone flags to application data and propagates workout and workout-exercise deletion to child records. The client generates UUIDs and initializes tombstones before inserting application records; database defaults remain for rows created by server-side triggers. Normal application reads hide tombstoned records, while backup export includes them. Every table has authenticated ownership, same-user relationships are enforced with composite foreign keys, and Row Level Security is enabled. `supabase/migrations/202609230002_restrict_to_google_user.sql` restricts every policy to the configured Google identity. All application screens use the Supabase data-access layer.
 
 The Supabase TypeScript contract is in `src/lib/database.types.ts` and is wired into the shared Supabase client. Regenerate it with the Supabase CLI after schema changes using `supabase gen types typescript --project-id dhxckgfuapniettrohvo --schema public` with an authenticated Supabase access token.
 
-The one-time JSON migration is implemented in `scripts/import-supabase-json.mjs`. It uses the Supabase service-role key only in Node, resolves the allowed Auth user by email, refuses to overwrite existing non-settings rows, remaps old numeric IDs, and imports records in dependency order. Application backups export schema version 2 with UUID identifiers; the in-app restore continues to accept schema version 1 backups.
+The one-time JSON migration is implemented in `scripts/import-supabase-json.mjs`. It uses the Supabase service-role key only in Node, resolves the allowed Auth user by email, refuses to overwrite existing non-settings rows, remaps old numeric IDs, and imports records in dependency order. Application backups export schema version 3 with UUID identifiers and deletion flags; the in-app restore continues to accept schema versions 1 and 2.
 
 Strava integration tables are defined in `supabase/migrations/202609240003_strava_tables.sql`. `strava_connections` is server-only and stores OAuth tokens for Edge Functions; `strava_activities` is readable by the owner and uses `(user_id, strava_activity_id)` for idempotent imports.
 
@@ -28,6 +28,7 @@ Stores application-wide preferences.
 Fields
 
 - id: string (UUID)
+- isDeleted: boolean
 - gymDetectionRadius: number
   - Units: metres
   - Default: 200
@@ -49,6 +50,7 @@ Represents a user-defined exercise category.
 Fields
 
 - id: string (UUID)
+- isDeleted: boolean
 - name: string
 
 Notes
@@ -70,6 +72,7 @@ Represents an exercise template that can be reused across workouts.
 Fields
 
 - id: string (UUID)
+- isDeleted: boolean
 - name: string
 - bodyPartGroupId: string (UUID)
 - machine: boolean
@@ -97,6 +100,7 @@ Represents a training location.
 Fields
 
 - id: string (UUID)
+- isDeleted: boolean
 - name: string
 - abbreviation: string
 - latitude: number
@@ -125,6 +129,7 @@ Represents a single training session.
 Fields
 
 - id: string (UUID)
+- isDeleted: boolean
 - gymId?: string (UUID)
 - startTime: Date
 - endTime?: Date
@@ -147,6 +152,7 @@ Represents one exercise performed within a workout, including the order in which
 Fields
 
 - id: string (UUID)
+- isDeleted: boolean
 - workoutId: string (UUID)
 - exerciseId: string (UUID)
 - order: number
@@ -166,6 +172,7 @@ Represents a single set within a workout exercise.
 Fields
 
 - id: string (UUID)
+- isDeleted: boolean
 - workoutExerciseId: string (UUID)
 - setNumber: number
 - weight: number
@@ -195,5 +202,9 @@ The schema has evolved through Supabase migrations.
 - Version 4
   - Migrated application record IDs and foreign keys from numeric values to UUIDs.
   - New application records receive their UUID from the client before insertion.
+- Version 5
+  - Added `is_deleted` tombstone flags to application tables.
+  - Soft-deleting a workout also marks its workout exercises and sets deleted.
+  - Soft-deleting a workout exercise also marks its sets deleted.
 
 The implementation also includes a cleanup hook, `removeEmptyWorkoutExercises`, which removes orphaned workout exercises and empty workouts after data maintenance.

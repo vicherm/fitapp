@@ -141,8 +141,15 @@ serve(async (request) => {
     }
 
     const [{ data: workout, error: workoutError }, { data: workoutExercises, error: exercisesError }] = await Promise.all([
-      db.from('workouts').select('id,start_time,note,gyms(name)').eq('id', workoutId).eq('user_id', user.id).single(),
-      db.from('workout_exercises').select('exercise_order,exercises(name,strava_exercise_type),workout_sets(weight,reps,performed_at,set_number)').eq('workout_id', workoutId).eq('user_id', user.id).order('exercise_order'),
+      db.from('workouts').select('id,start_time,note,gyms(name)').eq('id', workoutId).eq('user_id', user.id).eq('is_deleted', false).single(),
+      db.from('workout_exercises')
+        .select('exercise_order,exercises(name,strava_exercise_type),workout_sets(weight,reps,performed_at,set_number)')
+        .eq('workout_id', workoutId)
+        .eq('user_id', user.id)
+        .eq('is_deleted', false)
+        .eq('exercises.is_deleted', false)
+        .eq('workout_sets.is_deleted', false)
+        .order('exercise_order'),
     ])
     if (workoutError) throw workoutError
     if (exercisesError) throw exercisesError

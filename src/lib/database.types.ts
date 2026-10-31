@@ -6,6 +6,7 @@ export type Database = {
       settings: {
         Row: {
           id: string
+          is_deleted: boolean
           user_id: string
           gym_detection_radius: number
           theme: 'dark'
@@ -14,6 +15,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           gym_detection_radius?: number
           theme?: 'dark'
@@ -22,6 +24,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           gym_detection_radius?: number
           theme?: 'dark'
@@ -33,6 +36,7 @@ export type Database = {
       body_part_groups: {
         Row: {
           id: string
+          is_deleted: boolean
           user_id: string
           name: string
           created_at: string
@@ -40,6 +44,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           name: string
           created_at?: string
@@ -47,6 +52,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           name?: string
           created_at?: string
@@ -57,6 +63,7 @@ export type Database = {
       gyms: {
         Row: {
           id: string
+          is_deleted: boolean
           user_id: string
           name: string
           abbreviation: string
@@ -67,6 +74,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           name: string
           abbreviation: string
@@ -77,6 +85,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           name?: string
           abbreviation?: string
@@ -90,6 +99,7 @@ export type Database = {
       exercises: {
         Row: {
           id: string
+          is_deleted: boolean
           user_id: string
           body_part_group_id: string
           name: string
@@ -101,6 +111,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           body_part_group_id: string
           name: string
@@ -112,6 +123,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           body_part_group_id?: string
           name?: string
@@ -134,6 +146,7 @@ export type Database = {
       workouts: {
         Row: {
           id: string
+          is_deleted: boolean
           user_id: string
           gym_id: string | null
           note: string | null
@@ -144,6 +157,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           gym_id?: string | null
           note?: string | null
@@ -154,6 +168,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           gym_id?: string | null
           note?: string | null
@@ -175,6 +190,7 @@ export type Database = {
       workout_exercises: {
         Row: {
           id: string
+          is_deleted: boolean
           user_id: string
           workout_id: string
           exercise_id: string
@@ -184,6 +200,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           workout_id: string
           exercise_id: string
@@ -193,6 +210,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           workout_id?: string
           exercise_id?: string
@@ -220,6 +238,7 @@ export type Database = {
       workout_sets: {
         Row: {
           id: string
+          is_deleted: boolean
           user_id: string
           workout_exercise_id: string
           set_number: number
@@ -231,6 +250,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           workout_exercise_id: string
           set_number: number
@@ -242,6 +262,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_deleted?: boolean
           user_id?: string
           workout_exercise_id?: string
           set_number?: number

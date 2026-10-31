@@ -14,18 +14,20 @@ type Tables = Database['public']['Tables']
 export function mapSettings(row: Tables['settings']['Row']): Settings {
   return {
     id: row.id,
+    isDeleted: row.is_deleted,
     gymDetectionRadius: row.gym_detection_radius,
     theme: row.theme,
   }
 }
 
 export function mapBodyPartGroup(row: Tables['body_part_groups']['Row']): BodyPartGroup {
-  return { id: row.id, name: row.name }
+  return { id: row.id, isDeleted: row.is_deleted, name: row.name }
 }
 
 export function mapExercise(row: Tables['exercises']['Row']): Exercise {
   return {
     id: row.id,
+    isDeleted: row.is_deleted,
     name: row.name,
     bodyPartGroupId: row.body_part_group_id,
     machine: row.machine,
@@ -37,6 +39,7 @@ export function mapExercise(row: Tables['exercises']['Row']): Exercise {
 export function mapGym(row: Tables['gyms']['Row']): Gym {
   return {
     id: row.id,
+    isDeleted: row.is_deleted,
     name: row.name,
     abbreviation: row.abbreviation,
     latitude: row.latitude,
@@ -47,6 +50,7 @@ export function mapGym(row: Tables['gyms']['Row']): Gym {
 export function mapWorkout(row: Tables['workouts']['Row']): Workout {
   return {
     id: row.id,
+    isDeleted: row.is_deleted,
     gymId: row.gym_id ?? undefined,
     note: row.note ?? undefined,
     startTime: new Date(row.start_time),
@@ -57,6 +61,7 @@ export function mapWorkout(row: Tables['workouts']['Row']): Workout {
 export function mapWorkoutExercise(row: Tables['workout_exercises']['Row']): WorkoutExercise {
   return {
     id: row.id,
+    isDeleted: row.is_deleted,
     workoutId: row.workout_id,
     exerciseId: row.exercise_id,
     order: row.exercise_order,
@@ -66,6 +71,7 @@ export function mapWorkoutExercise(row: Tables['workout_exercises']['Row']): Wor
 export function mapWorkoutSet(row: Tables['workout_sets']['Row']): WorkoutSet {
   return {
     id: row.id,
+    isDeleted: row.is_deleted,
     workoutExerciseId: row.workout_exercise_id,
     setNumber: row.set_number,
     weight: row.weight,

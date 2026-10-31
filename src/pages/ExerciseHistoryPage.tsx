@@ -102,7 +102,7 @@ export default function ExerciseHistoryPage() {
       return
     }
 
-    const ex = await getExercise(exerciseId)
+    const ex = await getExercise(exerciseId, true)
     setExercise(ex ?? null)
     setExerciseNameDraft(ex?.name ?? '')
     setExerciseNotesDraft(ex?.notes ?? '')

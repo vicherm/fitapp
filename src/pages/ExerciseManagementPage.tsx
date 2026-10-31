@@ -47,7 +47,7 @@ export default function ExerciseManagementPage() {
     .sort((left, right) => left.name.localeCompare(right.name))
 
   if (unassignedExercises.length > 0) {
-    groupedExercises.push({ bodyPartGroup: { id: '', name: 'Unassigned' }, exercises: unassignedExercises })
+    groupedExercises.push({ bodyPartGroup: { id: '', isDeleted: false, name: 'Unassigned' }, exercises: unassignedExercises })
   }
 
   groupedExercises.sort((left, right) => left.bodyPartGroup.name.localeCompare(right.bodyPartGroup.name))

@@ -2,23 +2,28 @@ import { supabase } from '../lib/supabase'
 import { mapExercise } from './mappers'
 import type { Exercise } from '../db/types'
 
-export async function listExercises(): Promise<Exercise[]> {
-  const { data, error } = await supabase.from('exercises').select('*').order('name')
+export async function listExercises(includeDeleted = false): Promise<Exercise[]> {
+  let query = supabase.from('exercises').select('*')
+  if (!includeDeleted) query = query.eq('is_deleted', false)
+  const { data, error } = await query.order('name')
   if (error) throw error
   return data.map(mapExercise)
 }
 
-export async function getExercise(id: string): Promise<Exercise | null> {
-  const { data, error } = await supabase.from('exercises').select('*').eq('id', id).maybeSingle()
+export async function getExercise(id: string, includeDeleted = false): Promise<Exercise | null> {
+  let query = supabase.from('exercises').select('*').eq('id', id)
+  if (!includeDeleted) query = query.eq('is_deleted', false)
+  const { data, error } = await query.maybeSingle()
   if (error) throw error
   return data ? mapExercise(data) : null
 }
 
-export async function createExercise(input: Omit<Exercise, 'id'>): Promise<Exercise> {
+export async function createExercise(input: Omit<Exercise, 'id' | 'isDeleted'>): Promise<Exercise> {
   const { data, error } = await supabase
     .from('exercises')
     .insert({
       id: crypto.randomUUID(),
+      is_deleted: false,
       name: input.name,
       body_part_group_id: input.bodyPartGroupId,
       machine: input.machine,
@@ -45,6 +50,6 @@ export async function updateExercise(id: string, input: Partial<Omit<Exercise, '
 }
 
 export async function deleteExercise(id: string): Promise<void> {
-  const { error } = await supabase.from('exercises').delete().eq('id', id)
+  const { error } = await supabase.from('exercises').update({ is_deleted: true }).eq('id', id).eq('is_deleted', false)
   if (error) throw error
 }

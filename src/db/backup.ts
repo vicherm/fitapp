@@ -17,7 +17,7 @@ interface BackupData {
 }
 
 interface BackupPayload {
-  schemaVersion: 2
+  schemaVersion: 3
   exportedAt: string
   data: BackupData
 }
@@ -53,16 +53,16 @@ async function insertRows<T extends keyof import('../lib/database.types').Databa
 export async function exportAllDataToJson(): Promise<void> {
   await requireUserId()
   const [settings, bodyPartGroups, exercises, gyms, workouts, workoutExercises, workoutSets] = await Promise.all([
-    listSettings(),
-    listBodyPartGroups(),
-    listExercises(),
-    listGyms(),
-    listWorkouts(),
-    listWorkoutExercises(),
-    listWorkoutSets(),
+    listSettings(true),
+    listBodyPartGroups(true),
+    listExercises(true),
+    listGyms(true),
+    listWorkouts(true),
+    listWorkoutExercises(undefined, true),
+    listWorkoutSets(undefined, true),
   ])
   const payload: BackupPayload = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     exportedAt: new Date().toISOString(),
     data: {
       settings,
@@ -94,7 +94,7 @@ export async function resetAllSupabaseData(): Promise<void> {
 export async function importAllDataFromJson(file: File): Promise<{ records: number }> {
   await requireUserId()
   const parsed = JSON.parse(await file.text()) as { schemaVersion?: number; data?: unknown }
-  if ((parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2) || !parsed.data || typeof parsed.data !== 'object') {
+  if (![1, 2, 3].includes(parsed.schemaVersion ?? 0) || !parsed.data || typeof parsed.data !== 'object') {
     throw new Error('Invalid backup: unsupported file format')
   }
   const data = parsed.data as BackupData
@@ -110,15 +110,21 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   if (settings[0]) {
     const { error } = await supabase.from('settings').insert({
       id: crypto.randomUUID(),
+      is_deleted: settings[0].isDeleted ?? false,
       gym_detection_radius: settings[0].gymDetectionRadius,
       theme: 'dark',
     })
     if (error) throw error
   }
-  const bodyPartIds = await insertRows('body_part_groups', bodyPartGroups.map((group) => ({ id: crypto.randomUUID(), name: group.name })))
+  const bodyPartIds = await insertRows('body_part_groups', bodyPartGroups.map((group) => ({
+    id: crypto.randomUUID(),
+    is_deleted: group.isDeleted ?? false,
+    name: group.name,
+  })))
   const bodyPartMap = new Map(bodyPartGroups.map((group, index) => [String(group.id), bodyPartIds[index]]))
   const gymIds = await insertRows('gyms', gyms.map((gym) => ({
     id: crypto.randomUUID(),
+    is_deleted: gym.isDeleted ?? false,
     name: gym.name,
     abbreviation: gym.abbreviation,
     latitude: gym.latitude,
@@ -127,6 +133,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   const gymMap = new Map(gyms.map((gym, index) => [String(gym.id), gymIds[index]]))
   const exerciseIds = await insertRows('exercises', exercises.map((exercise) => ({
     id: crypto.randomUUID(),
+    is_deleted: exercise.isDeleted ?? false,
     name: exercise.name,
     body_part_group_id: bodyPartMap.get(String(exercise.bodyPartGroupId))!,
     machine: exercise.machine === true,
@@ -135,6 +142,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   const exerciseMap = new Map(exercises.map((exercise, index) => [String(exercise.id), exerciseIds[index]]))
   const workoutIds = await insertRows('workouts', workouts.map((workout) => ({
     id: crypto.randomUUID(),
+    is_deleted: workout.isDeleted ?? false,
     gym_id: workout.gymId ? gymMap.get(String(workout.gymId)) ?? null : null,
     note: workout.note?.trim() || null,
     start_time: workout.startTime,
@@ -143,6 +151,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   const workoutMap = new Map(workouts.map((workout, index) => [String(workout.id), workoutIds[index]]))
   const workoutExerciseIds = await insertRows('workout_exercises', workoutExercises.map((entry) => ({
     id: crypto.randomUUID(),
+    is_deleted: entry.isDeleted ?? false,
     workout_id: workoutMap.get(String(entry.workoutId))!,
     exercise_id: exerciseMap.get(String(entry.exerciseId))!,
     exercise_order: entry.order,
@@ -150,6 +159,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
   const workoutExerciseMap = new Map(workoutExercises.map((entry, index) => [String(entry.id), workoutExerciseIds[index]]))
   await insertRows('workout_sets', workoutSets.map((set) => ({
     id: crypto.randomUUID(),
+    is_deleted: set.isDeleted ?? false,
     workout_exercise_id: workoutExerciseMap.get(String(set.workoutExerciseId))!,
     set_number: set.setNumber,
     weight: set.weight,

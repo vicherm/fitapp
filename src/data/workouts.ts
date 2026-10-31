@@ -2,34 +2,38 @@ import { supabase } from '../lib/supabase'
 import { mapWorkout, mapWorkoutExercise, mapWorkoutSet } from './mappers'
 import type { Workout, WorkoutExercise, WorkoutSet } from '../db/types'
 
-export async function listWorkouts(): Promise<Workout[]> {
-  const { data, error } = await supabase.from('workouts').select('*').order('start_time')
+export async function listWorkouts(includeDeleted = false): Promise<Workout[]> {
+  let query = supabase.from('workouts').select('*')
+  if (!includeDeleted) query = query.eq('is_deleted', false)
+  const { data, error } = await query.order('start_time')
   if (error) throw error
   return data.map(mapWorkout)
 }
 
 export async function listOpenWorkouts(): Promise<Workout[]> {
-  const { data, error } = await supabase.from('workouts').select('*').is('end_time', null).order('start_time')
+  const { data, error } = await supabase.from('workouts').select('*').eq('is_deleted', false).is('end_time', null).order('start_time')
   if (error) throw error
   return data.map(mapWorkout)
 }
 
 export async function getWorkout(id: string): Promise<Workout | null> {
-  const { data, error } = await supabase.from('workouts').select('*').eq('id', id).maybeSingle()
+  const { data, error } = await supabase.from('workouts').select('*').eq('id', id).eq('is_deleted', false).maybeSingle()
   if (error) throw error
   return data ? mapWorkout(data) : null
 }
 
-export async function listWorkoutExercises(workoutIds?: string[]): Promise<WorkoutExercise[]> {
+export async function listWorkoutExercises(workoutIds?: string[], includeDeleted = false): Promise<WorkoutExercise[]> {
   let query = supabase.from('workout_exercises').select('*')
+  if (!includeDeleted) query = query.eq('is_deleted', false)
   if (workoutIds && workoutIds.length > 0) query = query.in('workout_id', workoutIds)
   const { data, error } = await query.order('exercise_order')
   if (error) throw error
   return data.map(mapWorkoutExercise)
 }
 
-export async function listWorkoutSets(workoutExerciseIds?: string[]): Promise<WorkoutSet[]> {
+export async function listWorkoutSets(workoutExerciseIds?: string[], includeDeleted = false): Promise<WorkoutSet[]> {
   let query = supabase.from('workout_sets').select('*')
+  if (!includeDeleted) query = query.eq('is_deleted', false)
   if (workoutExerciseIds && workoutExerciseIds.length > 0) query = query.in('workout_exercise_id', workoutExerciseIds)
   const { data, error } = await query.order('performed_at')
   if (error) throw error
@@ -39,7 +43,7 @@ export async function listWorkoutSets(workoutExerciseIds?: string[]): Promise<Wo
 export async function createWorkout(input: Pick<Workout, 'gymId' | 'startTime'>): Promise<Workout> {
   const { data, error } = await supabase
     .from('workouts')
-    .insert({ id: crypto.randomUUID(), gym_id: input.gymId ?? null, start_time: input.startTime.toISOString() })
+    .insert({ id: crypto.randomUUID(), is_deleted: false, gym_id: input.gymId ?? null, start_time: input.startTime.toISOString() })
     .select('*')
     .single()
   if (error) throw error
@@ -53,20 +57,20 @@ export async function updateWorkout(id: string, input: Partial<Pick<Workout, 'gy
     ...(input.startTime === undefined ? {} : { start_time: input.startTime.toISOString() }),
     ...(input.endTime === undefined ? {} : { end_time: input.endTime?.toISOString() ?? null }),
   }
-  const { data, error } = await supabase.from('workouts').update(payload).eq('id', id).select('*').single()
+  const { data, error } = await supabase.from('workouts').update(payload).eq('id', id).eq('is_deleted', false).select('*').single()
   if (error) throw error
   return mapWorkout(data)
 }
 
 export async function deleteWorkout(id: string): Promise<void> {
-  const { error } = await supabase.from('workouts').delete().eq('id', id)
+  const { error } = await supabase.from('workouts').update({ is_deleted: true }).eq('id', id).eq('is_deleted', false)
   if (error) throw error
 }
 
-export async function createWorkoutExercise(input: Omit<WorkoutExercise, 'id'>): Promise<WorkoutExercise> {
+export async function createWorkoutExercise(input: Omit<WorkoutExercise, 'id' | 'isDeleted'>): Promise<WorkoutExercise> {
   const { data, error } = await supabase
     .from('workout_exercises')
-    .insert({ id: crypto.randomUUID(), workout_id: input.workoutId, exercise_id: input.exerciseId, exercise_order: input.order })
+    .insert({ id: crypto.randomUUID(), is_deleted: false, workout_id: input.workoutId, exercise_id: input.exerciseId, exercise_order: input.order })
     .select('*')
     .single()
   if (error) throw error
@@ -79,6 +83,7 @@ export async function getWorkoutExercise(workoutId: string, exerciseId: string):
     .select('*')
     .eq('workout_id', workoutId)
     .eq('exercise_id', exerciseId)
+    .eq('is_deleted', false)
     .maybeSingle()
   if (error) throw error
   return data ? mapWorkoutExercise(data) : null
@@ -91,16 +96,17 @@ export async function updateWorkoutSet(id: string, input: Partial<Pick<WorkoutSe
     ...(input.setNumber === undefined ? {} : { set_number: input.setNumber }),
     ...(input.workoutExerciseId === undefined ? {} : { workout_exercise_id: input.workoutExerciseId }),
   }
-  const { data, error } = await supabase.from('workout_sets').update(payload).eq('id', id).select('*').single()
+  const { data, error } = await supabase.from('workout_sets').update(payload).eq('id', id).eq('is_deleted', false).select('*').single()
   if (error) throw error
   return mapWorkoutSet(data)
 }
 
-export async function createWorkoutSet(input: Omit<WorkoutSet, 'id'>): Promise<WorkoutSet> {
+export async function createWorkoutSet(input: Omit<WorkoutSet, 'id' | 'isDeleted'>): Promise<WorkoutSet> {
   const { data, error } = await supabase
     .from('workout_sets')
     .insert({
       id: crypto.randomUUID(),
+      is_deleted: false,
       workout_exercise_id: input.workoutExerciseId,
       set_number: input.setNumber,
       weight: input.weight,
@@ -114,11 +120,11 @@ export async function createWorkoutSet(input: Omit<WorkoutSet, 'id'>): Promise<W
 }
 
 export async function deleteWorkoutSet(id: string): Promise<void> {
-  const { error } = await supabase.from('workout_sets').delete().eq('id', id)
+  const { error } = await supabase.from('workout_sets').update({ is_deleted: true }).eq('id', id).eq('is_deleted', false)
   if (error) throw error
 }
 
 export async function deleteWorkoutExercise(id: string): Promise<void> {
-  const { error } = await supabase.from('workout_exercises').delete().eq('id', id)
+  const { error } = await supabase.from('workout_exercises').update({ is_deleted: true }).eq('id', id).eq('is_deleted', false)
   if (error) throw error
 }

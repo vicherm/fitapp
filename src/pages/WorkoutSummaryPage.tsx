@@ -69,11 +69,11 @@ async function loadSummary(workoutId: string): Promise<WorkoutSummary | null> {
   const orderedWorkoutExercises = workoutExercises.sort((left, right) => left.order - right.order)
   const exerciseIds = orderedWorkoutExercises.map((workoutExercise) => workoutExercise.exerciseId)
   const exercises = exerciseIds.length > 0
-    ? (await listExercises()).filter((exercise) => exerciseIds.includes(exercise.id!))
+    ? (await listExercises(true)).filter((exercise) => exerciseIds.includes(exercise.id!))
     : []
   const groupIds = Array.from(new Set(exercises.map((exercise) => exercise.bodyPartGroupId)))
   const groups = groupIds.length > 0
-    ? (await listBodyPartGroups()).filter((group) => groupIds.includes(group.id!))
+    ? (await listBodyPartGroups(true)).filter((group) => groupIds.includes(group.id!))
     : []
   const exerciseById = new Map<string, Exercise>(exercises.map((exercise) => [exercise.id, exercise]))
   const groupById = new Map<string, BodyPartGroup>(groups.map((group) => [group.id, group]))
