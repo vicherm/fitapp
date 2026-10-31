@@ -168,8 +168,8 @@ describe('local primary storage', () => {
 
   it('blocks explicit Strava actions before Push without contacting remote functions', async () => {
     const { workout } = await workoutTree()
-    await expect(uploadWorkoutToStrava(workout.id)).rejects.toThrow('Press Push')
-    await expect(downloadWorkoutStravaJson(workout.id)).rejects.toThrow('Press Push')
+    await expect(uploadWorkoutToStrava(workout.id)).rejects.toThrow('Press Sync')
+    await expect(downloadWorkoutStravaJson(workout.id)).rejects.toThrow('Press Sync')
     expect(supabase.functions.invoke).not.toHaveBeenCalled()
   })
 
@@ -182,12 +182,83 @@ describe('local primary storage', () => {
     expect(await uploadWorkoutToStrava(workout.id)).toEqual({ uploaded: true })
     expect(supabase.functions.invoke).toHaveBeenLastCalledWith('strava-upload-workout', { body: { workoutId: workout.id } })
     await updateLocalRow('workout_sets', set.id, { reps: 10 })
-    await expect(uploadWorkoutToStrava(workout.id)).rejects.toThrow('Press Push')
+    await expect(uploadWorkoutToStrava(workout.id)).rejects.toThrow('Press Sync')
     expect(supabase.functions.invoke).toHaveBeenCalledTimes(2)
   })
 })
 
 describe('manual synchronization', () => {
+  it('runs Pull then Push, uploading only pending rows after merging', async () => {
+    const local = await createLocalRow('body_part_groups', groupInput('Local edit'))
+    const server = { ...local, id: crypto.randomUUID(), name: 'Server row' }
+    const events: string[] = []
+    const result = await manualSync('sync', {
+      pull: async (cursor) => {
+        events.push('pull')
+        expect(cursor).toBeNull()
+        return { cursor: '20', data: { ...emptyServerSnapshot(), body_part_groups: [server] } }
+      },
+      push: async (rows) => {
+        events.push('push')
+        expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('20')
+        expect(rows.body_part_groups.map((row) => row.id)).toEqual([local.id])
+        return rows
+      },
+    })
+    expect(events).toEqual(['pull', 'push'])
+    expect(result).toEqual({ records: 2, keptLocal: 0 })
+    expect((await db.rows('body_part_groups').toArray()).every((row) => row.sync_status === 'synced')).toBe(true)
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('20')
+  })
+
+  it('does not Push when Pull fails and allows retry after the failure', async () => {
+    await createLocalRow('body_part_groups', groupInput())
+    const push = vi.fn(async (rows) => rows)
+    await expect(manualSync('sync', {
+      push, pull: async () => { throw new Error('Download failed') },
+    })).rejects.toThrow('Download failed')
+    expect(push).not.toHaveBeenCalled()
+    const failedMerge = await db.snapshot()
+    await expect(manualSync('sync', {
+      push, pull: async () => ({ cursor: '1', data: {
+        ...emptyServerSnapshot(), body_part_groups: [{ ...failedMerge.body_part_groups[0], id: crypto.randomUUID() }],
+      } }),
+    })).rejects.toThrow('unique')
+    expect(push).not.toHaveBeenCalled()
+    await manualSync('sync', { push, pull: async () => ({ cursor: '1', data: emptyServerSnapshot() }) })
+    expect(push).toHaveBeenCalledOnce()
+  })
+
+  it('reports Push failure while preserving the completed Pull and pending edits', async () => {
+    const local = await createLocalRow('body_part_groups', groupInput())
+    await expect(manualSync('sync', {
+      pull: async () => ({ cursor: '12', data: emptyServerSnapshot() }),
+      push: async () => { throw new Error('Upload failed') },
+    })).rejects.toThrow('Pull completed, but Push failed')
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('12')
+    expect(await db.rows('body_part_groups').get(local.id)).toMatchObject({ sync_status: 'pending' })
+  })
+
+  it('keeps the busy lock through Push and preserves edits made in flight', async () => {
+    const local = await createLocalRow('body_part_groups', groupInput())
+    let release!: () => void
+    let started!: () => void
+    const start = new Promise<void>((resolve) => { started = resolve })
+    const running = manualSync('sync', {
+      pull: async () => ({ cursor: '10', data: emptyServerSnapshot() }),
+      push: async (rows) => {
+        await new Promise<void>((resolve) => { release = resolve; started() })
+        return rows
+      },
+    })
+    await start
+    await expect(manualSync('sync', { pull: vi.fn(), push: vi.fn() })).rejects.toThrow('already running')
+    await updateLocalRow('body_part_groups', local.id, { name: 'During upload' })
+    release()
+    expect((await running).keptLocal).toBe(1)
+    expect(await db.rows('body_part_groups').get(local.id)).toMatchObject({ name: 'During upload', sync_status: 'pending' })
+  })
+
   it('calls only the incremental RPC with the saved cursor and validates its response', async () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: { session: { user: { id: db.userId } } }, error: null,
@@ -195,15 +266,55 @@ describe('manual synchronization', () => {
     vi.mocked(supabase.rpc).mockResolvedValue({
       data: { cursor: '7', data: emptyServerSnapshot() }, error: null,
     })
-    await syncData('pull')
+    await syncData()
     expect(supabase.rpc).toHaveBeenLastCalledWith('pull_local_changes', { since_revision: null })
-    await syncData('pull')
+    const successful = await db.lastSyncMetadata().get('last_sync')
+    expect(successful?.status).toBe('OK')
+    expect(Number.isFinite(Date.parse(successful!.timestamp))).toBe(true)
+    const userId = db.userId
+    activateLocalDatabase(null)
+    activateLocalDatabase(userId)
+    db = getLocalDatabase()
+    expect(await db.lastSyncMetadata().get('last_sync')).toEqual(successful)
+    await syncData()
     expect(supabase.rpc).toHaveBeenLastCalledWith('pull_local_changes', { since_revision: '7' })
     vi.mocked(supabase.rpc).mockResolvedValue({ data: { cursor: '8', data: {} }, error: null })
-    await expect(syncData('pull')).rejects.toThrow('Invalid sync response')
+    await expect(syncData()).rejects.toThrow('Invalid sync response')
+    expect((await db.lastSyncMetadata().get('last_sync'))?.status).toBe('BAD')
     vi.mocked(supabase.rpc).mockResolvedValue({ data: { cursor: null, data: emptyServerSnapshot() }, error: null })
-    await expect(syncData('pull')).rejects.toThrow('Invalid incremental Pull response')
+    await expect(syncData()).rejects.toThrow('Invalid incremental Pull response')
     expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('7')
+  })
+
+  it('records BAD when Push fails after a successful Pull', async () => {
+    await createLocalRow('body_part_groups', groupInput())
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc)
+      .mockResolvedValueOnce({ data: { cursor: '9', data: emptyServerSnapshot() }, error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: 'Upload unavailable' } })
+    await expect(syncData()).rejects.toThrow('Pull completed, but Push failed')
+    expect((await db.lastSyncMetadata().get('last_sync'))?.status).toBe('BAD')
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('9')
+  })
+
+  it('reports failures to persist last sync instead of claiming success', async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: { cursor: '1', data: emptyServerSnapshot() }, error: null,
+    })
+    const table = db.lastSyncMetadata()
+    const put = table.put.bind(table)
+    vi.spyOn(table, 'put').mockImplementation((row) => {
+      if (row.key === 'last_sync') return Promise.reject(new Error('Storage full'))
+      return put(row)
+    })
+    await expect(syncData()).rejects.toThrow('Sync completed, but its status could not be saved')
+    vi.mocked(supabase.rpc).mockRejectedValue(new Error('Offline'))
+    await expect(syncData()).rejects.toThrow('Sync failed and its status could not be saved')
   })
 
   it('strips sync_status, sends only pending rows, acknowledges success', async () => {

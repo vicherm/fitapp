@@ -110,7 +110,7 @@ export async function pushFromLocal(db: LocalDatabase, transport: SyncTransport)
 
 let syncRunning = false
 
-export async function manualSync(direction: 'push' | 'pull', transport: SyncTransport): Promise<SyncResult> {
+export async function manualSync(direction: 'push' | 'pull' | 'sync', transport: SyncTransport): Promise<SyncResult> {
   if (syncRunning) throw new Error('A sync operation is already running.')
   syncRunning = true
   try {
@@ -118,7 +118,14 @@ export async function manualSync(direction: 'push' | 'pull', transport: SyncTran
     if (direction === 'push') return await pushFromLocal(db, transport)
     const previous = await db.syncMetadata().get('pull_cursor')
     const response = await transport.pull(previous?.value ?? null)
-    return await pullIntoLocal(db, response.data, response.cursor)
+    const pulled = await pullIntoLocal(db, response.data, response.cursor)
+    if (direction === 'pull') return pulled
+    try {
+      const pushed = await pushFromLocal(db, transport)
+      return { records: pulled.records + pushed.records, keptLocal: pushed.keptLocal }
+    } catch (error) {
+      throw new Error(`Pull completed, but Push failed. Pending local changes were retained. ${error instanceof Error ? error.message : 'Unable to upload changes.'}`)
+    }
   } finally {
     syncRunning = false
   }

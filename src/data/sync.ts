@@ -37,9 +37,26 @@ const transport: SyncTransport = {
   },
 }
 
-export async function syncData(direction: 'push' | 'pull') {
-  const { data, error } = await supabase.auth.getSession()
-  if (error) throw error
-  if (data.session?.user.id !== getLocalDatabase().userId) throw new Error('Sign in to the account that owns this local database.')
-  return manualSync(direction, transport)
+export async function syncData() {
+  const db = getLocalDatabase()
+  let result
+  try {
+    const { data, error } = await supabase.auth.getSession()
+    if (error) throw error
+    if (data.session?.user.id !== db.userId) throw new Error('Sign in to the account that owns this local database.')
+    result = await manualSync('sync', transport)
+  } catch (error) {
+    try {
+      await db.lastSyncMetadata().put({ key: 'last_sync', timestamp: new Date().toISOString(), status: 'BAD' })
+    } catch (storageError) {
+      throw new AggregateError([error, storageError], `Sync failed and its status could not be saved: ${error instanceof Error ? error.message : String(error)}; ${storageError instanceof Error ? storageError.message : String(storageError)}`)
+    }
+    throw error
+  }
+  try {
+    await db.lastSyncMetadata().put({ key: 'last_sync', timestamp: new Date().toISOString(), status: 'OK' })
+  } catch (error) {
+    throw new Error(`Sync completed, but its status could not be saved: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  return result
 }

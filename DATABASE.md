@@ -1,6 +1,6 @@
 # GymLog - Database Model
 
-Version: 1.2
+Version: 1.4
 Status: Current implementation
 
 This app uses IndexedDB through Dexie.js as its primary application store, with Supabase Auth and explicitly synchronized PostgreSQL storage protected by Row Level Security. Domain models remain in `src/db/types.ts`, while typed database access is defined in `src/lib/database.types.ts` and `src/data/`.
@@ -8,6 +8,10 @@ This app uses IndexedDB through Dexie.js as its primary application store, with 
 ## Supabase schema
 
 ### Local storage and manual synchronization
+
+Home exposes one Sync button performing Pull then Push, under a single busy lock, without a final Pull. Pull failure prevents Push. Push failure leaves the completed Pull/cursor committed and retains unacknowledged pending changes. No server schema changes are required for combining the two phases.
+
+The local `sync_metadata` store also holds `last_sync` with an ISO completion `timestamp` and `status: 'OK' | 'BAD'` for the last manual Sync attempt. It is independent of the Pull cursor, excluded from backups and server replication, and displayed below Home's build date. No IndexedDB schema upgrade is needed because the store is already keyed by `key`.
 
 `src/db/local.ts` defines seven application tables; Dexie schema version 2 adds a local `sync_metadata` store for the last successful Pull cursor. Each account uses a separate `gymlog-{userId}` database. Rows retain snake_case application fields, UUIDs, ownership, timestamps and `is_deleted`, plus local-only `sync_status: 'pending' | 'synced'`. Domain mappers expose dates and camelCase fields to screens. Local storage starts empty and is not automatically seeded or synchronized.
 
@@ -52,7 +56,7 @@ Fields
 
 Notes
 
-- Supabase seeds a default row for a new account; local storage remains empty until Pull or an explicit settings save:
+- Supabase seeds a default row for a new account; local storage remains empty until Sync or an explicit settings save:
   - `{ gymDetectionRadius: 200, theme: 'dark' }`
 - Supabase table: `settings`
 - Local indexes: `id, sync_status`

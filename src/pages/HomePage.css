@@ -32,11 +32,18 @@
   letter-spacing: 0.05em;
 }
 
+.home-last-sync {
+  margin: 0.4rem 0 0;
+  color: var(--text);
+  font-size: 0.72rem;
+}
+
 .home-nav {
   max-width: 100%;
   margin: 10px auto 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
   gap: 8px;
 }
 
@@ -116,15 +123,14 @@
 }
 
 .home-sync p {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 0.85rem;
 }
 
-.home-sync-buttons {
+.home-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
-  margin-bottom: 10px;
 }
 
 .home-sync-error {

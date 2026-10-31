@@ -16,7 +16,7 @@ async function requireSyncedWorkout(workoutId: string): Promise<void> {
     ...snapshot.gyms.filter((row) => row.id === workout.gym_id),
   ]
   if (related.some((row) => row.sync_status !== 'synced')) {
-    throw new Error('Press Push on Home before uploading or previewing this workout in Strava.')
+    throw new Error('Press Sync on Home before uploading or previewing this workout in Strava.')
   }
 }
 

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { liveQuery } from 'dexie'
 import { syncData } from '../data/sync'
+import { getLocalDatabase, type LastSync } from '../db/local'
 import './HomePage.css'
 
 const navItems = [
@@ -16,32 +18,38 @@ const navItems = [
     title: 'Statistics',
     to: '/statistics',
   },
-  {
-    title: 'More ...',
-    to: '/more',
-  },
 ]
 
 export default function HomePage() {
-  const [syncing, setSyncing] = useState<'push' | 'pull' | null>(null)
+  const [syncing, setSyncing] = useState(false)
   const [syncMessage, setSyncMessage] = useState('')
   const [syncError, setSyncError] = useState('')
   const busy = useRef(false)
+  const [lastSync, setLastSync] = useState<LastSync | null>(null)
 
-  async function handleSync(direction: 'push' | 'pull') {
+  useEffect(() => {
+    const db = getLocalDatabase()
+    const subscription = liveQuery(() => db.lastSyncMetadata().get('last_sync')).subscribe({
+      next: (record) => setLastSync(record ?? null),
+      error: (error: unknown) => setSyncError(`Unable to read last sync: ${error instanceof Error ? error.message : String(error)}`),
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function handleSync() {
     if (busy.current) return
     busy.current = true
-    setSyncing(direction)
+    setSyncing(true)
     setSyncMessage('')
     setSyncError('')
     try {
-      const result = await syncData(direction)
-      setSyncMessage(`${direction === 'push' ? 'Push' : 'Pull'} complete: ${result.records} records synchronized. ${result.keptLocal} newer local records kept.`)
+      const result = await syncData()
+      setSyncMessage(`Sync complete: ${result.records} row operations processed. ${result.keptLocal} newer local records remain pending.`)
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : 'Sync failed. Local changes have been retained.')
     } finally {
       busy.current = false
-      setSyncing(null)
+      setSyncing(false)
     }
   }
   const logoUrl = `${import.meta.env.BASE_URL}icons/icon-512.png`
@@ -60,6 +68,11 @@ export default function HomePage() {
         <p className="home-build" aria-label={`Build date and time: ${buildTimestamp}`}>
           Built {buildTimestamp}
         </p>
+        <p className={`home-last-sync${lastSync?.status === 'BAD' ? ' home-sync-error' : ''}`} role="status">
+          {lastSync
+            ? `Last sync: ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(lastSync.timestamp))} — ${lastSync.status}`
+            : 'Last sync: Never'}
+        </p>
       </section>
 
       <section className="home-nav" aria-label="Main navigation">
@@ -68,22 +81,18 @@ export default function HomePage() {
             {item.title}
           </Link>
         ))}
+        <div className="home-actions">
+          <button className="home-data-btn" type="button" disabled={syncing} onClick={() => void handleSync()}>
+            {syncing ? 'Syncing...' : 'Sync'}
+          </button>
+          <Link className="home-nav-card" to="/more">More ...</Link>
+        </div>
       </section>
 
-      <section className="home-sync" aria-label="Temporary manual synchronization">
-        <p>Data is stored on this device. Push and Pull are manual only.</p>
-        <div className="home-sync-buttons">
-          <button className="home-data-btn" type="button" disabled={syncing !== null} onClick={() => void handleSync('push')}>
-            {syncing === 'push' ? 'Pushing...' : 'Push'}
-          </button>
-          <button className="home-data-btn" type="button" disabled={syncing !== null} onClick={() => void handleSync('pull')}>
-            {syncing === 'pull' ? 'Pulling...' : 'Pull'}
-          </button>
-        </div>
-        <p>On first use, press Pull to load your server data. Conflicts use the latest updated_at; equal timestamps favor the server.</p>
+      {(syncMessage || syncError) && <section className="home-sync" aria-label="Synchronization result">
         {syncMessage && <p className="home-data-message" role="status">{syncMessage}</p>}
         {syncError && <p className="home-sync-error" role="alert">{syncError}</p>}
-      </section>
+      </section>}
 
     </main>
   )

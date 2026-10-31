@@ -15,6 +15,11 @@ export type LocalSnapshot = { [T in DataTable]: LocalRow<T>[] }
 export type ServerSnapshot = { [T in DataTable]: ServerRow<T>[] }
 type RowInput<T extends DataTable> = RowFields[T]
 
+export interface LastSync {
+  timestamp: string
+  status: 'BAD' | 'OK'
+}
+
 export class LocalDatabase extends Dexie {
   readonly userId: string
 
@@ -38,6 +43,10 @@ export class LocalDatabase extends Dexie {
   }
 
   syncMetadata(): Table<{ key: 'pull_cursor'; value: string }, string> {
+    return this.table('sync_metadata')
+  }
+
+  lastSyncMetadata(): Table<LastSync & { key: 'last_sync' }, string> {
     return this.table('sync_metadata')
   }
 
@@ -97,7 +106,7 @@ export function validateSnapshot(snapshot: LocalSnapshot, userId: string): void 
   }
   const parent = (name: DataTable, id: string) => {
     const row = parents.get(name)?.get(id)
-    if (!row) throw new Error(`Missing ${name} record ${id}. Pull the related data first.`)
+    if (!row) throw new Error(`Missing ${name} record ${id}. Sync the related data first.`)
     return row
   }
 

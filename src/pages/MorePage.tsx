@@ -43,7 +43,7 @@ export default function MorePage() {
     event.target.value = ''
     if (!file || isBusy) return
 
-    if (!window.confirm('Import will replace local data and mark changes pending. Server data changes only after Push. Continue?')) return
+    if (!window.confirm('Import will replace local data and mark changes pending. Server data changes only after Sync. Continue?')) return
 
     setIsBusy(true)
     setMessage('')
@@ -119,7 +119,7 @@ export default function MorePage() {
           </button>
         ) : (
           <div className="more-reset-confirmation">
-            <p>This marks all local data deleted. Server data changes only when you press Push.</p>
+            <p>This marks all local data deleted. Server data changes only when you press Sync.</p>
             <button
               className="more-reset-btn"
               onClick={() => void confirmReset()}

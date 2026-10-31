@@ -1,6 +1,6 @@
 # GymLog - Architecture
 
-Version: 0.6
+Version: 0.7
 Status: Draft
 
 Storage status: IndexedDB/Dexie is primary; Supabase provides authentication and explicitly synchronized server storage.
@@ -11,7 +11,7 @@ Storage status: IndexedDB/Dexie is primary; Supabase provides authentication and
 
 GymLog is an offline-first Progressive Web App.
 
-The application uses Supabase Auth with per-account IndexedDB/Dexie databases for normal data operations. Network access is required for sign-in, explicit Home Push/Pull synchronization, and explicitly requested Strava actions, not local reads or saves.
+The application uses Supabase Auth with per-account IndexedDB/Dexie databases for normal data operations. Network access is required for sign-in, explicit Home Sync, and explicitly requested Strava actions, not local reads or saves.
 
 ---
 
@@ -25,7 +25,7 @@ The primary workflow is local and device-based:
 - read GPS location
 - detect gym
 - log sets locally
-- explicitly Push changes to Supabase or Pull server data
+- explicitly Sync by pulling server changes, then pushing pending local data
 - export data when needed
 
 ---
@@ -50,7 +50,7 @@ Application records use client-generated UUIDs and local-only `sync_status`. Sav
 
 Application data records carry an `is_deleted` tombstone. User deletes mark records instead of physically removing them, and ordinary reads omit tombstoned records. Workout deletion propagates the tombstone to its child records so explicit synchronization can transmit deletions without losing their identifiers.
 
-Temporary Home buttons call `src/data/sync.ts`, the only application-data replication entry point. Atomic Supabase RPCs provide timestamp-aware Push and consistent full/incremental Pull snapshots. `src/db/sync.ts` compares `updated_at` (including server sub-millisecond precision); the server wins ties. Local merge/acknowledgement transactions preserve newer edits made during network requests. Invalid relationships or active unique-key collisions surface errors instead of partial success. Device clock accuracy is required.
+The temporary Home Sync button calls `src/data/sync.ts`, the only application-data replication entry point. `src/db/sync.ts` holds one busy lock across Pull, local merge/cursor commit, and Push; it does not perform a final Pull. Pull failure prevents Push, while Push failure retains the completed Pull and reports partial completion. Each phase is transactional, not the complete network sequence. Atomic Supabase RPCs provide timestamp-aware Push and consistent full/incremental Pull snapshots. `src/db/sync.ts` compares `updated_at` (including server sub-millisecond precision); the server wins ties. Local merge/acknowledgement transactions preserve newer edits made during network requests. Invalid relationships or active unique-key collisions surface errors instead of partial success. Device clock accuracy is required.
 
 Backups, restores and resets operate locally. Restore validates a complete replacement transaction and preserves outgoing tombstones. Strava remains server-side; upload and preview require synchronized local workout data and never implicitly Push. Automatic Strava uploads are deferred during the manual-only phase.
 
