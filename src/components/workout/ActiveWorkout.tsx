@@ -604,7 +604,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   if (isLoading) return <div className="aw-loading">Loading…</div>
 
   if (!w) {
-    const canStart = typeof selectedGymId === 'number'
+    const canStart = selectedGymId !== ''
 
     return (
       <div className="aw-start">
@@ -635,7 +635,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
               <button
                 className="aw-start-btn"
                 onClick={() => {
-                  if (typeof selectedGymId === 'number') {
+                  if (canStart) {
                     void startWorkout(selectedGymId)
                   }
                 }}
@@ -658,7 +658,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   }
 
   if (!w.gymId) {
-    const canAssign = typeof selectedGymId === 'number'
+    const canAssign = selectedGymId !== ''
 
     return (
       <div className="aw-start">
@@ -689,7 +689,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
               <button
                 className="aw-start-btn"
                 onClick={() => {
-                  if (typeof selectedGymId === 'number') {
+                  if (canAssign) {
                     void assignGymToWorkout(w.id!, selectedGymId)
                   }
                 }}
