@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listWorkoutExercises, listWorkoutSets, createWorkout, listOpenWorkouts, updateWorkout } from '../data/workouts'
 import type { Workout } from '../db/types'
-import { supabase } from '../lib/supabase'
 
 export interface WorkoutState {
   workout: Workout | null
@@ -59,9 +58,6 @@ export default function useWorkout(): WorkoutState {
         await updateWorkout(candidate.id!, {
           endTime: lastSetByWorkoutId.get(candidate.id!) ?? candidate.startTime,
         })
-        void supabase.functions.invoke('strava-upload-workout', {
-          body: { workoutId: candidate.id },
-        }).catch(() => undefined)
       }))
     }
 

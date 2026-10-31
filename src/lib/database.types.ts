@@ -409,6 +409,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      pull_local_snapshot: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      push_local_changes: {
+        Args: { changes: Json }
+        Returns: Json
+      }
       is_allowed_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean

@@ -1,6 +1,6 @@
 import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { exportAllDataToJson, importAllDataFromJson, resetAllSupabaseData } from '../db/backup'
+import { exportAllDataToJson, importAllDataFromJson, resetAllLocalData } from '../db/backup'
 import './HomePage.css'
 import './MorePage.css'
 
@@ -31,8 +31,8 @@ export default function MorePage() {
     try {
       await exportAllDataToJson()
       setMessage('Exported backup JSON file.')
-    } catch {
-      setMessage('Export failed. Please try again.')
+    } catch (error) {
+      setMessage(error instanceof Error ? `Export failed: ${error.message}` : 'Export failed. Please try again.')
     } finally {
       setIsBusy(false)
     }
@@ -43,7 +43,7 @@ export default function MorePage() {
     event.target.value = ''
     if (!file || isBusy) return
 
-    if (!window.confirm('Import will replace all local data. Continue?')) return
+    if (!window.confirm('Import will replace local data and mark changes pending. Server data changes only after Push. Continue?')) return
 
     setIsBusy(true)
     setMessage('')
@@ -51,8 +51,8 @@ export default function MorePage() {
       const result = await importAllDataFromJson(file)
       setMessage(`Imported ${result.records} records. Reloading...`)
       window.setTimeout(() => window.location.reload(), 500)
-    } catch {
-      setMessage('Import failed. Please select a valid backup JSON file.')
+    } catch (error) {
+      setMessage(error instanceof Error ? `Import failed: ${error.message}` : 'Import failed. Please select a valid backup JSON file.')
       setIsBusy(false)
     }
   }
@@ -68,11 +68,11 @@ export default function MorePage() {
 
     setIsBusy(true)
     try {
-      await resetAllSupabaseData()
+      await resetAllLocalData()
       sessionStorage.removeItem('gymlog-active-workout-draft-v1')
       window.location.reload()
-    } catch {
-      setMessage('Reset failed. Please try again.')
+    } catch (error) {
+      setMessage(error instanceof Error ? `Reset failed: ${error.message}` : 'Reset failed. Please try again.')
       setResetRequested(false)
       setIsBusy(false)
     }
@@ -119,7 +119,7 @@ export default function MorePage() {
           </button>
         ) : (
           <div className="more-reset-confirmation">
-            <p>This permanently deletes all workouts, exercises, gyms, groups, and settings.</p>
+            <p>This marks all local data deleted. Server data changes only when you press Push.</p>
             <button
               className="more-reset-btn"
               onClick={() => void confirmReset()}

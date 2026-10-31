@@ -1,6 +1,27 @@
 import { supabase } from '../lib/supabase'
+import { getLocalDatabase } from '../db/local'
+
+async function requireSyncedWorkout(workoutId: string): Promise<void> {
+  const db = getLocalDatabase()
+  const snapshot = await db.transaction('r', db.tables, () => db.snapshot())
+  const workout = snapshot.workouts.find((row) => row.id === workoutId && !row.is_deleted)
+  if (!workout) throw new Error('Workout not found on this device.')
+  const entries = snapshot.workout_exercises.filter((row) => row.workout_id === workoutId)
+  const entryIds = new Set(entries.map((row) => row.id))
+  const exerciseIds = new Set(entries.map((row) => row.exercise_id))
+  const related = [
+    workout, ...entries,
+    ...snapshot.workout_sets.filter((row) => entryIds.has(row.workout_exercise_id)),
+    ...snapshot.exercises.filter((row) => exerciseIds.has(row.id)),
+    ...snapshot.gyms.filter((row) => row.id === workout.gym_id),
+  ]
+  if (related.some((row) => row.sync_status !== 'synced')) {
+    throw new Error('Press Push on Home before uploading or previewing this workout in Strava.')
+  }
+}
 
 export async function uploadWorkoutToStrava(workoutId: string): Promise<{ uploaded: boolean; alreadyUploaded?: boolean; stravaActivityId?: number; stravaUrl?: string }> {
+  await requireSyncedWorkout(workoutId)
 
   const { data: status, error: statusError } = await supabase.functions.invoke('strava-status', {
     body: {},
@@ -37,6 +58,7 @@ export async function uploadWorkoutToStrava(workoutId: string): Promise<{ upload
 }
 
 export async function downloadWorkoutStravaJson(workoutId: string): Promise<void> {
+  await requireSyncedWorkout(workoutId)
   const { data, error } = await supabase.functions.invoke('strava-upload-workout', {
     body: { workoutId, preview: true },
   })

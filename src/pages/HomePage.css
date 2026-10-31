@@ -107,6 +107,30 @@
   display: none;
 }
 
+.home-sync {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.home-sync p {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+}
+
+.home-sync-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.home-sync-error {
+  color: var(--accent);
+}
+
 .home-data-message {
   grid-column: 1 / -1;
   margin: 0;

@@ -19,8 +19,9 @@ export default function SettingsPage() {
       setRadius(String(savedSettings.gymDetectionRadius))
     })
 
-    void supabase.auth.getUser().then(({ data }) => {
-      setAccountEmail(data.user?.email ?? '')
+    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      setAccountEmail(data.session?.user.email ?? '')
+      if (sessionError) setAccountError(sessionError.message)
     })
   }, [])
 

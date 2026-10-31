@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
+import { activateLocalDatabase, getLocalDatabase } from '../../db/local'
 import './AuthGate.css'
 
 const ALLOWED_EMAIL = 'miroslav.vicher@gmail.com'
@@ -14,6 +15,22 @@ function isAllowedSession(session: Session): boolean {
     && session.user.app_metadata.provider === 'google'
 }
 
+function LocalDataGate({ children }: Props) {
+  const [ready, setReady] = useState(false)
+  const [storageError, setStorageError] = useState('')
+  useEffect(() => {
+    let active = true
+    void getLocalDatabase().open().then(() => {
+      if (active) setReady(true)
+    }).catch((error: unknown) => {
+      if (active) setStorageError(error instanceof Error ? error.message : 'Unable to open local storage.')
+    })
+    return () => { active = false }
+  }, [])
+  if (storageError) return <main className="auth-page"><p className="auth-error" role="alert">Local database unavailable: {storageError}. Enable browser storage and reload.</p></main>
+  return ready ? children : <div className="auth-loading">Opening local database...</div>
+}
+
 export default function AuthGate({ children }: Props) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -25,6 +42,7 @@ export default function AuthGate({ children }: Props) {
 
     void supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!isActive) return
+      activateLocalDatabase(data.session && isAllowedSession(data.session) ? data.session.user.id : null)
       setSession(data.session)
       setError(sessionError?.message ?? null)
       setIsLoading(false)
@@ -32,6 +50,7 @@ export default function AuthGate({ children }: Props) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!isActive) return
+      activateLocalDatabase(nextSession && isAllowedSession(nextSession) ? nextSession.user.id : null)
       setSession(nextSession)
       setIsLoading(false)
     })
@@ -66,7 +85,7 @@ export default function AuthGate({ children }: Props) {
     return <div className="auth-loading">Loading…</div>
   }
 
-  if (session && isAllowedSession(session)) return children
+  if (session && isAllowedSession(session)) return <LocalDataGate key={session.user.id}>{children}</LocalDataGate>
 
   return (
     <main className="auth-page">

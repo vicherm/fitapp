@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "vitest run tests",
     "preview": "vite preview",
     "convert:heavyset": "node scripts/heavyset-csv-to-gymlog-json.mjs",
     "import:supabase": "node scripts/import-supabase-json.mjs"
@@ -26,6 +27,9 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "@electric-sql/pglite": "^0.3.14",
+    "fake-indexeddb": "^6.2.4",
+    "vitest": "^4.1.0",
     "oxlint": "^1.71.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"

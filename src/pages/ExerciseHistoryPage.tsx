@@ -7,12 +7,13 @@ import { listGyms } from '../data/gyms'
 import { getExerciseDisplayName } from '../lib/exerciseName'
 import {
   createWorkoutExercise,
-  deleteWorkoutExercise,
   deleteWorkoutSet,
   listWorkoutExercises,
   listWorkoutSets,
   listWorkouts,
   updateWorkoutSet,
+  moveWorkoutSet,
+  resequenceWorkoutSets,
 } from '../data/workouts'
 import {
   calculatePersonalRecords,
@@ -301,7 +302,7 @@ export default function ExerciseHistoryPage() {
       ...entry,
       setNumber: index + 1,
     }))
-    await Promise.all(resequenced.map((entry) => updateWorkoutSet(entry.id!, { setNumber: entry.setNumber })))
+    await resequenceWorkoutSets(resequenced.map((entry) => entry.id))
 
     await loadHistory()
   }
@@ -324,21 +325,7 @@ export default function ExerciseHistoryPage() {
     }
     if (!targetWorkoutExercise) return
 
-    await updateWorkoutSet(set.id!, { workoutExerciseId: targetWorkoutExercise.id! })
-
-    const targetSets = await listWorkoutSets([targetWorkoutExercise.id!])
-    await Promise.all(targetSets
-      .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
-      .map((targetSet, index) => updateWorkoutSet(targetSet.id!, { setNumber: index + 1 })))
-
-    const remainingSourceSets = await listWorkoutSets([sourceWorkoutExercise.id!])
-    if (remainingSourceSets.length === 0) {
-      await deleteWorkoutExercise(sourceWorkoutExercise.id!)
-      return
-    }
-    await Promise.all(remainingSourceSets
-      .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
-      .map((sourceSet, index) => updateWorkoutSet(sourceSet.id!, { setNumber: index + 1 })))
+    await moveWorkoutSet(set.id!, targetWorkoutExercise.id!)
 
     await loadHistory()
   }
