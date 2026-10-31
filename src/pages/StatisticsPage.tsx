@@ -13,6 +13,8 @@ interface GymStatistic {
 interface Statistics {
   workoutCount: number
   averageWorkoutsPerWeek: number
+  averageSetsPerWorkout: number
+  averageTimePerSetSeconds: number
   averageDurationMinutes: number
   topGyms: GymStatistic[]
 }
@@ -36,6 +38,23 @@ function formatAverageDuration(minutes: number): string {
   return formatDuration(Math.round(minutes))
 }
 
+function formatAverageTimePerSet(seconds: number): string {
+  const roundedSeconds = Math.round(seconds)
+  if (roundedSeconds < 60) return `${roundedSeconds}s`
+
+  const minutes = Math.floor(roundedSeconds / 60)
+  const remainingSeconds = roundedSeconds % 60
+  if (minutes < 60) {
+    return remainingSeconds === 0 ? `${minutes}m` : `${minutes}m ${remainingSeconds}s`
+  }
+
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  return remainingMinutes === 0
+    ? `${hours}h`
+    : `${hours}h ${remainingMinutes}m`
+}
+
 async function loadStatistics(): Promise<Statistics> {
   const [workouts, gyms, workoutExercises, workoutSets] = await Promise.all([
     listWorkouts(),
@@ -48,6 +67,8 @@ async function loadStatistics(): Promise<Statistics> {
     return {
       workoutCount: 0,
       averageWorkoutsPerWeek: 0,
+      averageSetsPerWorkout: 0,
+      averageTimePerSetSeconds: 0,
       averageDurationMinutes: 0,
       topGyms: [],
     }
@@ -66,12 +87,18 @@ async function loadStatistics(): Promise<Statistics> {
     setsByWorkoutId.set(workoutId, timestamps)
   }
 
+  const totalSetCount = workouts.reduce(
+    (total, workout) => total + (setsByWorkoutId.get(workout.id!)?.length ?? 0),
+    0,
+  )
+
   const sortedWorkouts = [...workouts].sort((left, right) => left.startTime.getTime() - right.startTime.getTime())
   const firstWeek = startOfWeek(sortedWorkouts[0].startTime)
   const lastWeek = startOfWeek(sortedWorkouts[sortedWorkouts.length - 1].startTime)
   const weekCount = Math.max(1, Math.floor((lastWeek.getTime() - firstWeek.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1)
 
   let totalDurationMinutes = 0
+  let totalSetDurationMilliseconds = 0
   for (const workout of workouts) {
     const setTimes = setsByWorkoutId.get(workout.id!) ?? []
     const latestSetTime = setTimes.reduce<Date | undefined>(
@@ -81,6 +108,9 @@ async function loadStatistics(): Promise<Statistics> {
     const endTime = latestSetTime ?? workout.endTime
     if (endTime) {
       totalDurationMinutes += Math.max(0, Math.floor((endTime.getTime() - workout.startTime.getTime()) / 60000))
+    }
+    if (setTimes.length > 0 && latestSetTime) {
+      totalSetDurationMilliseconds += Math.max(0, latestSetTime.getTime() - workout.startTime.getTime())
     }
   }
 
@@ -100,6 +130,9 @@ async function loadStatistics(): Promise<Statistics> {
   return {
     workoutCount: workouts.length,
     averageWorkoutsPerWeek: workouts.length / weekCount,
+    averageSetsPerWorkout: totalSetCount / workouts.length,
+    averageTimePerSetSeconds:
+      totalSetCount === 0 ? 0 : totalSetDurationMilliseconds / totalSetCount / 1000,
     averageDurationMinutes: totalDurationMinutes / workouts.length,
     topGyms,
   }
@@ -133,6 +166,14 @@ export default function StatisticsPage() {
           <strong>{statistics.workoutCount}</strong>
         </article>
         <article className="statistics-metric">
+          <span>Average sets / workout</span>
+          <strong>{statistics.averageSetsPerWorkout.toFixed(1)}</strong>
+        </article>
+        <article className="statistics-metric">
+          <span>Average time / set</span>
+          <strong>{formatAverageTimePerSet(statistics.averageTimePerSetSeconds)}</strong>
+        </article>
+        <article className="statistics-metric">
           <span>Average workout duration</span>
           <strong>{formatAverageDuration(statistics.averageDurationMinutes)}</strong>
         </article>
@@ -150,8 +191,11 @@ export default function StatisticsPage() {
                   <strong>{gym.abbreviation}</strong>
                   {gym.name}
                 </span>
-                <span className="statistics-gym-share">
-                  {Math.round((workoutCount / statistics.workoutCount) * 100)}%
+                <span className="statistics-gym-stats">
+                  <span className="statistics-gym-count">{workoutCount}</span>
+                  <span className="statistics-gym-share">
+                    {Math.round((workoutCount / statistics.workoutCount) * 100)}%
+                  </span>
                 </span>
               </li>
             ))}

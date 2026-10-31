@@ -110,8 +110,19 @@
   letter-spacing: 0.08em;
 }
 
-.statistics-gym-share {
+.statistics-gym-stats {
   flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.statistics-gym-count {
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.statistics-gym-share {
   color: var(--text-h);
   font-size: 1rem;
   font-weight: 600;
