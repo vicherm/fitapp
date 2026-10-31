@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getSettings, updateSettings } from '../data/settings'
+import { DEFAULT_SYNC_COOLDOWN, getSettings, updateSettings } from '../data/settings'
 import { supabase } from '../lib/supabase'
 import './SettingsPage.css'
 
@@ -8,6 +8,7 @@ const DEFAULT_RADIUS = 200
 
 export default function SettingsPage() {
   const [radius, setRadius] = useState(String(DEFAULT_RADIUS))
+  const [cooldown, setCooldown] = useState(String(DEFAULT_SYNC_COOLDOWN))
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [accountEmail, setAccountEmail] = useState('')
@@ -17,7 +18,8 @@ export default function SettingsPage() {
     void getSettings().then((savedSettings) => {
       if (!savedSettings) return
       setRadius(String(savedSettings.gymDetectionRadius))
-    })
+      setCooldown(String(savedSettings.syncCooldownSeconds))
+    }).catch((failure: unknown) => setError(failure instanceof Error ? failure.message : 'Unable to load settings.'))
 
     void supabase.auth.getSession().then(({ data, error: sessionError }) => {
       setAccountEmail(data.session?.user.email ?? '')
@@ -32,16 +34,26 @@ export default function SettingsPage() {
 
   async function saveSettings() {
     const parsedRadius = Number(radius)
-    if (!Number.isFinite(parsedRadius) || parsedRadius <= 0) {
-      setError('Detection radius must be a positive number of metres')
+    if (!Number.isInteger(parsedRadius) || parsedRadius <= 0) {
+      setError('Detection radius must be a positive whole number of metres')
       setMessage('')
       return
     }
 
-    const nextSettings = { gymDetectionRadius: parsedRadius, theme: 'dark' as const }
-    await updateSettings(nextSettings)
-    setError('')
-    setMessage('Settings saved.')
+    const parsedCooldown = Number(cooldown)
+    if (!cooldown.trim() || !Number.isInteger(parsedCooldown) || parsedCooldown < 0 || parsedCooldown > 2147483647) {
+      setError('Sync cooldown must be a whole number from 0 to 2147483647 seconds.')
+      setMessage('')
+      return
+    }
+    try {
+      await updateSettings({ gymDetectionRadius: parsedRadius, syncCooldownSeconds: parsedCooldown, theme: 'dark' })
+      setError('')
+      setMessage('Settings saved.')
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Unable to save settings.')
+      setMessage('')
+    }
   }
 
   return (
@@ -67,6 +79,15 @@ export default function SettingsPage() {
               aria-label="Global gym detection radius in metres"
             />
             <span>metres</span>
+          </span>
+        </label>
+        <label className="settings-label settings-cooldown">
+          Automatic sync cooldown
+          <span className="settings-field-row">
+            <input className="settings-input" type="number" min="0" max="2147483647" step="1"
+              value={cooldown} onChange={(event) => setCooldown(event.target.value)}
+              aria-label="Automatic sync cooldown in seconds" />
+            <span>seconds</span>
           </span>
         </label>
         <button className="settings-save" onClick={() => void saveSettings()}>

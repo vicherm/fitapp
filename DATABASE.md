@@ -1,6 +1,6 @@
 # GymLog - Database Model
 
-Version: 1.4
+Version: 1.6
 Status: Current implementation
 
 This app uses IndexedDB through Dexie.js as its primary application store, with Supabase Auth and explicitly synchronized PostgreSQL storage protected by Row Level Security. Domain models remain in `src/db/types.ts`, while typed database access is defined in `src/lib/database.types.ts` and `src/data/`.
@@ -11,7 +11,11 @@ This app uses IndexedDB through Dexie.js as its primary application store, with 
 
 Home exposes one Sync button performing Pull then Push, under a single busy lock, without a final Pull. Pull failure prevents Push. Push failure leaves the completed Pull/cursor committed and retains unacknowledged pending changes. No server schema changes are required for combining the two phases.
 
-The local `sync_metadata` store also holds `last_sync` with an ISO completion `timestamp` and `status: 'OK' | 'BAD'` for the last manual Sync attempt. It is independent of the Pull cursor, excluded from backups and server replication, and displayed below Home's build date. No IndexedDB schema upgrade is needed because the store is already keyed by `key`.
+The account-level coordinator checks previous-day local workouts on visible cold start/foreground resume on every route, committing closures before considering Sync. Both triggers share a configurable cooldown measured from the last attempt (including manual/failure); closure is never suppressed by cooldown. Sync errors do not roll back closures; last-sync metadata records automatic attempts as well as manual ones.
+
+`202610310011_sync_cooldown.sql` adds `settings.sync_cooldown_seconds integer not null default 3600` with a nonnegative check. Dexie schema version 3 initializes the field on existing settings rows without changing their sync status. New/older imported settings default to 3600; the preference is replicated and exported with settings. Zero removes automatic throttling; the accepted maximum is 2147483647.
+
+The local `sync_metadata` store also holds `last_sync` with an ISO completion `timestamp` and `status: 'OK' | 'BAD'` for the last manual or automatic Sync attempt. It is independent of the Pull cursor, excluded from backups and server replication, and displayed below Home's build date. No IndexedDB schema upgrade is needed because the store is already keyed by `key`.
 
 `src/db/local.ts` defines seven application tables; Dexie schema version 2 adds a local `sync_metadata` store for the last successful Pull cursor. Each account uses a separate `gymlog-{userId}` database. Rows retain snake_case application fields, UUIDs, ownership, timestamps and `is_deleted`, plus local-only `sync_status: 'pending' | 'synced'`. Domain mappers expose dates and camelCase fields to screens. Local storage starts empty and is not automatically seeded or synchronized.
 
@@ -60,6 +64,7 @@ Notes
   - `{ gymDetectionRadius: 200, theme: 'dark' }`
 - Supabase table: `settings`
 - Local indexes: `id, sync_status`
+- syncCooldownSeconds: nonnegative whole seconds, default 3600, controlling startup/foreground automatic Sync.
 
 ---
 
@@ -207,7 +212,7 @@ Notes
 
 # 8. Database versioning and upgrades
 
-Local Dexie schema version 2 is separate from server migration numbering and portable backup versions. It preserves the seven version 1 tables and adds local cursor metadata; it does not import server data on upgrade/open.
+Local Dexie schema version 3 is separate from server migration numbering and portable backup versions. It preserves the seven version 1 tables and version 2 cursor metadata and initializes the settings cooldown; the coordinator, not the schema upgrade, triggers server sync on visible startup/foreground resume.
 
 Server changes are applied in filename order from `supabase/migrations/`. The UUID migration is `202610310007`, tombstones are `202610310008`, manual synchronization RPCs are `202610310009`, and incremental Pull is `202610310010`. These migrations must be applied before using the corresponding frontend features.
 

@@ -36,6 +36,10 @@ export class LocalDatabase extends Dexie {
       workout_sets: 'id, workout_exercise_id, performed_at, sync_status',
     })
     this.version(2).stores({ sync_metadata: 'key' })
+    this.version(3).stores({}).upgrade((transaction) =>
+      transaction.table('settings').toCollection().modify((row) => {
+        row.sync_cooldown_seconds = 3600
+      }))
   }
 
   rows<T extends DataTable>(name: T): Table<LocalRow<T>, string> {
@@ -112,6 +116,9 @@ export function validateSnapshot(snapshot: LocalSnapshot, userId: string): void 
 
   unique(active('settings').map((row) => row.user_id), 'Active settings')
   for (const row of snapshot.settings) {
+    if (!Number.isInteger(row.sync_cooldown_seconds) || row.sync_cooldown_seconds < 0 || row.sync_cooldown_seconds > 2147483647) {
+      throw new Error('Sync cooldown must be a nonnegative whole number of seconds, at most 2147483647.')
+    }
     if (!Number.isInteger(row.gym_detection_radius) || row.gym_detection_radius <= 0 || row.theme !== 'dark') {
       throw new Error('Detection radius must be a positive whole number of metres.')
     }

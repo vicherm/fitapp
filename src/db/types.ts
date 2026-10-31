@@ -1,4 +1,5 @@
 export interface Settings {
+  syncCooldownSeconds: number
   id: string
   isDeleted: boolean
   gymDetectionRadius: number // metres

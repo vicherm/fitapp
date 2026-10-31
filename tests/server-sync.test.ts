@@ -62,6 +62,7 @@ describe('actual PostgreSQL sync migrations', () => {
   it('supports full then empty incremental Pulls with a server-issued cursor', async () => {
     const initial = await pull()
     expect(initial.data.settings).toHaveLength(1)
+    expect(initial.data.settings[0].sync_cooldown_seconds).toBe(3600)
     expect(initial.cursor).toBe('0')
     expect(initial.data.body_part_groups.map((row) => row.name)).toEqual(['Pre-existing group'])
     expect(initial.cursor).toMatch(/^\d+$/)
@@ -71,6 +72,18 @@ describe('actual PostgreSQL sync migrations', () => {
     expect(initial.data.settings[0]).not.toHaveProperty('server_revision')
   })
 
+  it('replicates cooldown settings with validation and revisions', async () => {
+    const initial = await pull()
+    const settings = initial.data.settings[0]
+    const changed = { ...emptyServerSnapshot(), settings: [{ ...settings, sync_cooldown_seconds: 120,
+      updated_at: '2090-01-01T00:00:00Z' }] }
+    await push(changed)
+    const delta = await pull(initial.cursor)
+    expect(delta.data.settings[0].sync_cooldown_seconds).toBe(120)
+    changed.settings[0] = { ...changed.settings[0], sync_cooldown_seconds: -1, updated_at: '2091-01-01T00:00:00Z' }
+    await expect(push(changed)).rejects.toThrow('check constraint')
+    expect((await pull()).data.settings[0].sync_cooldown_seconds).toBe(120)
+  })
   it('returns late uploads with old client timestamps and subsequent tombstones', async () => {
     const initial = await pull()
     const group = { ...metadata(), name: 'Late upload', updated_at: '2000-01-01T00:00:00Z' }

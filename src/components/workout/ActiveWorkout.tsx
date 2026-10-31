@@ -69,7 +69,7 @@ function distanceInMetres(latitude1: number, longitude1: number, latitude2: numb
 
 export default function ActiveWorkout({ workout, pendingExercise }: Props) {
   const navigate = useNavigate()
-  const { workout: w, isLoading, startWorkout, assignGymToWorkout } = workout
+  const { workout: w, isLoading, error, startWorkout, assignGymToWorkout } = workout
 
   const [exercise, setExercise] = useState<Exercise | null>(null)
   const [workoutExercise, setWorkoutExercise] = useState<WorkoutExercise | null>(null)
@@ -612,6 +612,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           <Link className="aw-home-link" to="/home">
             Home
           </Link>
+          {error && <p role="alert">{error}</p>}
           {gyms.length > 0 ? (
             <>
               <label className="aw-start-label" htmlFor="aw-gym-select">
@@ -666,6 +667,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
           <Link className="aw-home-link" to="/home">
             Home
           </Link>
+          {error && <p role="alert">{error}</p>}
           {gyms.length > 0 ? (
             <>
               <label className="aw-start-label" htmlFor="aw-assign-gym-select">
@@ -719,6 +721,7 @@ export default function ActiveWorkout({ workout, pendingExercise }: Props) {
 
   return (
     <div className="aw">
+      {error && <p role="alert">{error}</p>}
       {notification && (
         <div className="aw-pr-notification" role="status" aria-live="polite">
           <span className="aw-pr-icon" aria-hidden="true">🏆</span>

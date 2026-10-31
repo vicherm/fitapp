@@ -14,6 +14,7 @@ export function mapSettings(row: ServerRow<'settings'>): Settings {
     id: row.id,
     isDeleted: row.is_deleted,
     gymDetectionRadius: row.gym_detection_radius,
+    syncCooldownSeconds: row.sync_cooldown_seconds,
     theme: row.theme,
   }
 }

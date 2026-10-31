@@ -95,6 +95,7 @@ export async function importAllDataFromJson(file: File): Promise<{ records: numb
     await db.rows('settings').bulkPut(settings.map((row) => ({
       ...metadata(requireId(settingIds, row.id), row.isDeleted),
       gym_detection_radius: row.gymDetectionRadius, theme: row.theme,
+      sync_cooldown_seconds: row.syncCooldownSeconds ?? 3600,
     })))
     await db.rows('body_part_groups').bulkPut(groups.map((row) => ({
       ...metadata(requireId(groupIds, row.id), row.isDeleted), name: row.name,

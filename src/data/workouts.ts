@@ -10,6 +10,32 @@ export async function listOpenWorkouts(): Promise<Workout[]> {
   return (await listWorkouts()).filter((row) => row.endTime === undefined)
 }
 
+export async function closePreviousDayWorkouts(now = new Date()): Promise<number> {
+  const db = getLocalDatabase()
+  return db.transaction('rw', db.tables, async () => {
+    const previous = (await listOpenWorkouts()).filter((row) => {
+      const start = row.startTime
+      return start < now && (start.getFullYear() !== now.getFullYear()
+        || start.getMonth() !== now.getMonth() || start.getDate() !== now.getDate())
+    })
+    if (previous.length === 0) return 0
+    const entries = await listWorkoutExercises(previous.map((row) => row.id))
+    const sets = await listWorkoutSets(entries.map((row) => row.id))
+    const workoutIdByEntry = new Map(entries.map((row) => [row.id, row.workoutId]))
+    const lastSetByWorkout = new Map<string, Date>()
+    for (const set of sets) {
+      const id = workoutIdByEntry.get(set.workoutExerciseId)
+      if (id === undefined) continue
+      const last = lastSetByWorkout.get(id)
+      if (!last || set.timestamp > last) lastSetByWorkout.set(id, set.timestamp)
+    }
+    for (const row of previous) {
+      await updateWorkout(row.id, { endTime: lastSetByWorkout.get(row.id) ?? row.startTime })
+    }
+    return previous.length
+  })
+}
+
 export async function getWorkout(id: string): Promise<Workout | null> {
   const row = await getLocalRow('workouts', id)
   return row ? mapWorkout(row) : null

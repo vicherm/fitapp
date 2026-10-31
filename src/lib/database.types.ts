@@ -11,6 +11,7 @@ export type Database = {
       }
       settings: {
         Row: {
+          sync_cooldown_seconds: number
           server_revision: number
           id: string
           is_deleted: boolean
@@ -21,6 +22,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          sync_cooldown_seconds?: number
           server_revision?: number
           id?: string
           is_deleted?: boolean
@@ -31,6 +33,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          sync_cooldown_seconds?: number
           server_revision?: number
           id?: string
           is_deleted?: boolean

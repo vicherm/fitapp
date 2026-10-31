@@ -9,7 +9,9 @@ import { exportAllDataToJson, importAllDataFromJson } from '../src/db/backup'
 import { moveWorkoutSet, resequenceWorkoutSets } from '../src/data/workouts'
 import { uploadWorkoutToStrava, downloadWorkoutStravaJson } from '../src/data/strava'
 import { supabase } from '../src/lib/supabase'
-import { syncData } from '../src/data/sync'
+import { automaticSync, syncData } from '../src/data/sync'
+import { closePreviousDayWorkouts } from '../src/data/workouts'
+import { getSettings, updateSettings } from '../src/data/settings'
 
 vi.mock('../src/lib/supabase', () => ({
   supabase: { functions: { invoke: vi.fn() }, rpc: vi.fn(), auth: { getSession: vi.fn() } },
@@ -30,6 +32,11 @@ afterEach(async () => {
 })
 
 const groupInput = (name = 'Back') => ({ name, is_deleted: false })
+
+async function lifecycle(now: Date) {
+  await closePreviousDayWorkouts(now)
+  await automaticSync(db)
+}
 
 async function workoutTree() {
   const group = await createLocalRow('body_part_groups', groupInput())
@@ -188,6 +195,152 @@ describe('local primary storage', () => {
 })
 
 describe('manual synchronization', () => {
+  it('shares the default 3600-second cooldown across starts/resumes after OK or BAD', async () => {
+    const completed = new Date('2026-10-31T12:00:00Z')
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: { cursor: '0', data: emptyServerSnapshot() }, error: null,
+    })
+    for (const status of ['OK', 'BAD'] as const) {
+      await db.lastSyncMetadata().put({ key: 'last_sync', timestamp: completed.toISOString(), status })
+      await automaticSync(db, new Date(completed.getTime() + 3599999))
+      expect(supabase.rpc).not.toHaveBeenCalled()
+    }
+    await automaticSync(db, new Date(completed.getTime() + 3600000))
+    expect(supabase.rpc).toHaveBeenCalledOnce()
+  })
+
+  it('closes older workouts during cooldown without network requests', async () => {
+    const { workout } = await workoutTree()
+    await db.lastSyncMetadata().put({ key: 'last_sync', timestamp: new Date().toISOString(), status: 'BAD' })
+    await lifecycle(new Date('2026-10-02T12:00:00Z'))
+    expect((await db.rows('workouts').get(workout.id))?.end_time).not.toBeNull()
+    expect(supabase.rpc).not.toHaveBeenCalled()
+  })
+
+  it('persists configurable cooldown and validates negative/fractional values', async () => {
+    expect(await getSettings()).toBeNull()
+    const initial = await updateSettings({ gymDetectionRadius: 200, theme: 'dark' })
+    expect(initial.syncCooldownSeconds).toBe(3600)
+    await updateSettings({ gymDetectionRadius: 200, theme: 'dark', syncCooldownSeconds: 5 })
+    const userId = db.userId
+    activateLocalDatabase(null)
+    activateLocalDatabase(userId)
+    db = getLocalDatabase()
+    expect((await getSettings())?.syncCooldownSeconds).toBe(5)
+    for (const value of [-1, 0.5, 2147483648]) {
+      await expect(updateSettings({ gymDetectionRadius: 200, theme: 'dark', syncCooldownSeconds: value })).rejects.toThrow('Sync cooldown')
+    }
+    expect((await getSettings())?.syncCooldownSeconds).toBe(5)
+  })
+
+  it('restores older backups with default cooldown and preserves configured values', async () => {
+    const setting = { id: crypto.randomUUID(), isDeleted: false, gymDetectionRadius: 200, theme: 'dark' }
+    const backup = { schemaVersion: 3, data: { settings: [setting], bodyPartGroups: [], exercises: [],
+      gyms: [], workouts: [], workoutExercises: [], workoutSets: [] } }
+    await importAllDataFromJson(new File([JSON.stringify(backup)], 'old.json'))
+    expect((await getSettings())?.syncCooldownSeconds).toBe(3600)
+    const configured = { ...backup, data: { ...backup.data, settings: [{ ...setting, syncCooldownSeconds: 30 }] } }
+    await importAllDataFromJson(new File([JSON.stringify(configured)], 'new.json'))
+    expect((await getSettings())?.syncCooldownSeconds).toBe(30)
+  })
+
+  it('manual Sync bypasses cooldown, zero allows each start, and busy skips automatic Sync', async () => {
+    await updateSettings({ gymDetectionRadius: 200, theme: 'dark', syncCooldownSeconds: 0 })
+    await db.lastSyncMetadata().put({ key: 'last_sync', timestamp: new Date().toISOString(), status: 'OK' })
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc).mockImplementation(async (name, args) => ({
+      data: name === 'pull_local_changes' ? { cursor: '0', data: emptyServerSnapshot() } : args!.changes,
+      error: null,
+    }))
+    await automaticSync(db)
+    await automaticSync(db)
+    expect(supabase.rpc).toHaveBeenCalledTimes(3)
+    await updateSettings({ gymDetectionRadius: 200, theme: 'dark', syncCooldownSeconds: 3600 })
+    await syncData()
+    expect(supabase.rpc).toHaveBeenCalledTimes(5)
+    let release!: () => void
+    let started!: () => void
+    const start = new Promise<void>((resolve) => { started = resolve })
+    vi.mocked(supabase.rpc).mockImplementationOnce(async () => {
+      await new Promise<void>((resolve) => { release = resolve; started() })
+      return { data: { cursor: '0', data: emptyServerSnapshot() }, error: null }
+    })
+    const manual = syncData()
+    await start
+    const before = vi.mocked(supabase.rpc).mock.calls.length
+    await automaticSync(db, new Date(Date.now() + 7200000))
+    await expect(syncData()).rejects.toThrow('already running')
+    expect(supabase.rpc).toHaveBeenCalledTimes(before)
+    release()
+    await manual
+  })
+
+  it('closes previous-day workouts before one automatic Pull-Push and records OK', async () => {
+    const { workout, set } = await workoutTree()
+    const empty = await createLocalRow('workouts', {
+      start_time: '2026-10-01T08:00:00Z', end_time: null, gym_id: null, note: null, is_deleted: false,
+    })
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc)
+      .mockImplementationOnce(async () => {
+        expect((await db.rows('workouts').get(workout.id))?.end_time).toBe(new Date(set.performed_at).toISOString())
+        expect((await db.rows('workouts').get(empty.id))?.end_time).toBe(new Date(empty.start_time).toISOString())
+        return { data: { cursor: '1', data: emptyServerSnapshot() }, error: null }
+      })
+      .mockImplementationOnce(async (_name, args) => ({ data: args!.changes, error: null }))
+    await lifecycle(new Date('2026-10-02T12:00:00Z'))
+    expect(supabase.rpc).toHaveBeenCalledTimes(2)
+    expect((await db.lastSyncMetadata().get('last_sync'))?.status).toBe('OK')
+    await lifecycle(new Date('2026-10-02T12:00:00Z'))
+    expect(supabase.rpc).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not auto-close current-day/future workouts or sync when no closure occurs', async () => {
+    const now = new Date()
+    for (const start of [now, new Date(now.getTime() + 86400000)]) {
+      await createLocalRow('workouts', {
+        start_time: start.toISOString(), end_time: null, gym_id: null, note: null, is_deleted: false,
+      })
+    }
+    await closePreviousDayWorkouts(now)
+    expect(supabase.rpc).not.toHaveBeenCalled()
+    expect((await db.rows('workouts').toArray()).every((row) => row.end_time === null)).toBe(true)
+  })
+
+  it('triggers only one auto-sync when closure is invoked concurrently', async () => {
+    await workoutTree()
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc)
+      .mockResolvedValueOnce({ data: { cursor: '1', data: emptyServerSnapshot() }, error: null })
+      .mockImplementationOnce(async (_name, args) => ({ data: args!.changes, error: null }))
+    const now = new Date('2026-10-02T12:00:00Z')
+    await Promise.all([lifecycle(now), lifecycle(now)])
+    expect(supabase.rpc).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps closure pending and records BAD when automatic sync fails', async () => {
+    const { workout, set } = await workoutTree()
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc).mockRejectedValue(new Error('Offline'))
+    const now = new Date('2026-10-02T12:00:00Z')
+    await expect(lifecycle(now)).rejects.toThrow('Offline')
+    expect(await db.rows('workouts').get(workout.id)).toMatchObject({ end_time: new Date(set.performed_at).toISOString(), sync_status: 'pending' })
+    expect((await db.lastSyncMetadata().get('last_sync'))?.status).toBe('BAD')
+    await lifecycle(now)
+    expect(supabase.rpc).toHaveBeenCalledTimes(1)
+  })
+
   it('runs Pull then Push, uploading only pending rows after merging', async () => {
     const local = await createLocalRow('body_part_groups', groupInput('Local edit'))
     const server = { ...local, id: crypto.randomUUID(), name: 'Server row' }
@@ -486,10 +639,15 @@ describe('manual synchronization', () => {
     const group = { ...groupInput(), id: crypto.randomUUID(), user_id: userId, sync_status: 'pending',
       created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }
     await v1.table('body_part_groups').add(group)
+    const setting = { id: crypto.randomUUID(), user_id: userId, sync_status: 'synced',
+      created_at: group.created_at, updated_at: group.updated_at,
+      gym_detection_radius: 200, theme: 'dark', is_deleted: false }
+    await v1.table('settings').add(setting)
     v1.close()
     const upgraded = new LocalDatabase(userId)
     try {
       expect(await upgraded.rows('body_part_groups').get(group.id)).toEqual(group)
+      expect(await upgraded.rows('settings').get(setting.id)).toEqual({ ...setting, sync_cooldown_seconds: 3600 })
       expect(await upgraded.syncMetadata().get('pull_cursor')).toBeUndefined()
     } finally {
       await upgraded.delete()

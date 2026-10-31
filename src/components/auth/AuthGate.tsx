@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import { activateLocalDatabase, getLocalDatabase } from '../../db/local'
 import './AuthGate.css'
+import SyncCoordinator from './SyncCoordinator'
 
 const ALLOWED_EMAIL = 'miroslav.vicher@gmail.com'
 
@@ -28,7 +29,7 @@ function LocalDataGate({ children }: Props) {
     return () => { active = false }
   }, [])
   if (storageError) return <main className="auth-page"><p className="auth-error" role="alert">Local database unavailable: {storageError}. Enable browser storage and reload.</p></main>
-  return ready ? children : <div className="auth-loading">Opening local database...</div>
+  return ready ? <SyncCoordinator>{children}</SyncCoordinator> : <div className="auth-loading">Opening local database...</div>
 }
 
 export default function AuthGate({ children }: Props) {

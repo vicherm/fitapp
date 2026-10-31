@@ -1,6 +1,6 @@
 # GymLog - Architecture
 
-Version: 0.7
+Version: 0.9
 Status: Draft
 
 Storage status: IndexedDB/Dexie is primary; Supabase provides authentication and explicitly synchronized server storage.
@@ -46,13 +46,15 @@ All application data is stored primarily in IndexedDB through `src/db/local.ts`;
 
 JSON export remains available as a user-controlled backup and restore format.
 
-Application records use client-generated UUIDs and local-only `sync_status`. Saves and deletes become pending. Local initialization is empty; there are no startup, save, timer, or reconnect replication triggers.
+Application records use client-generated UUIDs and local-only `sync_status`. Saves and deletes become pending. `SyncCoordinator` runs inside the account/local database gate above routes, on visible cold start and foreground resume. It always closes previous-day local workouts transactionally first, then considers automatic Pull-Push Sync. Routes wait only for initial closure, not network sync. Active Workout observes local changes through Dexie live queries; it no longer triggers closure/sync. Route navigation does not remount the coordinator.
 
 Application data records carry an `is_deleted` tombstone. User deletes mark records instead of physically removing them, and ordinary reads omit tombstoned records. Workout deletion propagates the tombstone to its child records so explicit synchronization can transmit deletions without losing their identifiers.
 
-The temporary Home Sync button calls `src/data/sync.ts`, the only application-data replication entry point. `src/db/sync.ts` holds one busy lock across Pull, local merge/cursor commit, and Push; it does not perform a final Pull. Pull failure prevents Push, while Push failure retains the completed Pull and reports partial completion. Each phase is transactional, not the complete network sequence. Atomic Supabase RPCs provide timestamp-aware Push and consistent full/incremental Pull snapshots. `src/db/sync.ts` compares `updated_at` (including server sub-millisecond precision); the server wins ties. Local merge/acknowledgement transactions preserve newer edits made during network requests. Invalid relationships or active unique-key collisions surface errors instead of partial success. Device clock accuracy is required.
+The temporary Home Sync button and startup/foreground coordinator call `src/data/sync.ts`, the shared application-data replication entry point. `src/db/sync.ts` holds one busy lock across Pull, local merge/cursor commit, and Push; it does not perform a final Pull. Pull failure prevents Push, while Push failure retains the completed Pull and reports partial completion. Each phase is transactional, not the complete network sequence. Atomic Supabase RPCs provide timestamp-aware Push and consistent full/incremental Pull snapshots. `src/db/sync.ts` compares `updated_at` (including server sub-millisecond precision); the server wins ties. Local merge/acknowledgement transactions preserve newer edits made during network requests. Invalid relationships or active unique-key collisions surface errors instead of partial success. Device clock accuracy is required.
 
 Backups, restores and resets operate locally. Restore validates a complete replacement transaction and preserves outgoing tombstones. Strava remains server-side; upload and preview require synchronized local workout data and never implicitly Push. Automatic Strava uploads are deferred during the manual-only phase.
+
+Both lifecycle triggers share `settings.sync_cooldown_seconds` (default 3600). Last-sync completion metadata throttles automatic attempts, including failures and manual attempts, across reloads. Manual Sync bypasses this check. A shared guard covers authentication, network sync, and status persistence; foreground events are coalesced during coordinator work. No automatic timers, save/reconnect/background triggers or guaranteed suspended-iOS work are used. Restore validates a complete replacement transaction and preserves outgoing tombstones. Strava remains server-side; upload and preview require synchronized local workout data and never implicitly Push. Automatic Strava uploads are deferred during the manual-only phase.
 
 Dexie schema version 2 adds `sync_metadata` containing the account/device's last successful `pull_cursor`, stored as a string to preserve bigint precision. No cursor means full Pull; later requests call `pull_local_changes(since_revision)` for changed rows only. Merge and cursor persistence share one IndexedDB transaction. Push/reset/restore do not advance the cursor, and metadata is excluded from backups.
 

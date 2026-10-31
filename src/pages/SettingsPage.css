@@ -57,6 +57,10 @@
   text-transform: none;
 }
 
+.settings-cooldown {
+  margin-top: 14px;
+}
+
 .settings-input {
   width: 120px;
   padding: 9px 10px;

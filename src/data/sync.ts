@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
-import { dataTables, getLocalDatabase, type ServerSnapshot } from '../db/local'
+import { dataTables, getLocalDatabase, type LocalDatabase, type ServerSnapshot } from '../db/local'
+import { DEFAULT_SYNC_COOLDOWN, getSettings } from './settings'
 import { manualSync, type SyncTransport } from '../db/sync'
 import type { Json } from '../lib/database.types'
 
@@ -37,7 +38,33 @@ const transport: SyncTransport = {
   },
 }
 
+let running = false
+
+export function isSyncRunning(): boolean {
+  return running
+}
+
+export async function automaticSync(db: LocalDatabase, now = new Date()): Promise<void> {
+  if (getLocalDatabase() !== db || isSyncRunning()) return
+  const settings = await getSettings()
+  const last = await db.lastSyncMetadata().get('last_sync')
+  const cooldown = settings?.syncCooldownSeconds ?? DEFAULT_SYNC_COOLDOWN
+  if (last && now.getTime() - Date.parse(last.timestamp) < cooldown * 1000) return
+  if (getLocalDatabase() !== db || isSyncRunning()) return
+  await syncData()
+}
+
 export async function syncData() {
+  if (running) throw new Error('A sync operation is already running.')
+  running = true
+  try {
+    return await runSync()
+  } finally {
+    running = false
+  }
+}
+
+async function runSync() {
   const db = getLocalDatabase()
   let result
   try {
