@@ -7,11 +7,9 @@ import type {
   WorkoutExercise,
   WorkoutSet,
 } from '../db/types'
-import type { Database } from '../lib/database.types'
+import type { ServerRow } from '../db/local'
 
-type Tables = Database['public']['Tables']
-
-export function mapSettings(row: Tables['settings']['Row']): Settings {
+export function mapSettings(row: ServerRow<'settings'>): Settings {
   return {
     id: row.id,
     isDeleted: row.is_deleted,
@@ -20,11 +18,11 @@ export function mapSettings(row: Tables['settings']['Row']): Settings {
   }
 }
 
-export function mapBodyPartGroup(row: Tables['body_part_groups']['Row']): BodyPartGroup {
+export function mapBodyPartGroup(row: ServerRow<'body_part_groups'>): BodyPartGroup {
   return { id: row.id, isDeleted: row.is_deleted, name: row.name }
 }
 
-export function mapExercise(row: Tables['exercises']['Row']): Exercise {
+export function mapExercise(row: ServerRow<'exercises'>): Exercise {
   return {
     id: row.id,
     isDeleted: row.is_deleted,
@@ -36,7 +34,7 @@ export function mapExercise(row: Tables['exercises']['Row']): Exercise {
   }
 }
 
-export function mapGym(row: Tables['gyms']['Row']): Gym {
+export function mapGym(row: ServerRow<'gyms'>): Gym {
   return {
     id: row.id,
     isDeleted: row.is_deleted,
@@ -47,7 +45,7 @@ export function mapGym(row: Tables['gyms']['Row']): Gym {
   }
 }
 
-export function mapWorkout(row: Tables['workouts']['Row']): Workout {
+export function mapWorkout(row: ServerRow<'workouts'>): Workout {
   return {
     id: row.id,
     isDeleted: row.is_deleted,
@@ -58,7 +56,7 @@ export function mapWorkout(row: Tables['workouts']['Row']): Workout {
   }
 }
 
-export function mapWorkoutExercise(row: Tables['workout_exercises']['Row']): WorkoutExercise {
+export function mapWorkoutExercise(row: ServerRow<'workout_exercises'>): WorkoutExercise {
   return {
     id: row.id,
     isDeleted: row.is_deleted,
@@ -68,7 +66,7 @@ export function mapWorkoutExercise(row: Tables['workout_exercises']['Row']): Wor
   }
 }
 
-export function mapWorkoutSet(row: Tables['workout_sets']['Row']): WorkoutSet {
+export function mapWorkoutSet(row: ServerRow<'workout_sets'>): WorkoutSet {
   return {
     id: row.id,
     isDeleted: row.is_deleted,

@@ -1,6 +1,6 @@
 # GymLog - Product Specification
 
-Version: 3.98
+Version: 3.99
 Last Updated: 2026-10-31
 Status: Draft
 Target Platform: Progressive Web App (PWA)
@@ -125,7 +125,8 @@ The Home screen displays the GymLog logo and simple navigation buttons.
 - Home is available at a separate route (`/home`)
 - Home displays the date and local time of the application build beneath the logo.
 - Temporary Push and Pull buttons are the only application-data synchronization triggers. There is no startup, save, reconnect, timer, or automatic Strava synchronization.
-- Push sends pending local rows, including tombstones; Pull retrieves all server rows, including tombstones. A successful Push acknowledges only revisions not superseded by newer local edits while the request was running.
+- Push sends pending local rows, including tombstones. First Pull downloads all server rows; subsequent Pulls download only rows changed since the last successful Pull, including tombstones. A successful Push acknowledges only revisions not superseded by newer local edits while the request was running.
+- Pull uses a server-managed revision cursor, separate from client `updated_at`, so late uploads with old client timestamps are not missed. Each account/device persists the cursor atomically with a successful local merge, including empty results; failed requests or merges do not advance it. Push, local edits, reset, and restore never advance the Pull cursor. Existing local databases keep their data and perform a full Pull once after upgrading; clearing browser storage also starts with a full Pull.
 - Conflicts for the same UUID use last-write-wins by `updated_at`; equal timestamps favor the server. Pull retains newer local rows and rows absent from the server. Device clocks must be accurate.
 - Sync buttons are disabled while a request is running and report results or errors. Server and local batches are transactional; invalid relationships, parent/child deletion conflicts, or duplicate active names/orders are reported rather than silently merged. Resolve conflicting local records (or reset local data) before retrying.
 - Only explicit Push changes replicated server data. Authentication/token refresh and explicitly requested Strava actions may still use the network.

@@ -1,6 +1,6 @@
 # GymLog - Architecture
 
-Version: 0.5
+Version: 0.6
 Status: Draft
 
 Storage status: IndexedDB/Dexie is primary; Supabase provides authentication and explicitly synchronized server storage.
@@ -50,6 +50,10 @@ Application records use client-generated UUIDs and local-only `sync_status`. Sav
 
 Application data records carry an `is_deleted` tombstone. User deletes mark records instead of physically removing them, and ordinary reads omit tombstoned records. Workout deletion propagates the tombstone to its child records so explicit synchronization can transmit deletions without losing their identifiers.
 
-Temporary Home buttons call `src/data/sync.ts`, the only application-data replication entry point. Atomic Supabase RPCs provide timestamp-aware Push and consistent complete Pull snapshots. `src/db/sync.ts` compares `updated_at` (including server sub-millisecond precision); the server wins ties. Local merge/acknowledgement transactions preserve newer edits made during network requests. Invalid relationships or active unique-key collisions surface errors instead of partial success. Device clock accuracy is required.
+Temporary Home buttons call `src/data/sync.ts`, the only application-data replication entry point. Atomic Supabase RPCs provide timestamp-aware Push and consistent full/incremental Pull snapshots. `src/db/sync.ts` compares `updated_at` (including server sub-millisecond precision); the server wins ties. Local merge/acknowledgement transactions preserve newer edits made during network requests. Invalid relationships or active unique-key collisions surface errors instead of partial success. Device clock accuracy is required.
 
 Backups, restores and resets operate locally. Restore validates a complete replacement transaction and preserves outgoing tombstones. Strava remains server-side; upload and preview require synchronized local workout data and never implicitly Push. Automatic Strava uploads are deferred during the manual-only phase.
+
+Dexie schema version 2 adds `sync_metadata` containing the account/device's last successful `pull_cursor`, stored as a string to preserve bigint precision. No cursor means full Pull; later requests call `pull_local_changes(since_revision)` for changed rows only. Merge and cursor persistence share one IndexedDB transaction. Push/reset/restore do not advance the cursor, and metadata is excluded from backups.
+
+Server `server_revision` values are assigned by triggers independently of client `updated_at`. A private per-owner `sync_revisions` counter is updated under a transaction-held row lock, ensuring committed revisions cannot arrive out of order. The stable Pull RPC reads the counter and all tables under one MVCC snapshot, filtering ownership explicitly before returning data and a cursor. Revisions are not copied into local data rows.

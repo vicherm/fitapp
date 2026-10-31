@@ -8,7 +8,7 @@ export const dataTables = [
 
 export type DataTable = typeof dataTables[number]
 type RowMetadata = Pick<Database['public']['Tables']['settings']['Row'], 'id' | 'user_id' | 'created_at' | 'updated_at'>
-type RowFields = { [T in DataTable]: Omit<Database['public']['Tables'][T]['Row'], keyof RowMetadata> }
+type RowFields = { [T in DataTable]: Omit<Database['public']['Tables'][T]['Row'], keyof RowMetadata | 'server_revision'> }
 export type ServerRow<T extends DataTable> = RowFields[T] & RowMetadata
 export type LocalRow<T extends DataTable> = ServerRow<T> & { sync_status: 'pending' | 'synced' }
 export type LocalSnapshot = { [T in DataTable]: LocalRow<T>[] }
@@ -30,10 +30,15 @@ export class LocalDatabase extends Dexie {
       workout_exercises: 'id, workout_id, exercise_id, sync_status',
       workout_sets: 'id, workout_exercise_id, performed_at, sync_status',
     })
+    this.version(2).stores({ sync_metadata: 'key' })
   }
 
   rows<T extends DataTable>(name: T): Table<LocalRow<T>, string> {
     return this.table(name)
+  }
+
+  syncMetadata(): Table<{ key: 'pull_cursor'; value: string }, string> {
+    return this.table('sync_metadata')
   }
 
   async snapshot(): Promise<LocalSnapshot> {

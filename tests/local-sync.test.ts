@@ -9,8 +9,11 @@ import { exportAllDataToJson, importAllDataFromJson } from '../src/db/backup'
 import { moveWorkoutSet, resequenceWorkoutSets } from '../src/data/workouts'
 import { uploadWorkoutToStrava, downloadWorkoutStravaJson } from '../src/data/strava'
 import { supabase } from '../src/lib/supabase'
+import { syncData } from '../src/data/sync'
 
-vi.mock('../src/lib/supabase', () => ({ supabase: { functions: { invoke: vi.fn() } } }))
+vi.mock('../src/lib/supabase', () => ({
+  supabase: { functions: { invoke: vi.fn() }, rpc: vi.fn(), auth: { getSession: vi.fn() } },
+}))
 
 let db: LocalDatabase
 beforeEach(() => {
@@ -22,6 +25,8 @@ afterEach(async () => {
   await db.delete()
   vi.restoreAllMocks()
   vi.mocked(supabase.functions.invoke).mockReset()
+  vi.mocked(supabase.rpc).mockReset()
+  vi.mocked(supabase.auth.getSession).mockReset()
 })
 
 const groupInput = (name = 'Back') => ({ name, is_deleted: false })
@@ -120,7 +125,9 @@ describe('local primary storage', () => {
         exercises: [], gyms: [], workouts: [], workoutExercises: [], workoutSets: [] },
     }
     const fetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network forbidden'))
+    await db.syncMetadata().put({ key: 'pull_cursor', value: '4' })
     await importAllDataFromJson(new File([JSON.stringify(backup)], 'backup.json'))
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('4')
     expect(await db.rows('body_part_groups').get(old.id)).toMatchObject({ is_deleted: true, sync_status: 'pending' })
     const imported = (await listLocalRows('body_part_groups'))[0]
     expect(imported.name).toBe('Imported')
@@ -135,6 +142,7 @@ describe('local primary storage', () => {
   it('exports local tombstones in backup v3 without sync metadata', async () => {
     const { workout } = await workoutTree()
     await deleteLocalRow('workouts', workout.id)
+    await db.syncMetadata().put({ key: 'pull_cursor', value: '5' })
     let blob: Blob | undefined
     vi.spyOn(URL, 'createObjectURL').mockImplementation((value) => {
       blob = value as Blob
@@ -151,6 +159,7 @@ describe('local primary storage', () => {
       expect(payload.data.workouts[0]).toMatchObject({ id: workout.id, isDeleted: true })
       expect(payload.data.workoutSets[0].isDeleted).toBe(true)
       expect(text).not.toContain('sync_status')
+      expect(text).not.toContain('pull_cursor')
       expect(click).toHaveBeenCalledOnce()
     } finally {
       vi.unstubAllGlobals()
@@ -179,6 +188,24 @@ describe('local primary storage', () => {
 })
 
 describe('manual synchronization', () => {
+  it('calls only the incremental RPC with the saved cursor and validates its response', async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: db.userId } } }, error: null,
+    })
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: { cursor: '7', data: emptyServerSnapshot() }, error: null,
+    })
+    await syncData('pull')
+    expect(supabase.rpc).toHaveBeenLastCalledWith('pull_local_changes', { since_revision: null })
+    await syncData('pull')
+    expect(supabase.rpc).toHaveBeenLastCalledWith('pull_local_changes', { since_revision: '7' })
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: { cursor: '8', data: {} }, error: null })
+    await expect(syncData('pull')).rejects.toThrow('Invalid sync response')
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: { cursor: null, data: emptyServerSnapshot() }, error: null })
+    await expect(syncData('pull')).rejects.toThrow('Invalid incremental Pull response')
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('7')
+  })
+
   it('strips sync_status, sends only pending rows, acknowledges success', async () => {
     const group = await createLocalRow('body_part_groups', groupInput())
     const push = vi.fn(async (snapshot) => {
@@ -225,7 +252,7 @@ describe('manual synchronization', () => {
       push: vi.fn(),
       pull: async () => {
         await updateLocalRow('body_part_groups', group.id, { name: 'During pull' })
-        return { ...emptyServerSnapshot(), body_part_groups: [group] }
+        return { cursor: '1', data: { ...emptyServerSnapshot(), body_part_groups: [group] } }
       },
     })
     expect(await db.rows('body_part_groups').get(group.id)).toMatchObject({ name: 'During pull', sync_status: 'pending' })
@@ -278,12 +305,83 @@ describe('manual synchronization', () => {
     snapshot.body_part_groups = [{ ...group, user_id: crypto.randomUUID() }]
     await expect(pullIntoLocal(db, snapshot)).rejects.toThrow('ownership')
     let finish!: () => void
+    let started!: () => void
+    const start = new Promise<void>((resolve) => { started = resolve })
     const running = manualSync('pull', { push: vi.fn(), pull: async () => {
-      await new Promise<void>((resolve) => { finish = resolve })
-      return emptyServerSnapshot()
+      await new Promise<void>((resolve) => { finish = resolve; started() })
+      return { cursor: '0', data: emptyServerSnapshot() }
     } })
+    await start
     await expect(manualSync('pull', { push: vi.fn(), pull: vi.fn() })).rejects.toThrow('already running')
     finish()
     await running
+  })
+
+  it('persists the Pull cursor across reopening and sends it only on subsequent Pulls', async () => {
+    const pull = vi.fn(async () => ({ cursor: '9007199254740993', data: emptyServerSnapshot() }))
+    await manualSync('pull', { push: vi.fn(), pull })
+    expect(pull).toHaveBeenLastCalledWith(null)
+    const userId = db.userId
+    activateLocalDatabase(null)
+    activateLocalDatabase(userId)
+    db = getLocalDatabase()
+    await manualSync('pull', { push: vi.fn(), pull })
+    expect(pull).toHaveBeenLastCalledWith('9007199254740993')
+    const group = await createLocalRow('body_part_groups', groupInput())
+    await pushFromLocal(db, { pull, push: async (data) => data })
+    await updateLocalRow('body_part_groups', group.id, { name: 'Edited' })
+    await resetLocalData()
+    expect(await db.syncMetadata().get('pull_cursor')).toEqual({ key: 'pull_cursor', value: '9007199254740993' })
+  })
+
+  it('updates data and cursor atomically and retains both on failed Pull', async () => {
+    const group = await createLocalRow('body_part_groups', groupInput())
+    await pullIntoLocal(db, emptyServerSnapshot(), '10')
+    const before = await db.snapshot()
+    const conflict = { ...emptyServerSnapshot(), body_part_groups: [{ ...group, id: crypto.randomUUID() }] }
+    await expect(pullIntoLocal(db, conflict, '11')).rejects.toThrow('unique')
+    expect(await db.snapshot()).toEqual(before)
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('10')
+    await expect(manualSync('pull', { push: vi.fn(), pull: async () => { throw new Error('Offline') } })).rejects.toThrow('Offline')
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('10')
+    await expect(pullIntoLocal(db, emptyServerSnapshot(), '9')).rejects.toThrow('backwards')
+    await expect(pullIntoLocal(db, emptyServerSnapshot(), 'invalid')).rejects.toThrow('Invalid Pull cursor')
+    await pullIntoLocal(db, emptyServerSnapshot(), '11')
+    expect((await db.syncMetadata().get('pull_cursor'))?.value).toBe('11')
+  })
+
+  it('rolls back merged rows if saving the Pull cursor fails', async () => {
+    const group = await createLocalRow('body_part_groups', groupInput())
+    const save = vi.spyOn(db.syncMetadata(), 'put').mockRejectedValueOnce(new Error('Storage failure'))
+    const incoming = { ...emptyServerSnapshot(), body_part_groups: [{ ...group, name: 'Server rename' }] }
+    await expect(pullIntoLocal(db, incoming, '1')).rejects.toThrow('Storage failure')
+    save.mockRestore()
+    expect(await db.rows('body_part_groups').get(group.id)).toEqual(group)
+    expect(await db.syncMetadata().get('pull_cursor')).toBeUndefined()
+  })
+
+  it('upgrades existing Dexie v1 data without setting a Pull cursor', async () => {
+    const userId = crypto.randomUUID()
+    const legacy = new LocalDatabase(userId)
+    await legacy.delete()
+    const { default: Dexie } = await import('dexie')
+    const v1 = new Dexie(`gymlog-${userId}`)
+    v1.version(1).stores({
+      settings: 'id, sync_status', body_part_groups: 'id, sync_status', gyms: 'id, sync_status',
+      exercises: 'id, body_part_group_id, sync_status', workouts: 'id, gym_id, start_time, sync_status',
+      workout_exercises: 'id, workout_id, exercise_id, sync_status',
+      workout_sets: 'id, workout_exercise_id, performed_at, sync_status',
+    })
+    const group = { ...groupInput(), id: crypto.randomUUID(), user_id: userId, sync_status: 'pending',
+      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }
+    await v1.table('body_part_groups').add(group)
+    v1.close()
+    const upgraded = new LocalDatabase(userId)
+    try {
+      expect(await upgraded.rows('body_part_groups').get(group.id)).toEqual(group)
+      expect(await upgraded.syncMetadata().get('pull_cursor')).toBeUndefined()
+    } finally {
+      await upgraded.delete()
+    }
   })
 })

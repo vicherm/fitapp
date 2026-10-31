@@ -3,8 +3,15 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      sync_revisions: {
+        Row: { user_id: string; revision: number }
+        Insert: { user_id: string; revision?: number }
+        Update: { user_id?: string; revision?: number }
+        Relationships: []
+      }
       settings: {
         Row: {
+          server_revision: number
           id: string
           is_deleted: boolean
           user_id: string
@@ -14,6 +21,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -23,6 +31,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -35,6 +44,7 @@ export type Database = {
       }
       body_part_groups: {
         Row: {
+          server_revision: number
           id: string
           is_deleted: boolean
           user_id: string
@@ -43,6 +53,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -51,6 +62,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -62,6 +74,7 @@ export type Database = {
       }
       gyms: {
         Row: {
+          server_revision: number
           id: string
           is_deleted: boolean
           user_id: string
@@ -73,6 +86,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -84,6 +98,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -98,6 +113,7 @@ export type Database = {
       }
       exercises: {
         Row: {
+          server_revision: number
           id: string
           is_deleted: boolean
           user_id: string
@@ -110,6 +126,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -122,6 +139,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -145,6 +163,7 @@ export type Database = {
       }
       workouts: {
         Row: {
+          server_revision: number
           id: string
           is_deleted: boolean
           user_id: string
@@ -156,6 +175,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -167,6 +187,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -189,6 +210,7 @@ export type Database = {
       }
       workout_exercises: {
         Row: {
+          server_revision: number
           id: string
           is_deleted: boolean
           user_id: string
@@ -199,6 +221,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -209,6 +232,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -237,6 +261,7 @@ export type Database = {
       }
       workout_sets: {
         Row: {
+          server_revision: number
           id: string
           is_deleted: boolean
           user_id: string
@@ -249,6 +274,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -261,6 +287,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          server_revision?: number
           id?: string
           is_deleted?: boolean
           user_id?: string
@@ -409,6 +436,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      pull_local_changes: {
+        Args: { since_revision?: string | null }
+        Returns: Json
+      }
       pull_local_snapshot: {
         Args: Record<PropertyKey, never>
         Returns: Json

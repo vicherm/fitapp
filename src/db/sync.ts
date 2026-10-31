@@ -5,7 +5,12 @@ import {
 
 export interface SyncTransport {
   push(snapshot: ServerSnapshot): Promise<ServerSnapshot>
-  pull(): Promise<ServerSnapshot>
+  pull(cursor: string | null): Promise<PullResponse>
+}
+
+export interface PullResponse {
+  cursor: string
+  data: ServerSnapshot
 }
 
 export interface SyncResult {
@@ -30,8 +35,15 @@ function timestampValue(value: string): bigint {
   return BigInt(milliseconds) * 1_000_000n + BigInt(fraction.padEnd(9, '0').slice(3, 9))
 }
 
-export async function pullIntoLocal(db: LocalDatabase, incoming: ServerSnapshot): Promise<SyncResult> {
+export async function pullIntoLocal(db: LocalDatabase, incoming: ServerSnapshot, cursor?: string): Promise<SyncResult> {
   return db.transaction('rw', db.tables, async () => {
+    if (cursor !== undefined) {
+      if (!/^(0|[1-9][0-9]*)$/.test(cursor)) throw new Error('Invalid Pull cursor.')
+      const previous = await db.syncMetadata().get('pull_cursor')
+      if (previous && BigInt(cursor) < BigInt(previous.value)) {
+        throw new Error('Pull cursor moved backwards. Retry Pull.')
+      }
+    }
     let records = 0
     let keptLocal = 0
     async function merge<T extends DataTable>(name: T) {
@@ -48,6 +60,7 @@ export async function pullIntoLocal(db: LocalDatabase, incoming: ServerSnapshot)
     }
     for (const name of dataTables) await merge(name)
     validateSnapshot(await db.snapshot(), db.userId)
+    if (cursor !== undefined) await db.syncMetadata().put({ key: 'pull_cursor', value: cursor })
     return { records, keptLocal }
   })
 }
@@ -102,9 +115,10 @@ export async function manualSync(direction: 'push' | 'pull', transport: SyncTran
   syncRunning = true
   try {
     const db = getLocalDatabase()
-    return direction === 'push'
-      ? await pushFromLocal(db, transport)
-      : await pullIntoLocal(db, await transport.pull())
+    if (direction === 'push') return await pushFromLocal(db, transport)
+    const previous = await db.syncMetadata().get('pull_cursor')
+    const response = await transport.pull(previous?.value ?? null)
+    return await pullIntoLocal(db, response.data, response.cursor)
   } finally {
     syncRunning = false
   }
