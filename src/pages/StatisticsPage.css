@@ -71,6 +71,19 @@
   font-size: 0.8rem;
 }
 
+.statistics-gym-scroll-container {
+  max-height: 208px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.statistics-gym-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
 .statistics-gym-list {
   display: flex;
   flex-direction: column;

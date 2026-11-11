@@ -125,7 +125,6 @@ async function loadStatistics(): Promise<Statistics> {
     .map(([gymId, workoutCount]) => ({ gym: gymById.get(gymId), workoutCount }))
     .filter((entry): entry is GymStatistic => entry.gym !== undefined)
     .sort((left, right) => right.workoutCount - left.workoutCount || left.gym.name.localeCompare(right.gym.name))
-    .slice(0, 4)
 
   return {
     workoutCount: workouts.length,
@@ -184,22 +183,24 @@ export default function StatisticsPage() {
         {statistics.topGyms.length === 0 ? (
           <p className="statistics-empty">No gym data recorded yet.</p>
         ) : (
-          <ol className="statistics-gym-list">
-            {statistics.topGyms.map(({ gym, workoutCount }) => (
-              <li className="statistics-gym" key={gym.id}>
-                <span className="statistics-gym-name">
-                  <strong>{gym.abbreviation}</strong>
-                  {gym.name}
-                </span>
-                <span className="statistics-gym-stats">
-                  <span className="statistics-gym-count">{workoutCount}</span>
-                  <span className="statistics-gym-share">
-                    {Math.round((workoutCount / statistics.workoutCount) * 100)}%
+          <div className="statistics-gym-scroll-container">
+            <ol className="statistics-gym-list">
+              {statistics.topGyms.map(({ gym, workoutCount }) => (
+                <li className="statistics-gym" key={gym.id}>
+                  <span className="statistics-gym-name">
+                    <strong>{gym.abbreviation}</strong>
+                    {gym.name}
                   </span>
-                </span>
-              </li>
-            ))}
-          </ol>
+                  <span className="statistics-gym-stats">
+                    <span className="statistics-gym-count">{workoutCount}</span>
+                    <span className="statistics-gym-share">
+                      {Math.round((workoutCount / statistics.workoutCount) * 100)}%
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
         )}
       </section>
     </main>

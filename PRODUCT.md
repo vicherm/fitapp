@@ -1,7 +1,7 @@
 # GymLog - Product Specification
 
-Version: 4.08
-Last Updated: 2026-10-31
+Version: 4.09
+Last Updated: 2026-11-10
 Status: Draft
 Target Platform: Progressive Web App (PWA)
 Primary User: Personal use (single user)
@@ -151,7 +151,7 @@ Statistics is accessible from Home and displays:
 - average number of logged sets per recorded workout, including workouts with no sets
 - average elapsed time per logged set for workouts containing sets, measured from workout start to the latest logged set
 - average workout duration, using the latest logged set as the workout end when available
-- the top four gyms by workout count, showing each gym's workout count followed by its percentage of all workouts without a text label
+- the top gyms by workout count, displayed as a scrollable list showing a maximum of 4 gyms at a time; each gym shows its workout count followed by its percentage of all workouts without a text label; the list can be scrolled up and down to view additional gyms beyond the initial four
 
 ## More
 The More page provides navigation to:
